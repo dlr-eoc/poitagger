@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>296</width>
+    <height>486</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>296</width>
+     <height>21</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionNeuerMarker"/>
+   <addaction name="actionReproMarker"/>
+   <addaction name="actionAllePois"/>
+   <addaction name="actionUpload"/>
+  </widget>
+  <action name="actionNeuerMarker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/fahne_neu.png</normaloff>icons/fahne_neu.png</iconset>
+   </property>
+   <property name="text">
+    <string>neuerMarker</string>
+   </property>
+  </action>
+  <action name="actionReproMarker">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/path3102.png</normaloff>icons/path3102.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reprojekt Marker</string>
+   </property>
+   <property name="toolTip">
+    <string>Reprojekt Marker aus anderen Bildern</string>
+   </property>
+  </action>
+  <action name="actionAllePois">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/allepois.png</normaloff>icons/allepois.png</iconset>
+   </property>
+   <property name="text">
+    <string>allePois</string>
+   </property>
+  </action>
+  <action name="actionUpload">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/upload.png</normaloff>icons/upload.png</iconset>
+   </property>
+   <property name="text">
+    <string>Upload</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
