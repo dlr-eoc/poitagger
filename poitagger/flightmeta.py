@@ -144,15 +144,16 @@ class Flight(QtCore.QThread):
     def preparePois(self,poisparam):
         #print("FM, POIS JETZT" )
         poisdict = nested.Nested(poisparam.getValues(),nested.paramtodict,nested.pre_paramtodict,tupletype=list).data
-        #print(poisdict["0"]["data"])
+        #print(poisdict)
         pois = []
-        for i in poisdict["0"]["data"]:
-            entry = dict(i)
-            try:
+        try:
+            
+            for i in poisdict["0"]["data"]:
+                entry = dict(i)
                 if "id" in entry:
                     pois.append(entry)
-            except:
-                logging.warning("flightmeta: append poi failed",exc_info=True)
+        except:
+            logging.warning("flightmeta: append poi failed",exc_info=True)
         self.pois.emit(pois)
         #p = poisparam.getValues()
         #print(len(p),p["0"][1]["data"][1])
@@ -182,20 +183,6 @@ class Flight(QtCore.QThread):
             except:
                 logging.error("Flightmeta load", exc_info=True)
                 
-        elif self.task == "saveYaml":
-            try:
-                fpath = os.path.join(self.path,self.filename)
-                if os.name == "nt":
-                    import ctypes
-                    ctypes.windll.kernel32.SetFileAttributesW(fpath, 128)
-                    with open(fpath, 'w') as outfile:
-                        yaml.dump(self.p.saveState(), outfile, default_flow_style=False)
-                    ctypes.windll.kernel32.SetFileAttributesW(fpath, 2)
-                else:
-                    with open(fpath, 'w') as outfile:
-                        yaml.dump(self.p.saveState(), outfile, default_flow_style=False)
-            except:
-                logging.error("Flightmeta save", exc_info=True)
         
     def load(self,path=None,filename=None):
         if path:
@@ -216,9 +203,20 @@ class Flight(QtCore.QThread):
         self.start()
         
     def save(self):
-        self.task = "saveYaml"
-        self.start()
-        
+        try:
+            fpath = os.path.join(self.path,self.filename)
+            if os.name == "nt":
+                import ctypes
+                ctypes.windll.kernel32.SetFileAttributesW(fpath, 128)
+                with open(fpath, 'w') as outfile:
+                    yaml.dump(self.p.saveState(), outfile, default_flow_style=False)
+                ctypes.windll.kernel32.SetFileAttributesW(fpath, 2)
+            else:
+                with open(fpath, 'w') as outfile:
+                    yaml.dump(self.p.saveState(), outfile, default_flow_style=False)
+        except:
+            logging.error("Flightmeta save", exc_info=True)
+            
     def change(self):
         print("flight.change()")
         print (self.p.child("uavpath").value())

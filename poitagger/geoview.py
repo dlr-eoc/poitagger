@@ -22,11 +22,12 @@ WIDTH = 0.00003
 HEIGHT = 0.00003
 
 class GeoWidget(QMainWindow): 
-    def __init__(self,parent = None):
-        super(GeoWidget, self).__init__(parent)
+    def __init__(self,settings):
+        super().__init__()
         uic.loadUi('ui/geomain.ui',self)
         self.setWindowFlags(QtCore.Qt.Widget)
-        self.view = Browser()
+        self.settings = settings
+        self.view = Browser(settings)
         self.view.setSizeHint(200,300)
         self.setCentralWidget(self.view)
         #self.view.lat = 0.0
@@ -57,6 +58,18 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
     lon = 0
     followUav = True
     jsloaded = False
+    
+    def __init__(self,settings):
+    
+        self.view = QtWebEngineWidgets.QWebEngineView.__init__(self)
+        self.settings = settings
+        self.setWindowTitle('Loading...')
+        self.titleChanged.connect(self.adjustTitle)
+        self.page = Page()
+        self.setPage(self.page)
+        self.load("file:///map_gl.html")
+        self.loadFinished.connect(self._loadFinished)
+        
     def setSizeHint(self, width, height):
         self._sizehint = QtCore.QSize(width, height)
 
@@ -66,32 +79,28 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
             return self._sizehint
         return super(Browser, self).sizeHint()
 
-    def __init__(self):
-        self.view = QtWebEngineWidgets.QWebEngineView.__init__(self)
-        self.setWindowTitle('Loading...')
-        self.titleChanged.connect(self.adjustTitle)
-        self.page = Page()
-        self.setPage(self.page)
-        self.load("file:///map_gl.html")
-        self.loadFinished.connect(self._loadFinished)
-        
     def load(self,url):  
         self.setUrl(QtCore.QUrl(url)) 
    
     def _loadFinished(self):
+        mapboxtoken = self.settings.value("GEOVIEW/mapboxtoken")
+        self.page.runJavaScript("mapboxgl.accessToken ='{}'".format(mapboxtoken))
+        out = ""
+        with open("bla.js","r") as f:
+            self.page.runJavaScript(f.read())
         self.jsloaded = True
+        
         
     def adjustTitle(self):
         self.setWindowTitle(self.title())
  
     def disableJS(self):
-        settings = QtWebEngineWidgets.QWebEngineSettings.globalSettings()
-        settings.setAttribute(QtWebEngineWidgets.QWebEngineSettings.JavascriptEnabled, False)
+        jsset = QtWebEngineWidgets.QWebEngineSettings.globalSettings()
+        jsset.setAttribute(QtWebEngineWidgets.QWebEngineSettings.JavascriptEnabled, False)
  
     def setMarker(self,lat,lng):
         #print("geoview: setMarker")
         self.page.runJavaScript('var marker = new mapboxgl.Marker().setLngLat([{}, {}]).addTo(map);'.format(lng,lat))
-  
     def clear(self):
         #print("geoview: clear")
         self.page.runJavaScript('map.removeLayer("uavpath");map.removeSource("uavpath");') #console.log(map.getSource("uav"))

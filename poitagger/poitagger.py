@@ -99,7 +99,7 @@ class Main(QMainWindow):
         
         self.pois = pois.Pois(self.conf)
         
-        self.geomain = geoview.GeoWidget(self)
+        self.geomain = geoview.GeoWidget(self.settings)
         
         self.treemain = treeview.TreeWidget(self)
         self.treemain.setRoot(rd)
@@ -193,7 +193,7 @@ class Main(QMainWindow):
     def connections(self):
         self.sdcard.clicked.connect(lambda: self.wf.readSDCard(self.saveDialog,self.settings,self.SDCard_leeren.checkState(),self.nurFlugBilder.checkState()))
         
-        self.actionSD_Karte_einlesen.triggered.connect(lambda: self.wf.readSDCard(self.settings,self.SDCard_leeren.checkState(),self.nurFlugBilder.checkState()))
+        self.actionSD_Karte_einlesen.triggered.connect(lambda: self.wf.readSDCard(self.saveDialog,self.settings,self.SDCard_leeren.checkState(),self.nurFlugBilder.checkState()))
         #self.actionAra_korrigieren.triggered.connect(lambda: self.wf.readFolder(str(self.dir.treeitem.fileInfo(self.dir.tree.currentIndex()).absoluteFilePath())))
         self.actionAra_korrigieren.triggered.connect(lambda: self.wf.readFolder(self.treemain.view.current_path()))
         self.actionSave_poi_gpx.triggered.connect(self.pois.save_gpx)
@@ -349,8 +349,8 @@ class Main(QMainWindow):
             self.move(pos)
         
         
-   #     self.img.proc.viewCtrlUI.CVfliphorCheckBox.setChecked(s.value('VIEW/fliphor')=="true")
-   #     self.img.proc.viewCtrlUI.CVflipverCheckBox.setChecked(s.value('VIEW/flipver')=="true")
+        self.img.viewCtrlUI.CVfliphorCheckBox.setChecked(s.value('VIEW/fliphor')=="true")
+        self.img.viewCtrlUI.CVflipverCheckBox.setChecked(s.value('VIEW/flipver')=="true")
         
         self.pois.loadSettings(self.settings)
         #self.poisproperties.loadSettings(self.settings)
@@ -368,8 +368,6 @@ class Main(QMainWindow):
         [s.setValue(v+"Visible",w.isVisible()) for w,v in self.dockwidgets]
         [s.setValue(v+"Focus",self.isTopDockWidget(w)) for w,v in self.dockwidgets]
         
-       # s.setValue('VIEW/fliphor',self.img.proc.viewCtrlUI.CVfliphorCheckBox.isChecked())
-        #s.setValue('VIEW/flipver',self.img.proc.viewCtrlUI.CVflipverCheckBox.isChecked())
         s.setValue('VIEW/fliphor',self.img.viewCtrlUI.CVfliphorCheckBox.isChecked())
         s.setValue('VIEW/flipver',self.img.viewCtrlUI.CVflipverCheckBox.isChecked())
         
