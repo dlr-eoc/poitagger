@@ -1,0 +1,10 @@
+
+poitagger/__pycache__/imgproc2.cpython-36.pyc
+poitagger/__pycache__/info.cpython-36.pyc
+poitagger/__pycache__/meta.cpython-36.pyc
+poitagger/__pycache__/nested.cpython-36.pyc
+poitagger/__pycache__/pois.cpython-36.pyc
+poitagger/__pycache__/save_as.cpython-36.pyc
+poitagger/__pycache__/temp.cpython-36.pyc
+poitagger/__pycache__/treemodel.cpython-36.pyc
+*.pyc
