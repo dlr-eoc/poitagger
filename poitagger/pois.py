@@ -1,5 +1,4 @@
 from __future__ import print_function
-import flirsd
 import numpy as np
 import os
 import logging
@@ -41,7 +40,7 @@ class Pois(QtGui.QMainWindow):
     
     def __init__(self,conf):
         QtGui.QMainWindow.__init__(self)
-        uic.loadUi('ui/pois.ui',self)
+        uic.loadUi('poitagger/ui/pois.ui',self)
         
         self.dialog = upload.UploadDialog("Upload")
         self.conf = conf
@@ -168,7 +167,6 @@ class Pois(QtGui.QMainWindow):
             filename = entry[1]
             x_geo,y_geo = self.checkcamorientation(entry[3],entry[4])
             curfilepath = os.path.join(self.indir,filename)
-            #raw = flirsd.ConvertRaw(curfilepath)
             raw = image.Image.factory(curfilepath)
             if self.calib.actionEigeneWerte.isChecked():
                 pitch_offset = self.calib.dlr_cam_pitch_offset_2.value()
@@ -481,8 +479,9 @@ class MyTableModel(QtCore.QAbstractTableModel):
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
         
 if __name__ == "__main__":
+    import image
     app = QtGui.QApplication(sys.argv)
-    ara = flirsd.ConvertRaw("test/5_0210001.ARA")
+    ara = image.Image.factory("test/5_0210001.ARA")
     w = Pois(ara)
     clear = QtGui.QPushButton("clear",w)
     clear.move(0,200)

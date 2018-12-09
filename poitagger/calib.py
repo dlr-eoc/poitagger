@@ -8,7 +8,7 @@ class Calib(QtGui.QMainWindow):
     conf =  QtCore.pyqtSignal(QtCore.QSettings) 
     def __init__(self):
         QtGui.QWidget.__init__(self)
-        uic.loadUi('ui/calib2.ui',self)
+        uic.loadUi('poitagger/ui/calib2.ui',self)
         
         self.actionGroupTools = QtGui.QActionGroup(self)
         self.actionGroupTools.addAction(self.actionGeometrisch)

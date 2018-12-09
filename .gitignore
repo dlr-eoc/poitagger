@@ -8,3 +8,7 @@ poitagger/__pycache__/save_as.cpython-36.pyc
 poitagger/__pycache__/temp.cpython-36.pyc
 poitagger/__pycache__/treemodel.cpython-36.pyc
 *.pyc
+dist3-64bit/poitagger.exe
+dist3-64bit/python3-minimal/_asyncio.pyd
+dist3-64bit/python3-minimal/_bz2.pyd
+dist3-64bit/python3-minimal/_ctypes.pyd

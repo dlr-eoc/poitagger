@@ -14,7 +14,8 @@ import sys
 import cv2
 import shutil
 
-import flirsd
+#import flirsd
+from image import Image
 import traceback
     
    
@@ -28,8 +29,10 @@ class Araloader(QtCore.QThread):
     outdirlist = []    
     eigeneConf = False
         
-    def readSDCard(self,dialog,settings,remove=False,flying=False):
+    def readSDCard(self,dialog,settings):
         sdcardname = "IR_"
+        remove = dialog.SDCard_leeren.checkState()
+        flying = dialog.nurFlugBilder.checkState()
         founddir = utils2.getSDCardPath(sdcardname)
         if founddir:
             self.log.emit("Karte eingesteckt in Laufwerk:" + founddir)
@@ -118,7 +121,7 @@ class Araloader(QtCore.QThread):
                 if ext.lower() not in [".raw",".ara",".ar2"]: continue
                 try:
                     self.infile = os.path.join(root,name)
-                    raw = flirsd.ConvertRaw(self.infile)
+                    raw = Image.factory(self.infile)
                     self.log.emit(self.infile)
                     
                 except:
@@ -138,7 +141,7 @@ class Araloader(QtCore.QThread):
                 if ext.lower() not in [".raw",".ara",".ar2"]: continue
                 try:
                     self.infile = os.path.join(root,name)
-                    raw = flirsd.ConvertRaw(self.infile)
+                    raw = Image.factory(self.infile)
                     self.log.emit(self.infile)
                     outfile = os.path.join(root,"%s.jpg"%(base))
                     outtxt = os.path.join(root,"%s.txt"%(base))
@@ -176,7 +179,7 @@ class Araloader(QtCore.QThread):
                 
                 try:
                     self.infile = os.path.join(root,name)
-                    raw = flirsd.ConvertRaw(self.infile)
+                    raw = Image.factory(self.infile)
                     settings = self.find_settings(raw) 
                     self.fill_presets(settings,raw)
                     self.correct_start_latlon(raw)
@@ -222,7 +225,7 @@ class Araloader(QtCore.QThread):
                         self.flugnr = time.time()
                     lastfile = int(base)
                     try:
-                        raw = flirsd.ConvertRaw(self.infile)
+                        raw = Image.factory(self.infile)
                         
                     except:
                         print("ConvertRaw fehlgeschlagen")
@@ -284,7 +287,7 @@ class Araloader(QtCore.QThread):
                 (base,ext) = os.path.splitext(name) 
                 if ext.lower() not in [".raw",".ara",".ar2"]: continue
                 if first:
-                    raw = flirsd.ConvertRaw(infile)
+                    raw = Image.factory(infile)
                     utc = raw.header.utc
                     first = False
                     if utc[0]==1980:
@@ -349,55 +352,55 @@ class Araloader(QtCore.QThread):
                 raw.rawheader["startup_gps"]["lat"] = self.s_latlon["lat"]
                 raw.rawheader["startup_gps"]["long"] = self.s_latlon["long"]
                 raw.rawheader["startup_gps"]["height"] = self.s_latlon["ele"]
-                raw.rawheader["dlr"]["changed_flags"] |= flirsd.CHANGEDFLAGS.START_LATLON
+                raw.rawheader["dlr"]["changed_flags"] |= image.CHANGEDFLAGS.START_LATLON
         #raw.fill_header()
         
     def compare_with_last(self,raw,last):
         if raw.rawheader["falcon"]["gps_time_ms"]==last.rawheader["falcon"]["gps_time_ms"]:
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.ALL_META
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.ALL_META
         if utils2.differs_more(raw.rawheader["falcon"]["gps_lat"],last.rawheader["falcon"]["gps_lat"],4000): # ca. 40 m 
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.LATLON
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.LATLON
         if utils2.differs_more(raw.rawheader["falcon"]["gps_long"],last.rawheader["falcon"]["gps_long"],4000): # ca. 40 m
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.LATLON
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.LATLON
         if (utils2.differs_more(raw.rawheader["falcon"]["gps_lat"],last.rawheader["falcon"]["gps_lat"],40000) or \
         utils2.differs_more(raw.rawheader["falcon"]["gps_long"],last.rawheader["falcon"]["gps_long"],40000)) and \
         (not last.rawheader["falcon"]["gps_long"]  == 0 and not last.rawheader["falcon"]["gps_lat"] == 0) and \
-        (not last.rawheader["dlr"]["error_flags"] & flirsd.ERRORFLAGS.LATLON) : # ca. 400 m
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.LATLON
-            raw.rawheader["dlr"]["changed_flags"] |= flirsd.CHANGEDFLAGS.LON
-            raw.rawheader["dlr"]["changed_flags"] |= flirsd.CHANGEDFLAGS.LAT
+        (not last.rawheader["dlr"]["error_flags"] & image.ERRORFLAGS.LATLON) : # ca. 400 m
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.LATLON
+            raw.rawheader["dlr"]["changed_flags"] |= image.CHANGEDFLAGS.LON
+            raw.rawheader["dlr"]["changed_flags"] |= image.CHANGEDFLAGS.LAT
             print(raw.rawheader["falcon"]["gps_lat"],">",last.rawheader["falcon"]["gps_lat"])
             print(raw.rawheader["falcon"]["gps_long"],">",last.rawheader["falcon"]["gps_long"])
             raw.rawheader["falcon"]["gps_lat"] = last.rawheader["falcon"]["gps_lat"]
             raw.rawheader["falcon"]["gps_long"] = last.rawheader["falcon"]["gps_long"]
         if utils2.differs_more(raw.rawheader["falcon"]["cam_angle_pitch"],last.rawheader["falcon"]["cam_angle_pitch"],500):
-            raw.rawheader["dlr"]["flags"] |= flirsd.FLAGS.CAM_CHANGED
+            raw.rawheader["dlr"]["flags"] |= image.FLAGS.CAM_CHANGED
         if utils2.differs_more(raw.rawheader["startup_gps"]["long"] ,last.rawheader["startup_gps"]["long"] ,1) and \
             last.rawheader["startup_gps"]["long"] == 0 and last.rawheader["startup_gps"]["lat"] == 0 and \
             utils2.differs_more(raw.rawheader["startup_gps"]["lat"] ,last.rawheader["startup_gps"]["lat"] ,1): 
-            raw.rawheader["dlr"]["flags"] |= flirsd.FLAGS.MOTORS_ON
+            raw.rawheader["dlr"]["flags"] |= image.FLAGS.MOTORS_ON
         if not -1800000000 <= raw.rawheader["falcon"]["gps_long"] <= 1800000000 or \
         not -900000000 <= raw.rawheader["falcon"]["gps_lat"] <= 900000000:# -90 .. 90 deg
             raw.rawheader["falcon"]["gps_long"] = last.rawheader["falcon"]["gps_long"]
-            raw.rawheader["dlr"]["changed_flags"] |= flirsd.CHANGEDFLAGS.LON
+            raw.rawheader["dlr"]["changed_flags"] |= image.CHANGEDFLAGS.LON
             raw.rawheader["falcon"]["gps_lat"] = last.rawheader["falcon"]["gps_lat"]
-            raw.rawheader["dlr"]["changed_flags"] |= flirsd.CHANGEDFLAGS.LAT
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.LATLON
+            raw.rawheader["dlr"]["changed_flags"] |= image.CHANGEDFLAGS.LAT
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.LATLON
         if not -300000 <= raw.rawheader["falcon"]["baro_height"] <= 300000: #300m
             raw.rawheader["falcon"]["baro_height"] = last.rawheader["falcon"]["baro_height"]
-            raw.rawheader["dlr"]["changed_flags"] |= flirsd.CHANGEDFLAGS.BAROHEIGHT
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.BAROHEIGHT
+            raw.rawheader["dlr"]["changed_flags"] |= image.CHANGEDFLAGS.BAROHEIGHT
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.BAROHEIGHT
         if utils2.differs_more(raw.rawheader["falcon"]["baro_height"],last.rawheader["falcon"]["baro_height"],10000) and \
             raw.rawheader["falcon"]["baro_height"]== 0 : # 10 m diff
             raw.rawheader["falcon"]["baro_height"] = last.rawheader["falcon"]["baro_height"]
-            raw.rawheader["dlr"]["changed_flags"] |= flirsd.CHANGEDFLAGS.BAROHEIGHT
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.BAROHEIGHT
+            raw.rawheader["dlr"]["changed_flags"] |= image.CHANGEDFLAGS.BAROHEIGHT
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.BAROHEIGHT
         raw.rawheader["dlr"]["gps_acc_x"] = raw.rawheader["falcon"]["gps_speed_x"] - last.rawheader["falcon"]["gps_speed_x"]
         raw.rawheader["dlr"]["gps_acc_y"] = raw.rawheader["falcon"]["gps_speed_y"] - last.rawheader["falcon"]["gps_speed_y"]
         if utils2.differs_more(raw.rawheader["falcon"]["angle_pitch"],last.rawheader["falcon"]["angle_pitch"],1000):
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.FAST_PITCH
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.FAST_PITCH
         if utils2.differs_more(raw.rawheader["falcon"]["angle_roll"],last.rawheader["falcon"]["angle_roll"],1000):
-            raw.rawheader["dlr"]["error_flags"] |= flirsd.ERRORFLAGS.FAST_ROLL
+            raw.rawheader["dlr"]["error_flags"] |= image.ERRORFLAGS.FAST_ROLL
         raw.fill_header()
     
     def fill_presets(self, settings, raw):
@@ -437,7 +440,7 @@ class Araloader(QtCore.QThread):
         AllGrps,Grp = [],[]
         last = None
         for i in Files:
-            raw = flirsd.ConvertRaw(i)
+            raw = image.Image.factory(i)
             if last == None: last = raw.header
             a = datetime.strptime(raw.header.gps_time,"%H:%M:%S") 
             b = datetime.strptime(last.gps_time,"%H:%M:%S")
@@ -459,7 +462,7 @@ class Araloader(QtCore.QThread):
         lut = []
         for k,Grp in enumerate(AllGrps):
             for i in Grp:    
-                raw = flirsd.ConvertRaw(i)
+                raw = image.Image.factory(i)
                 
                 imgvec = raw.rawbody.reshape(raw.rawbody.shape[0]*raw.rawbody.shape[1])
                 try:
@@ -484,7 +487,7 @@ class Araloader(QtCore.QThread):
         for k,Grp in enumerate(AllGrps):
             for i in Grp:
                 base, ext = os.path.splitext(i)
-                raw = flirsd.ConvertRaw(i)
+                raw = image.Image.factory(i)
                 if len(Grp)<minlen:
                     idx = bisect.bisect(lut,k)
                     dist1 = mse(raw.rawbody,EigenImages[lut[idx-1]])

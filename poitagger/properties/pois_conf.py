@@ -10,7 +10,7 @@ class PoisProperties(QtGui.QWidget):
    
     def __init__(self,settings):
         QtGui.QDialog.__init__(self)
-        uic.loadUi('properties/pois_conf.ui',self)
+        uic.loadUi('poitagger/properties/pois_conf.ui',self)
         self.settings = settings
         
         self.colorChooser = QtGui.QColorDialog()

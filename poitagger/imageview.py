@@ -74,9 +74,11 @@ class Img(QtGui.QWidget):
         self.vboxdebug.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight))#,padding=0.0
         
         
-        self.infoUI = uic.loadUi("ui/imgInfo.ui")
-        self.viewCtrlUI = uic.loadUi('ui/viewcontrol.ui')
-        self.imgDebugUI = uic.loadUi("ui/imgDebug.ui")
+        self.infoUI = uic.loadUi("poitagger/ui/imgInfo.ui")
+        self.viewCtrlUI = uic.loadUi('poitagger/ui/viewcontrol.ui')
+        self.imgDebugUI = uic.loadUi("poitagger/ui/imgDebug.ui")
+        self.normkitzUI = uic.loadUi("poitagger/ui/normkitz.ui")
+        
         self.conf = conf
         #self.settings = settings
         self.histlut = pg.HistogramLUTWidget()
@@ -97,20 +99,23 @@ class Img(QtGui.QWidget):
         self.w.scene().sigMouseClicked.connect(self.pixelClicked)
       #  self.proc.reload.connect(lambda: self.loadImg(self.curimg))
         
+        self.temp.verticalLayout.addWidget(self.normkitzUI)
         self.temp.verticalLayout.addWidget(self.infoUI)
         self.temp.histVL.addWidget(self.histlut)
+        self.temp.histVL.addWidget(self.histlut)
+        
      #   self.imgDebugUI.pushButton.clicked.connect(self.proc.cutout)
             
     def appendButtonsToToolBar(self,toolBar):
         self.toolBar = toolBar
         
-        tempIcon = QtGui.QIcon(QtGui.QPixmap("ui/icons/temp.png"))
+        tempIcon = QtGui.QIcon(QtGui.QPixmap("poitagger/ui/icons/temp.png"))
         self.tempAction = QtGui.QAction(tempIcon,"temp", self)
         self.tempAction.setToolTip("Measure Temperature")
         self.tempAction.setCheckable(True)
         self.toolBar.addAction(self.tempAction)
         
-        poiIcon = QtGui.QIcon(QtGui.QPixmap("ui/icons/poi2.png"))
+        poiIcon = QtGui.QIcon(QtGui.QPixmap("poitagger/ui/icons/poi2.png"))
         self.poiAction = QtGui.QAction(poiIcon,"poi", self)
         self.poiAction.setToolTip("Point of Interest")
         self.poiAction.setCheckable(True)
@@ -167,8 +172,8 @@ class Img(QtGui.QWidget):
             return 1
             
     def flip(self,img):
-        self.fliplr = True if self.viewCtrlUI.CVfliphorCheckBox.isChecked() else False
-        self.flipud = True if self.viewCtrlUI.CVflipverCheckBox.isChecked() else False
+        self.fliplr = True if self.infoUI.CVfliphorCheckBox.isChecked() else False
+        self.flipud = True if self.infoUI.CVflipverCheckBox.isChecked() else False
         lrimage = img if not self.fliplr else np.fliplr(img)
         return lrimage.T if not self.flipud else np.flipud(lrimage).T
         
@@ -177,8 +182,6 @@ class Img(QtGui.QWidget):
         self.imgdir, self.imgname = os.path.split(str(curimg))
         self.imgbasename, ext = os.path.splitext(self.imgname)
         if not os.path.isfile(curimg): return
-       # if os.path.splitext(curimg)[1].lower() == ".ara":
-       #     self.araalt = asctec.flirsd.ConvertRaw(curimg)
         
         self.ara = image.Image.factory(curimg)
         
@@ -188,7 +191,8 @@ class Img(QtGui.QWidget):
             # elif str(curimg).lower().endswith((".tiff",".tif")):
                 # self.ara = utils2.LoadJpg(curimg)
             # else:
-                # self.ara = asctec.flirsd.ConvertRaw(curimg)
+                #pass
+                
         # except:
             # print("no image loaded!")
             # return 

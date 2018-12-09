@@ -15,8 +15,6 @@ import copy
 import numpy as np
 import logging
 
-import flirsd
-
 
 WIDTH = 0.00003
 HEIGHT = 0.00003
@@ -24,7 +22,7 @@ HEIGHT = 0.00003
 class GeoWidget(QMainWindow): 
     def __init__(self,settings):
         super().__init__()
-        uic.loadUi('ui/geomain.ui',self)
+        uic.loadUi('poitagger/ui/geomain.ui',self)
         self.setWindowFlags(QtCore.Qt.Widget)
         self.settings = settings
         self.view = Browser(settings)
@@ -67,7 +65,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         self.titleChanged.connect(self.adjustTitle)
         self.page = Page()
         self.setPage(self.page)
-        self.load("file:///map_gl.html")
+        self.load("file:///poitagger/map_gl.html")
         self.loadFinished.connect(self._loadFinished)
         
     def setSizeHint(self, width, height):
@@ -83,10 +81,17 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         self.setUrl(QtCore.QUrl(url)) 
    
     def _loadFinished(self):
+        #pk.eyJ1IjoiZWFzeSIsImEiOiJjaXBqajhrcDYwMDVqdnJudHBpd3RlbHdhIn0.1l-xj2wHpfXg-Pi1oNKrCg
         mapboxtoken = self.settings.value("GEOVIEW/mapboxtoken")
+        mapboxstyle = self.settings.value("GEOVIEW/mapboxstyle")
         self.page.runJavaScript("mapboxgl.accessToken ='{}'".format(mapboxtoken))
+        line = "var map = new mapboxgl.Map({ container: 'map', style: "+"'{}', ".format(mapboxstyle)+"center: [11.0165, 48.1405],zoom: 18});"
+        #print (line)
+        self.page.runJavaScript(line)
+        
+
         out = ""
-        with open("bla.js","r") as f:
+        with open("poitagger/bla.js","r") as f:
             self.page.runJavaScript(f.read())
         self.jsloaded = True
         

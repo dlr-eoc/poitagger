@@ -7,7 +7,7 @@ class GpsProperties(QtGui.QWidget):
     
     def __init__(self,settings):
         QtGui.QDialog.__init__(self)
-        uic.loadUi('properties/gps_conf.ui',self)
+        uic.loadUi('poitagger/properties/gps_conf.ui',self)
         self.settings = settings
         
         self.connections()

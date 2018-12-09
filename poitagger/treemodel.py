@@ -14,11 +14,11 @@ class TreeModel(QFileSystemModel):
             
     def loadpixmaps(self):
         self.foldericon = QFileIconProvider().icon(QFileIconProvider.Folder).pixmap(16,16)
-        #self.foldernotok = QtGui.QPixmap("ui/icons/file-poi.png")
-        self.fileicon = QtGui.QPixmap("ui/icons/file-empty.png")
-        self.filepoi = QtGui.QPixmap("ui/icons/file-poi.png")
-        self.folderok = QtGui.QPixmap("ui/icons/folder_ok.png")
-        self.foldernotok = QtGui.QPixmap("ui/icons/folder!.png")
+        #self.foldernotok = QtGui.QPixmap("poitagger/ui/icons/file-poi.png")
+        self.fileicon = QtGui.QPixmap("poitagger/ui/icons/file-empty.png")
+        self.filepoi = QtGui.QPixmap("poitagger/ui/icons/file-poi.png")
+        self.folderok = QtGui.QPixmap("poitagger/ui/icons/folder_ok.png")
+        self.foldernotok = QtGui.QPixmap("poitagger/ui/icons/folder!.png")
         #self.fileicon = self.foldernotok
         #self.filepoi = self.foldernotok
         #self.folderok = self.foldernotok

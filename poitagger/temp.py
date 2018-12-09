@@ -3,16 +3,13 @@ from __future__ import print_function
 from PyQt5 import QtCore,QtGui,uic
 import numpy as np
 import utm
-#import gdal
 import os
-import cv2
 import traceback
 import utils2
 import bisect
 import math
 import csv
 import logging
-#import asctec
 
 
 class Temp(QtGui.QWidget):
@@ -22,8 +19,8 @@ class Temp(QtGui.QWidget):
     
     def __init__(self):
         QtGui.QWidget.__init__(self)
-        uic.loadUi('ui/temp.ui',self)
-        self.setLayout(self.layout)
+        uic.loadUi('poitagger/ui/temp.ui',self)
+        #self.setLayout(self.layout)
         self.connections()
         
     def connections(self):

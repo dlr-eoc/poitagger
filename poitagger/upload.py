@@ -14,7 +14,7 @@ class UploadDialog(QtGui.QDialog):
     
     def __init__(self,title):
         QtGui.QDialog.__init__(self)
-        uic.loadUi('ui/upload.ui',self)
+        uic.loadUi('poitagger/ui/upload.ui',self)
         self.setWindowTitle(title)
         self.connections()
         #self.setCalib()

@@ -12,7 +12,7 @@ class ImageProperties(QtGui.QWidget):
    
     def __init__(self,settings):
         QtGui.QDialog.__init__(self)
-        uic.loadUi('properties/image_conf.ui',self)
+        uic.loadUi('poitagger/properties/image_conf.ui',self)
         self.settings = settings
         
         self.tailrejection = 5

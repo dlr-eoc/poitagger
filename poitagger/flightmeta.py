@@ -75,7 +75,7 @@ def pre_paramStateReduce(k,v,**kwargs):
 class FlightWidget(QMainWindow):
     def __init__(self,parent = None):
         super(FlightWidget, self).__init__(parent)
-        uic.loadUi('ui/flightmain.ui',self)
+        uic.loadUi('poitagger/ui/flightmain.ui',self)
         self.setWindowFlags(QtCore.Qt.Widget)
         self.t = ParameterTree()
         self.horizontalLayout.addWidget(self.t)
@@ -124,7 +124,7 @@ class Flight(QtCore.QThread):
     calibration = QtCore.pyqtSignal(dict)
     general = QtCore.pyqtSignal(dict)
     changed = QtCore.pyqtSignal()
-    
+    #path = None
     def __init__(self, filename= "flightmeta.yml"):
         super().__init__()
         self.filename= filename
@@ -133,7 +133,7 @@ class Flight(QtCore.QThread):
                     {"name":"calibration",'type':"group"},
                     {"name":"pois",'type':"group"},
                     {"name":"images",'type':"group"},
-                    {"name":"uavpath",'type':"group"}]
+                    {"name":"uavpath",'type':"str"}]
         self.p = Parameter.create(name="flightparam",type="group",children=categories)
         self.ifm.finished.connect(self.setFromImport)
         #self.p.child("general").sigTreeStateChanged.connect(self.general.emit)
@@ -203,6 +203,7 @@ class Flight(QtCore.QThread):
         self.start()
         
     def save(self):
+        if self.path == None: return
         try:
             fpath = os.path.join(self.path,self.filename)
             if os.name == "nt":

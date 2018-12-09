@@ -598,7 +598,7 @@ class ImageTiff(Image):
             
         except:
             logging.error("ImageTiff load image failed", exc_info=True)
-        print (self.imgpath, self.image.shape)
+     #   print (self.imgpath, self.image.shape)
         
     def dms2dd(self,dms,ref):
         degrees = float(dms[0])/dms[1]

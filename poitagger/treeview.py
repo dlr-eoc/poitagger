@@ -9,7 +9,7 @@ import image
 class TreeWidget(QMainWindow):
     def __init__(self,parent = None):
         super(TreeWidget, self).__init__(parent)
-        uic.loadUi('ui/treemain.ui',self)
+        uic.loadUi('poitagger/ui/treemain.ui',self)
         self.setWindowFlags(QtCore.Qt.Widget)
         self.view = TreeView()
         self.vb = ViewButtons()
@@ -72,7 +72,7 @@ class RootPath(QWidget):
     rootdir = ""
     def __init__(self, rootdir = None):#TODO: abfangen wenn pfad falsch
         super(RootPath, self).__init__()
-        uic.loadUi("ui/rootpath.ui",self)
+        uic.loadUi("poitagger/ui/rootpath.ui",self)
         if rootdir is not None:
             self.rootdir = rootdir
         self.toolButton.clicked.connect(self.ChooseRootPath)
@@ -88,7 +88,7 @@ class ViewButtons(QWidget):
     steps = QtCore.pyqtSignal(int)
     def __init__(self):
         super(ViewButtons, self).__init__()
-        uic.loadUi("ui/view-buttons.ui",self)
+        uic.loadUi("poitagger/ui/view-buttons.ui",self)
         self.shortcuts()
         self.connections()
     
@@ -198,11 +198,11 @@ if __name__ == "__main__":
        myappid = 'dlr.wildretter.poitagger.1' 
        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     app_icon = QtGui.QIcon()
-    app_icon.addFile('ui/icons/poitagger/16x16_.png', QtCore.QSize(16,16))
-    app_icon.addFile('ui/icons/poitagger/24x24_.png', QtCore.QSize(24,24))
-    app_icon.addFile('ui/icons/poitagger/32x32_.png', QtCore.QSize(32,32))
-    app_icon.addFile('ui/icons/poitagger/48x48_.png', QtCore.QSize(48,48))
-    app_icon.addFile('ui/icons/poitagger/256x256_.png', QtCore.QSize(256,256))
+    app_icon.addFile('poitagger/ui/icons/poitagger/16x16_.png', QtCore.QSize(16,16))
+    app_icon.addFile('poitagger/ui/icons/poitagger/24x24_.png', QtCore.QSize(24,24))
+    app_icon.addFile('poitagger/ui/icons/poitagger/32x32_.png', QtCore.QSize(32,32))
+    app_icon.addFile('poitagger/ui/icons/poitagger/48x48_.png', QtCore.QSize(48,48))
+    app_icon.addFile('poitagger/ui/icons/poitagger/256x256_.png', QtCore.QSize(256,256))
 
     rootdir = "D:/WILDRETTER-DATEN"
     treemain = TreeWidget()
