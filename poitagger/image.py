@@ -196,13 +196,13 @@ class ImageJpg(Image):
                 self.fff = self.flir_header(flirchunk,width,height)
             else:
                 self.rawbody, self.fff = self.flir_data(flirchunk,width,height)
-                self.image = self.rawbody
+              #  self.image = self.rawbody
             self.fill_header_flir()
         else:
-            if not onlyheader:
-                self.image = np.array(pilimage.open(imgpath))
-                self.rawbody = self.image
+            #    self.rawbody = self.image
             self.fill_header_dji()
+        if not onlyheader:
+            self.image = np.array(pilimage.open(imgpath))    
             
     def get_meta(self,imgpath):
         exif = {}
@@ -348,6 +348,7 @@ class ImageJpg(Image):
         
     def fill_header_dji(self):
         a = self.xmp.find("rdf:description")
+        if a == None: return
         self.header["camera"]["roll"] = a.get("drone-dji:gimbalrolldegree",0)
         self.header["camera"]["yaw"] = a.get("drone-dji:gimbalyawdegree",0)
         self.header["camera"]["pitch"] = a.get("drone-dji:gimbalpitchdegree",0)
@@ -413,13 +414,26 @@ class ImageAra(Image):
             logging.error(e)
         except:
             logging.error("AraHeader read_header() failed", exc_info=True)
-            
+    
+    
     def read_body(self, fileobj,bitsPerPixel, im_width,im_height):
         count = im_width * im_height
         self.rawbody = np.fromfile(fileobj, dtype=bitsPerPixel,count=count) 
         self.rawbody = np.reshape(self.rawbody,(im_height,im_width))
-        self.image = self.rawbody
+        #self.normalize()
+        #self.image = self.rawbody
    
+    
+    def normalize(self):
+        '''
+            just reduction to 8bit
+        '''
+        self.normalized = self.rawbody - self.rawbody.min()
+        za = np.array(self.normalized, dtype=np.float32) 
+        za *= 255.0/float(self.normalized.max())
+        self.image = np.array(za, dtype=np.uint8) 
+        return self.image
+    
     def read_header(self, fileobj, size):
         try:
             rawheader = fileobj.read(size)
@@ -587,7 +601,7 @@ class ImageTiff(Image):
             with tf.TiffFile(os.path.normpath(str(imgpath))) as tif:
                 if not onlyheader:
                     self.rawbody = tif.asarray()
-                    self.image = self.rawbody
+                    #self.image = self.rawbody
                 for page in tif.pages:
                     for tag in page.tags.values():
                         self.exif[tag.name] = tag.value

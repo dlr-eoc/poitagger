@@ -414,10 +414,11 @@ class Main(QMainWindow):
 
 
 def screenAt(*pos):
+    #print (type(pos),type(*pos),pos,*pos)
     screens = app.screens()
     for s in screens:
         srect = s.availableGeometry()
-        if srect.contains(*pos):
+        if srect.contains(pos[0] + QtCore.QPoint(10,10)):
             return s
     return None
     

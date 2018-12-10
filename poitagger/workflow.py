@@ -11,7 +11,8 @@ from pyqtgraph.Qt import QtCore,QtGui,uic
 import os
 import sys
 #import flightmeta
-import cv2
+#import cv2
+import PIL
 import shutil
 
 #import flirsd
@@ -145,12 +146,14 @@ class Araloader(QtCore.QThread):
                     self.log.emit(self.infile)
                     outfile = os.path.join(root,"%s.jpg"%(base))
                     outtxt = os.path.join(root,"%s.txt"%(base))
-                    outgray = raw.homogenize()
-                    cv2.imwrite(outfile,outgray)
+                    outgray = raw.normalize()
+                    
+                    PIL.Image.fromarray(outgray).save(outfile)
+                    #cv2.imwrite(outfile,outgray)
                     
                     meta = mt.Meta()
                     meta.from_flirsd(raw.rawheader)
-                    meta.update("CAMERA", "homogenized", "True")
+                    meta.update("CAMERA", "homogenized", "Falstracebacke")
                     md = meta.to_dict()
                     
                     meta.save(outtxt)
@@ -436,94 +439,8 @@ class Araloader(QtCore.QThread):
         raw.rawheader["dlr"]["error_flags"] = 0
         raw.rawheader["dlr"]["flags"] = 0
         raw.rawheader["dlr"]["pois"]= [{"id":0,"x":0,"y":0 } for k in range(0,9)]
-    def groupImages(self,Files, maxlen=50, tempdiff = 100, pitchdiff = 10, timediff = 5):
-        AllGrps,Grp = [],[]
-        last = None
-        for i in Files:
-            raw = image.Image.factory(i)
-            if last == None: last = raw.header
-            a = datetime.strptime(raw.header.gps_time,"%H:%M:%S") 
-            b = datetime.strptime(last.gps_time,"%H:%M:%S")
-            cam_pitch_adiff = abs(raw.header.cam_pitch - last.cam_pitch) 
-            cur_diff = raw.header.asc_colmax - raw.header.asc_colmin
-            last_diff = last.asc_colmax - last.asc_colmin
-            diff = abs(cur_diff - last_diff)
-            if (a-b).total_seconds() >= timediff or cam_pitch_adiff >= pitchdiff or len(Grp) >= maxlen or diff >= tempdiff:
-                AllGrps.append(Grp)
-                Grp = []
-            Grp.append(i)
-            last = raw.header
-        AllGrps.append(Grp)   
-        return AllGrps
-
-    #this is preparation for convert to ar2-format with compressed raw- and preview-image
-    def createEigenImages(self,AllGrps,minlen=5,lowpass=47):
-        EigenImages = []
-        lut = []
-        for k,Grp in enumerate(AllGrps):
-            for i in Grp:    
-                raw = image.Image.factory(i)
-                
-                imgvec = raw.rawbody.reshape(raw.rawbody.shape[0]*raw.rawbody.shape[1])
-                try:
-                    Images = np.vstack((Images, imgvec))  
-                except:
-                    Images = imgvec
-            eigenimage = np.mean(Images, axis=0).reshape(1,-1)
-            try:
-                eigenimage = eigenimage.reshape(raw.rawbody.shape[0],raw.rawbody.shape[1])
-            except:
-                eigenimage = None
-            if len(Grp) >= minlen:
-                lut.append(k)
-                eigenimage = np.array(cv2.blur(eigenimage,(lowpass,lowpass)), dtype=np.float)  
-            EigenImages.append(eigenimage)
-            Images = None
-        return EigenImages,lut
-
-
-    #convert to ar2-format with compressed raw- and preview-image
-    def writeImg(self,AllGrps,EigenImages,lut,minlen=5,aspng=False,ext=".AR2"):
-        for k,Grp in enumerate(AllGrps):
-            for i in Grp:
-                base, ext = os.path.splitext(i)
-                raw = image.Image.factory(i)
-                if len(Grp)<minlen:
-                    idx = bisect.bisect(lut,k)
-                    dist1 = mse(raw.rawbody,EigenImages[lut[idx-1]])
-                    dist2 = mse(raw.rawbody,EigenImages[lut[idx]])
-                    if dist1<dist2: 
-                        outimg = raw.rawbody - EigenImages[lut[idx-1]]
-                    else:
-                        outimg = raw.rawbody - EigenImages[lut[idx]]
-                else:
-                    outimg = raw.rawbody - EigenImages[k]
-                height,width = raw.rawbody.shape    
-                cx,cy = width/2, height/2
-                ishifted = shift(outimg,raw.rawbody[cy,cx]-outimg[cy,cx] + outimg.min())
-                if aspng:
-                    ishifted = normalize(ishifted)
-                    cv2.imwrite(base + ".png",ishifted,(cv2.cv.CV_IMWRITE_PNG_COMPRESSION , 3))
-                else:
-                    raw.rawheader["dlr"]["version_major"]= 2
-                    raw.rawheader["dlr"]["version_minor"]= 0
-                    contentraw, bufraw = cv2.imencode(".png",raw.rawbody,(cv2.cv.CV_IMWRITE_PNG_COMPRESSION , 3))
-                    contentimg, bufimg = cv2.imencode(".png",ishifted,(cv2.cv.CV_IMWRITE_PNG_COMPRESSION , 3))
-                    raw.rawheader["dlr"]["raw_size"]= len(bufraw)
-                    raw.rawheader["dlr"]["img_size"]= len(bufimg)
-                    raw.get_header()
-                    outpath = base+ext
-                    try:
-                        header = struct.pack(raw.fmt, *raw.headerarray)
-                        with open(outpath,"wb") as f:
-                            f.write(header)
-                            f.write(bufraw)
-                            f.write(bufimg)
-                    except:
-                        print("saveraw failed")
-                        print("header",raw.headerarray)
-                        print(traceback.format_exc())
-
+   
+   
         
 if __name__ == "__main__":
     app = QtCore.QCoreApplication([])

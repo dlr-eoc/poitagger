@@ -38,7 +38,7 @@ class Meta(object):
         self.cfg.set("CAMERA", "version", str(header["camera"]["version"]))
         self.cfg.set("CAMERA", "fw_version", str(header["camera"]["fw_version"]))
         self.cfg.set("CAMERA", "sensortemperature", str(header["camera"]["sensortemperature"]))
-        self.cfg.set("CAMERA", "partnum", header["camera"]["partnum"].strip('\x00'))
+        self.cfg.set("CAMERA", "partnum", str(header["camera"]["partnum"].strip(b'\x00')))
         
         if not self.cfg.has_section("TIME"):
             self.cfg.add_section("TIME")
@@ -92,7 +92,7 @@ class Meta(object):
         
     def save(self,txtfile):
         self.txtfile = txtfile
-        with open(txtfile, 'wb') as cfgfile:
+        with open(txtfile, 'w') as cfgfile:
             self.cfg.write(cfgfile)
 
     def load(self,txtfile):

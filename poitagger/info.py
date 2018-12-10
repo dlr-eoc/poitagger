@@ -2,7 +2,8 @@ from PyQt5 import QtCore,QtGui,uic
 import pyqtgraph as pg
 import pyqtgraph.parametertree.parameterTypes as pTypes
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-import traceback
+import logging
+
 
 def is_equal(a, b, encoding="utf8"):
     if isinstance(a, bytes):
@@ -44,11 +45,13 @@ class Info(QtGui.QWidget):
         self.importer.start()
        
     def reloaded(self):
-        self.t.verticalScrollBar().setValue(self.savedScrollPosition)
-        lat = self.importer.p.child("gps").child("latitude").value()
-        lon = self.importer.p.child("gps").child("longitude").value()
-        self.position.emit(float(lat),float(lon))
-        
+        try:
+            self.t.verticalScrollBar().setValue(self.savedScrollPosition)
+            lat = self.importer.p.child("gps").child("latitude").value()
+            lon = self.importer.p.child("gps").child("longitude").value()
+            self.position.emit(float(lat),float(lon))
+        except:
+            logging.warning("info.py: reloaded failed")
 
 class ImportInfo(QtCore.QThread):
     finished = QtCore.pyqtSignal()

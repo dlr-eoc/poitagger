@@ -124,7 +124,7 @@ class Flight(QtCore.QThread):
     calibration = QtCore.pyqtSignal(dict)
     general = QtCore.pyqtSignal(dict)
     changed = QtCore.pyqtSignal()
-    #path = None
+    path = None
     def __init__(self, filename= "flightmeta.yml"):
         super().__init__()
         self.filename= filename
@@ -133,7 +133,7 @@ class Flight(QtCore.QThread):
                     {"name":"calibration",'type':"group"},
                     {"name":"pois",'type':"group"},
                     {"name":"images",'type':"group"},
-                    {"name":"uavpath",'type':"str"}]
+                    {"name":"uavpath",'type':"group"}]
         self.p = Parameter.create(name="flightparam",type="group",children=categories)
         self.ifm.finished.connect(self.setFromImport)
         #self.p.child("general").sigTreeStateChanged.connect(self.general.emit)

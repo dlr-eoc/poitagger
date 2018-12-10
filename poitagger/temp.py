@@ -28,16 +28,18 @@ class Temp(QtGui.QWidget):
     
 ################# Temp-UI
     def tempminmax(self,ara):
-        self.ara = ara
-        min = np.min(ara.rawbody)
-        max = np.max(ara.rawbody)
-        pt_min = self.calc_pixtemp(min)
-        pt_max = self.calc_pixtemp(max)
-        self.pixtemp_dn_min.setValue(min)
-        self.pixtemp_dn_max.setValue(max)
-        self.pixtemp_temp_min.setValue(pt_min)
-        self.pixtemp_temp_max.setValue(pt_max)
-    
+        try:
+            self.ara = ara
+            min = np.min(ara.rawbody)
+            max = np.max(ara.rawbody)
+            pt_min = self.calc_pixtemp(min)
+            pt_max = self.calc_pixtemp(max)
+            self.pixtemp_dn_min.setValue(min)
+            self.pixtemp_dn_max.setValue(max)
+            self.pixtemp_temp_min.setValue(pt_min)
+            self.pixtemp_temp_max.setValue(pt_max)
+        except:
+            logging.warning("temp.py: temperature extraction failed")
         
     def calc_pixtemp(self,dn):
         try:

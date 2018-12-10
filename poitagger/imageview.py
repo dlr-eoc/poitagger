@@ -185,6 +185,10 @@ class Img(QtGui.QWidget):
         
         self.ara = image.Image.factory(curimg)
         
+        if hasattr(self.ara, 'rawbody'):
+            img = self.ara.rawbody 
+        else:
+            img = self.ara.image 
         # try:
             # if str(curimg).lower().endswith((".tiff",".tif")):
                 # self.ara = utils2.LoadTiff(curimg)
@@ -197,9 +201,9 @@ class Img(QtGui.QWidget):
             # print("no image loaded!")
             # return 
         try:
-            self.imheight,self.imwidth = self.ara.rawbody.shape[0],self.ara.rawbody.shape[1]
+            self.imheight,self.imwidth = img.shape[0],img.shape[1]
         except:
-            print("ERROR!, shape:", self.ara.rawbody.shape)
+            print("ERROR!, shape:", img.shape)
   #      self.proc.load(self.ara,self.conf)
         
         pixmap = QtGui.QPixmap(100, 100)
@@ -215,7 +219,8 @@ class Img(QtGui.QWidget):
         painter.drawEllipse(50-r,50-r,2*r,2*r)
         
         painter.end()
-        preprocessed = self.flip(self.ara.image)
+        preprocessed = self.flip(img)
+        #preprocessed = self.flip(self.ara.image.astype(int))
 #        self.proc.viewCtrlUI.normkitz.setPixmap(pixmap)
         
   #      preprocessed, overlay = self.proc.preprocessed()
@@ -226,7 +231,7 @@ class Img(QtGui.QWidget):
         #    preprocessed = np.array(preprocessed * 2 * self.mask, dtype=np.uint16)
         #print ("####################")
         #print("imgshape",preprocessed.shape)
-        if len(self.ara.image.shape)<3:
+        if len(preprocessed.shape)<3:
             self.image = pg.ImageItem(preprocessed)
             self.temp.tempminmax(self.ara)
             self.histlut.setImageItem(self.image)
@@ -319,8 +324,10 @@ class Img(QtGui.QWidget):
         filename = QtGui.QFileDialog.getSaveFileName(self,"Save file",vorschlag,"Image (*.jpg)", );
         self.saveimgdir, last = os.path.split(str(filename[0]))
         self.exporter = pg.exporters.ImageExporter(self.image)
-        self.exporter.parameters()["width"]= self.imwidth
-        myQImage = self.exporter.export(toBytes=True) 
+        self.exporter.params.param('width').setValue(int(self.imwidth), blockSignal=self.exporter.widthChanged)
+        self.exporter.params.param('height').setValue(int(self.imheight), blockSignal=self.exporter.heightChanged)      
+        #self.exporter.parameters()["width"]= int(self.imwidth)
+        myQImage = self.exporter.export(toBytes=True)
         myQImage.save(filename[0], "JPG",90)
  
     def save_png(self):
@@ -331,6 +338,8 @@ class Img(QtGui.QWidget):
         self.saveimgdir, last = os.path.split(str(filename[0]))
         
         self.exporter = pg.exporters.ImageExporter(self.image)
+        self.exporter.params.param('width').setValue(int(self.imwidth), blockSignal=self.exporter.widthChanged)
+        self.exporter.params.param('height').setValue(int(self.imheight), blockSignal=self.exporter.heightChanged)      
         self.exporter.export(str(filename[0])) 
        
           
