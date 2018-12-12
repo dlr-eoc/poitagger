@@ -1,10 +1,22 @@
 from cx_Freeze import setup, Executable
 from setuptools import setup, find_packages
-import sys, os
+import sys, os, codecs, re
 
-version = '0.2'
+here = os.path.abspath(os.path.dirname(__file__))
 
+def read(*parts):
+    with codecs.open(os.path.join(here, *parts), 'r') as fp:
+        return fp.read()
 
+def find_version(*file_paths):
+    version_file = read(*file_paths)
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+                              version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
+    
 base = None
 if sys.platform == 'win32':
     base = 'Win32GUI'
@@ -21,7 +33,7 @@ executables = [
 
 
 setup(name='poitagger',
-      version=version,
+      version=find_version("poitagger", "__init__.py"),
       description="pyqt5 gui application for georeferencing drone based images",
       long_description="""\
 """,
@@ -31,18 +43,34 @@ setup(name='poitagger',
       author_email='martin.israel@dlr.de',
       url='',
       license='GNU GPL 3',
-      packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
+      packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-          # -*- Extra requirements: -*-
+        'docopt',
+        'setuptools',
+        'PyQt5',
+        'numpy',
+        'lxml',
+        'pyqtgraph>=0.10',
+        'tifffile',
+        'utm',
+        'pytz',
+        'bs4',
+        'python-dateutil',
+        'pyyaml',
+        'yamlordereddictloader',
+        'requests',
+        'requests_cache',
+        'simplejson',
+        'exifread',
+        'Pillow'
       ],
-      options=options,
-      executables=executables,
+      package_data={
+            '': ['*.js','*.html','*.css','*.ui','ui/icons/*.*','*.ini'],
+      },
       entry_points={
-        'console_scripts': [
-            'app1 = poitagger:main',
-        ],
+        'gui_scripts':  ["poitagger = poitagger.__main__:main"],
     },
       )
 

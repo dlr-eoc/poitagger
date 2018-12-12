@@ -5,12 +5,12 @@ import numpy as np
 import utm
 import os
 import traceback
-import utils2
+from . import utils2
 import bisect
 import math
 import csv
 import logging
-
+from . import PATHS
 
 class Temp(QtGui.QWidget):
     
@@ -19,7 +19,7 @@ class Temp(QtGui.QWidget):
     
     def __init__(self):
         QtGui.QWidget.__init__(self)
-        uic.loadUi('poitagger/ui/temp.ui',self)
+        uic.loadUi(os.path.join(PATHS["UI"],'temp.ui'),self)
         #self.setLayout(self.layout)
         self.connections()
         
@@ -50,7 +50,7 @@ class Temp(QtGui.QWidget):
             
         except:
             pt = 0
-            logging.error("calc_pixtemp didn't work. there might be no calibration data in the image header.",exc_info=True)
+            logging.error("calc_pixtemp didn't work. there might be no calibration data in the image header.",exc_info=False)
         return pt
         
     def fill_pixtemp(self,x,y,dn):

@@ -2,6 +2,8 @@ from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
 import ast
 import pyqtgraph as pg
+import os
+from .. import PATHS 
 
 class ImageProperties(QtGui.QWidget):
     a = 255
@@ -12,13 +14,13 @@ class ImageProperties(QtGui.QWidget):
    
     def __init__(self,settings):
         QtGui.QDialog.__init__(self)
-        uic.loadUi('poitagger/properties/image_conf.ui',self)
+        uic.loadUi(os.path.join(PATHS["PROPERTIES"],'image_conf.ui'),self)
         self.settings = settings
         
         self.tailrejection = 5
         self.homoKernelX = 147
         self.homoKernelY = 147
-        self.calibfile = "calibsettings/default.ini"
+        self.calibfile = os.path.join(PATHS["CALIB"],"/default.ini")
         self.camcalib = QtCore.QSettings(self.calibfile, QtCore.QSettings.IniFormat)
         
         self.colorChooser = QtGui.QColorDialog()

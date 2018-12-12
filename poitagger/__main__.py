@@ -39,27 +39,27 @@ import os
 import traceback
 import shutil
 
-import nested
-import gpx
-import utils2
-import flightmeta
-
+from . import nested
+from . import gpx
+from . import utils2
+from . import flightmeta
+from . import PATHS
 # Widgets
-import save_as
-import workflow
+from . import save_as
+from . import workflow
 
-import pois
+from . import pois
 
-import info
+from . import info
 
-import calib
+from . import calib
 
-import geoview
+from . import geoview
 #import dem
-import properties
-import imageview
+from . import properties
+from . import imageview
 #import dirtree
-import treeview
+from . import treeview
 
 paramreduce = nested.Nested(callback=nested.paramtodict,callback_pre=nested.pre_paramtodict,tupletype=list)
      
@@ -76,7 +76,7 @@ class Main(QMainWindow):
         #self.setWindowIcon(QtGui.QIcon('poitagger.png'))
         self.resetwindow = resetwindow
         self.msg = QMessageBox()
-        self.settings = QtCore.QSettings("poitagger/conf.ini", QtCore.QSettings.IniFormat)
+        self.settings = QtCore.QSettings(os.path.join(PATHS["BASE"],"conf.ini"), QtCore.QSettings.IniFormat)
         self.settings.setFallbacksEnabled(False) 
         rd = rootdir if rootdir is not None else str(self.settings.value('PATHS/rootdir'))
         id = imgdir if imgdir is not None else str(self.settings.value('PATHS/last'))
@@ -117,7 +117,7 @@ class Main(QMainWindow):
         self.treemain.view.setFocus()
         
     def loadUI(self):
-        uic.loadUi('poitagger/ui/poitagger.ui',self)
+        uic.loadUi(os.path.join(PATHS["UI"],'poitagger.ui'),self)
         self.setCentralWidget(self.img.w)
         
         self.img.appendButtonsToToolBar(self.toolBar)
@@ -291,7 +291,8 @@ class Main(QMainWindow):
                 
         elif  str(self.settings.value('GPS-DEVICE/exportType')) == "massStorage":# conf.massStorage_rB.isChecked():
             if str(self.settings.value('GPS-DEVICE/detectMode')) == "name": #conf.detectName_rB.isChecked():
-                drive = utils2.getSDCardPath(str(self.settings.value('GPS-DEVICE/harddrive'))) #str(conf.name_LE.text()))
+               # drive = utils2.getSDCardPath(str(self.settings.value('GPS-DEVICE/harddrive'))) #str(conf.name_LE.text()))
+                drive = None
                 if drive==False:
                     QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Ein Geraet mit dem Namen  %s existiert nicht)!"%str(conf.name_LE.text())); 
                     
@@ -423,7 +424,8 @@ def screenAt(*pos):
     return None
     
 
-if __name__ == "__main__":
+def main():
+    global app
     arg = docopt(__doc__, version='poitagger 0.1')
     app = QtGui.QApplication(sys.argv)
     
@@ -432,11 +434,11 @@ if __name__ == "__main__":
        myappid = 'dlr.wildretter.poitagger.1' 
        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     app_icon = QtGui.QIcon()
-    app_icon.addFile('poitagger/ui/icons/poitagger/16x16_.png', QtCore.QSize(16,16))
-    app_icon.addFile('poitagger/ui/icons/poitagger/24x24_.png', QtCore.QSize(24,24))
-    app_icon.addFile('poitagger/ui/icons/poitagger/32x32_.png', QtCore.QSize(32,32))
-    app_icon.addFile('poitagger/ui/icons/poitagger/48x48_.png', QtCore.QSize(48,48))
-    app_icon.addFile('poitagger/ui/icons/poitagger/256x256_.png', QtCore.QSize(256,256))
+    app_icon.addFile(os.path.join(PATHS["ICONS"],'poitagger/16x16_.png'), QtCore.QSize(16,16))
+    app_icon.addFile(os.path.join(PATHS["ICONS"],'poitagger/24x24_.png'), QtCore.QSize(24,24))
+    app_icon.addFile(os.path.join(PATHS["ICONS"],'poitagger/32x32_.png'), QtCore.QSize(32,32))
+    app_icon.addFile(os.path.join(PATHS["ICONS"],'poitagger/48x48_.png'), QtCore.QSize(48,48))
+    app_icon.addFile(os.path.join(PATHS["ICONS"],'poitagger/256x256_.png'), QtCore.QSize(256,256))
     
     imgdir = None
     rootdir = None
@@ -454,3 +456,6 @@ if __name__ == "__main__":
     window.setWindowIcon(app_icon)
     window.show()
     sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()

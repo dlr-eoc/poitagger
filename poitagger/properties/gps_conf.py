@@ -2,12 +2,14 @@ from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
 import ast
 import pyqtgraph as pg
+import os
+from .. import PATHS 
 
 class GpsProperties(QtGui.QWidget):
     
     def __init__(self,settings):
         QtGui.QDialog.__init__(self)
-        uic.loadUi('poitagger/properties/gps_conf.ui',self)
+        uic.loadUi(os.path.join(PATHS["PROPERTIES"],'gps_conf.ui'),self)
         self.settings = settings
         
         self.connections()

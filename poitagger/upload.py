@@ -6,7 +6,8 @@ import simplejson as json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 import traceback
-
+import os
+from . import PATHS
 
 import pyqtgraph as pg
 
@@ -14,7 +15,7 @@ class UploadDialog(QtGui.QDialog):
     
     def __init__(self,title):
         QtGui.QDialog.__init__(self)
-        uic.loadUi('poitagger/ui/upload.ui',self)
+        uic.loadUi(os.path.join(PATHS["UI"],'upload.ui'),self)
         self.setWindowTitle(title)
         self.connections()
         #self.setCalib()

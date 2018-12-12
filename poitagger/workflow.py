@@ -1,6 +1,6 @@
 from __future__ import print_function
-import utils2
-import meta as mt
+from . import utils2
+from . import meta as mt
 
 import time
 import datetime
@@ -16,9 +16,9 @@ import PIL
 import shutil
 
 #import flirsd
-from image import Image
+from .image import Image
 import traceback
-    
+from . import PATHS     
    
 class Araloader(QtCore.QThread):   
     log = QtCore.pyqtSignal(str)
@@ -34,7 +34,8 @@ class Araloader(QtCore.QThread):
         sdcardname = "IR_"
         remove = dialog.SDCard_leeren.checkState()
         flying = dialog.nurFlugBilder.checkState()
-        founddir = utils2.getSDCardPath(sdcardname)
+        founddir = None
+       # founddir = utils2.getSDCardPath(sdcardname)
         if founddir:
             self.log.emit("Karte eingesteckt in Laufwerk:" + founddir)
         else:
@@ -270,11 +271,11 @@ class Araloader(QtCore.QThread):
                 
     def find_settings(self,raw):
         camser = str(raw.rawheader["camera"]["sernum"])  
-        camserlist = [os.path.splitext(i)[0] for i in os.listdir("calibsettings") if os.path.splitext(i)[1] == ".ini"]
+        camserlist = [os.path.splitext(i)[0] for i in os.listdir(PATHS["CALIB"]) if os.path.splitext(i)[1] == ".ini"]
         if camser in camserlist:
-            settings = QtCore.QSettings(os.path.join("calibsettings",camser + ".ini"), QtCore.QSettings.IniFormat)
+            settings = QtCore.QSettings(os.path.join(PATHS["CALIB"],camser + ".ini"), QtCore.QSettings.IniFormat)
         else:
-            settings = QtCore.QSettings(os.path.join("calibsettings","default.ini"), QtCore.QSettings.IniFormat)
+            settings = QtCore.QSettings(os.path.join(PATHS["CALIB"],"default.ini"), QtCore.QSettings.IniFormat)
         
         if self.eigeneConf:
             settings = self.eigeneConf

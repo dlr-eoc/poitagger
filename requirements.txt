@@ -6,7 +6,6 @@ pyqtgraph>=0.10
 tifffile>=2018.11.28
 utm>=0.4.2
 pytz>=2018.7
-pywin32>=224
 bs4>=0.0.1
 python-dateutil>=2.7.5
 pyyaml>=3.13

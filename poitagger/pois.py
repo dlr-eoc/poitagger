@@ -6,14 +6,14 @@ import sys
 import utm
 import collections
 import datetime
-import camera2
-import gpx
+from . import camera2
+from . import gpx
 import math
 import xml.etree.ElementTree as ET
-import image
-
+from . import image
+from . import PATHS
 import traceback
-import upload
+from . import upload
 
 from PyQt5 import QtGui,QtCore,uic
 
@@ -40,7 +40,7 @@ class Pois(QtGui.QMainWindow):
     
     def __init__(self,conf):
         QtGui.QMainWindow.__init__(self)
-        uic.loadUi('poitagger/ui/pois.ui',self)
+        uic.loadUi(os.path.join(PATHS["UI"],'pois.ui'),self)
         
         self.dialog = upload.UploadDialog("Upload")
         self.conf = conf

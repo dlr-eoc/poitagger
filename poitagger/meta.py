@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import gpstime
+from . import gpstime
 import configparser
 import traceback
 import os

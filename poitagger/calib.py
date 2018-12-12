@@ -2,13 +2,14 @@ from PyQt5 import QtCore,QtGui,uic
 from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow,QFileDialog
 import os
 import logging
-import image
+from . import image
+from . import PATHS
 class Calib(QtGui.QMainWindow):
     log = QtCore.pyqtSignal(str)
     conf =  QtCore.pyqtSignal(QtCore.QSettings) 
     def __init__(self):
         QtGui.QWidget.__init__(self)
-        uic.loadUi('poitagger/ui/calib2.ui',self)
+        uic.loadUi(os.path.join(PATHS["UI"],'calib2.ui'),self)
         
         self.actionGroupTools = QtGui.QActionGroup(self)
         self.actionGroupTools.addAction(self.actionGeometrisch)
@@ -22,13 +23,13 @@ class Calib(QtGui.QMainWindow):
         #self.actionAusDatei.triggered.connect(self.ausDatei)
         self.actionAra_berschreiben_mit_eigenen_Werten.triggered.connect(self.sendSettings)
         calibfile = "default.ini"
-        calibpath = os.path.join("calibsettings",calibfile)
+        calibpath = os.path.join(PATHS["CALIB"],calibfile)
         self.settings = QtCore.QSettings(calibpath, QtCore.QSettings.IniFormat)
         self.calibFile.setText(calibfile)
         self.LoadButton.clicked.connect(self.pathChooser)
     
     def pathChooser(self):
-            dlgret = QFileDialog.getOpenFileName(self, "Select Calibration File","calibsettings", "Calibration Files (*.ini)")
+            dlgret = QFileDialog.getOpenFileName(self, "Select Calibration File",PATHS["CALIB"], "Calibration Files (*.ini)")
             calibpath = dlgret[0]
             calibfile = os.path.basename(calibpath)
             self.calibFile.setText(calibfile)

@@ -1,16 +1,19 @@
 import yaml
+import yamlordereddictloader
 import os
-import image
+import ast
+from . import image
 from lxml import etree
 import logging
-import utils2
+from . import utils2
 from PyQt5 import QtCore,QtGui,uic, QtWidgets
 from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
-from datetime import datetime
+import datetime
 from collections import OrderedDict,MutableMapping,MutableSequence
-import nested
+from . import nested
+from . import PATHS
 
 types = {"<class 'int'>":"int",
         "<class 'float'>":"float",
@@ -75,7 +78,7 @@ def pre_paramStateReduce(k,v,**kwargs):
 class FlightWidget(QMainWindow):
     def __init__(self,parent = None):
         super(FlightWidget, self).__init__(parent)
-        uic.loadUi('poitagger/ui/flightmain.ui',self)
+        uic.loadUi(os.path.join(PATHS["UI"],'flightmain.ui'),self)
         self.setWindowFlags(QtCore.Qt.Widget)
         self.t = ParameterTree()
         self.horizontalLayout.addWidget(self.t)
@@ -114,7 +117,7 @@ class FlightWidget(QMainWindow):
         
     def saveState(self):
            with open("saveState.yml", 'w') as outfile:
-                yaml.dump(self.p.saveState(), outfile, default_flow_style=False)
+                yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
                 
     
 class Flight(QtCore.QThread):
@@ -145,11 +148,15 @@ class Flight(QtCore.QThread):
         #print("FM, POIS JETZT" )
         poisdict = nested.Nested(poisparam.getValues(),nested.paramtodict,nested.pre_paramtodict,tupletype=list).data
         #print(poisdict)
+      #  with open("test.txt","w") as f:
+      #      f.write(str(poisdict["0"]["data"]))
         pois = []
         try:
             
             for i in poisdict["0"]["data"]:
-                entry = dict(i)
+                #print ("POI",i)
+                entry = eval(i)
+                #entry = dict(i)
                 if "id" in entry:
                     pois.append(entry)
         except:
@@ -179,7 +186,7 @@ class Flight(QtCore.QThread):
         elif self.task == "loadYaml":
             try:
                 with open(os.path.join(self.path,self.filename), 'r') as stream:
-                    self.p.restoreState(yaml.load(stream))
+                    self.p.restoreState(yaml.load(stream,Loader=yamlordereddictloader.Loader))
             except:
                 logging.error("Flightmeta load", exc_info=True)
                 
@@ -210,11 +217,11 @@ class Flight(QtCore.QThread):
                 import ctypes
                 ctypes.windll.kernel32.SetFileAttributesW(fpath, 128)
                 with open(fpath, 'w') as outfile:
-                    yaml.dump(self.p.saveState(), outfile, default_flow_style=False)
+                    yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
                 ctypes.windll.kernel32.SetFileAttributesW(fpath, 2)
             else:
                 with open(fpath, 'w') as outfile:
-                    yaml.dump(self.p.saveState(), outfile, default_flow_style=False)
+                    yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
         except:
             logging.error("Flightmeta save", exc_info=True)
             
@@ -257,7 +264,8 @@ class ImportFlightMeta(QtCore.QThread):
         self.uavpath = []
         try:
             for i in self.ImgHdr:
-                self.uavpath.append([float(i["gps"].get("longitude")), float(i["gps"].get("latitude"))])
+                if i["gps"].get("longitude") != None:
+                    self.uavpath.append([float(i["gps"].get("longitude")), float(i["gps"].get("latitude"))])
         except:
             logging.error("FM _createUavPath failed",exc_info=True)
         
@@ -301,7 +309,7 @@ class ImportFlightMeta(QtCore.QThread):
         result_tree = transform(doc)
         pois = yaml.load(str(result_tree)[23:])
         if pois == None: pois = []
-        ts = datetime.fromtimestamp(os.path.getmtime(self.path)).isoformat()
+        ts = datetime.datetime.fromtimestamp(os.path.getmtime(self.path)).isoformat()
         return [{"timestamp": ts,"description":"initial dataset","data":pois}]
     
     def run(self):

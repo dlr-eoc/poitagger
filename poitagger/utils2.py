@@ -1,8 +1,8 @@
 import os
 import tifffile as tf
 import utm
-if os.name == 'nt':
-    import win32api
+#if os.name == 'nt':
+#    import win32api
 import traceback
 import re
 import shutil
@@ -14,7 +14,7 @@ from bs4 import BeautifulSoup
 import dateutil.parser
 import datetime
 import pytz 
-import image
+from . import image
 
 
 gray_color_table = [QtGui.qRgb(i, i, i) for i in range(256)]
@@ -301,19 +301,19 @@ def join_folders2(flugnr,indir,outdir,remove_noneflight_images=True):
     return (outdirlist,error)
 
     
-def getSDCardPath(namestart="IR_"):
-    if os.name == 'nt':
-        for element in win32api.GetLogicalDriveStrings().split("\x00")[:-1]:
-            try:
-                driveinfo = win32api.GetVolumeInformation(element)
-                if driveinfo[0][:len(namestart)]==namestart:
-                    return element
-            except:
-                print("Drive %s is not readable" % element)
-        return False
-    else:
-        raise Exception("Automatic detection of SD-Card  on Linux is not yet implemented!")
-        return False
+# def getSDCardPath(namestart="IR_"):
+    # if os.name == 'nt':
+        # for element in win32api.GetLogicalDriveStrings().split("\x00")[:-1]:
+            # try:
+                # driveinfo = win32api.GetVolumeInformation(element)
+                # if driveinfo[0][:len(namestart)]==namestart:
+                    # return element
+            # except:
+                # print("Drive %s is not readable" % element)
+        # return False
+    # else:
+        # raise Exception("Automatic detection of SD-Card  on Linux is not yet implemented!")
+        # return False
         
 def set_filenames(infile,md,YEAR,CAMERA):
     UAVTYPE = md["uav_owner"][0]

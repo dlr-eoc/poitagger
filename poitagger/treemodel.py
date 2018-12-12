@@ -3,7 +3,8 @@ from PyQt5.QtWidgets import QApplication,QFileSystemModel, QTreeView, QFileIconP
 
 import sys, os
 #import icons_rc
-import image
+from . import image
+from . import PATHS
 rootdir = "D:/WILDRETTER-DATEN"
 
 class TreeModel(QFileSystemModel):
@@ -14,11 +15,11 @@ class TreeModel(QFileSystemModel):
             
     def loadpixmaps(self):
         self.foldericon = QFileIconProvider().icon(QFileIconProvider.Folder).pixmap(16,16)
-        #self.foldernotok = QtGui.QPixmap("poitagger/ui/icons/file-poi.png")
-        self.fileicon = QtGui.QPixmap("poitagger/ui/icons/file-empty.png")
-        self.filepoi = QtGui.QPixmap("poitagger/ui/icons/file-poi.png")
-        self.folderok = QtGui.QPixmap("poitagger/ui/icons/folder_ok.png")
-        self.foldernotok = QtGui.QPixmap("poitagger/ui/icons/folder!.png")
+        #self.foldernotok = QtGui.QPixmap(os.path.join(PATHS["ICONS"],"file-poi.png"))
+        self.fileicon = QtGui.QPixmap(os.path.join(PATHS["ICONS"],"file-empty.png"))
+        self.filepoi = QtGui.QPixmap(os.path.join(PATHS["ICONS"],"file-poi.png"))
+        self.folderok = QtGui.QPixmap(os.path.join(PATHS["ICONS"],"folder_ok.png"))
+        self.foldernotok = QtGui.QPixmap(os.path.join(PATHS["ICONS"],"folder!.png"))
         #self.fileicon = self.foldernotok
         #self.filepoi = self.foldernotok
         #self.folderok = self.foldernotok
@@ -39,7 +40,7 @@ class TreeModel(QFileSystemModel):
                 if os.path.exists(os.path.join(self.filePath(index),self.metafilename)):
                     return self.folderok 
                 else:
-                    return self.foldericon    
+                    return self.foldericon     
             else:
                 if ext.lower() in [".ara",".raw",".ar2"]:
                     return self.fileicon

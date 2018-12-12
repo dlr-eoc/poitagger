@@ -1,9 +1,12 @@
 from PyQt5 import QtCore, QtGui, uic
 
+import os
+from . import PATHS
+
 class SaveAsDialog(QtGui.QDialog):
     def __init__(self,parent=None):
         super(SaveAsDialog,self).__init__(parent)
-        uic.loadUi('poitagger/ui/save_as.ui',self)
+        uic.loadUi(os.path.join(PATHS["UI"],'save_as.ui'),self)
         self.pathButton.clicked.connect(self.onSearch)
         self.setWindowTitle("SD-Karte einlesen")
         self.setModal(True)

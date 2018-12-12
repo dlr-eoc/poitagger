@@ -14,7 +14,7 @@ import functools
 import copy
 import numpy as np
 import logging
-
+from . import PATHS
 
 WIDTH = 0.00003
 HEIGHT = 0.00003
@@ -22,7 +22,7 @@ HEIGHT = 0.00003
 class GeoWidget(QMainWindow): 
     def __init__(self,settings):
         super().__init__()
-        uic.loadUi('poitagger/ui/geomain.ui',self)
+        uic.loadUi(os.path.join(PATHS["UI"],'geomain.ui'),self)
         self.setWindowFlags(QtCore.Qt.Widget)
         self.settings = settings
         self.view = Browser(settings)
@@ -65,7 +65,9 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         self.titleChanged.connect(self.adjustTitle)
         self.page = Page()
         self.setPage(self.page)
-        self.load("file:///poitagger/map_gl.html")
+        path = "file:///"+PATHS["BASE"]+"/map_gl.html"
+        path = path.replace("\\","/")
+        self.load(path)
         self.loadFinished.connect(self._loadFinished)
         
     def setSizeHint(self, width, height):
@@ -91,7 +93,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         
 
         out = ""
-        with open("poitagger/bla.js","r") as f:
+        with open(os.path.join(PATHS["BASE"],"bla.js"),"r") as f:
             self.page.runJavaScript(f.read())
         self.jsloaded = True
         

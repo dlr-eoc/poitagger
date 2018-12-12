@@ -33,20 +33,21 @@ from PyQt5 import QtCore,QtGui,uic
 import pyqtgraph as pg
 import pyqtgraph.exporters
 import numpy as np
-import cv2
+#import cv2
 
 import os
 import traceback
 import logging
-import image 
 
+from . import image 
+from . import PATHS
 #import asctec
-import utils2
+from . import utils2
 
 #widgets
 #import imageprocessing2
-import temp
-   
+from . import temp
+from . import PATHS   
 SIZE = 30 # This is just the distance for the Labeling of the Pois
 
 class Img(QtGui.QWidget):
@@ -74,10 +75,10 @@ class Img(QtGui.QWidget):
         self.vboxdebug.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight))#,padding=0.0
         
         
-        self.infoUI = uic.loadUi("poitagger/ui/imgInfo.ui")
-        self.viewCtrlUI = uic.loadUi('poitagger/ui/viewcontrol.ui')
-        self.imgDebugUI = uic.loadUi("poitagger/ui/imgDebug.ui")
-        self.normkitzUI = uic.loadUi("poitagger/ui/normkitz.ui")
+        self.infoUI = uic.loadUi(os.path.join(PATHS["UI"],"imgInfo.ui"))
+        self.viewCtrlUI = uic.loadUi(os.path.join(PATHS["UI"],'viewcontrol.ui'))
+        self.imgDebugUI = uic.loadUi(os.path.join(PATHS["UI"],"imgDebug.ui"))
+        self.normkitzUI = uic.loadUi(os.path.join(PATHS["UI"],"normkitz.ui"))
         
         self.conf = conf
         #self.settings = settings
@@ -109,13 +110,13 @@ class Img(QtGui.QWidget):
     def appendButtonsToToolBar(self,toolBar):
         self.toolBar = toolBar
         
-        tempIcon = QtGui.QIcon(QtGui.QPixmap("poitagger/ui/icons/temp.png"))
+        tempIcon = QtGui.QIcon(QtGui.QPixmap(os.path.join(PATHS["ICONS"],"temp.png")))
         self.tempAction = QtGui.QAction(tempIcon,"temp", self)
         self.tempAction.setToolTip("Measure Temperature")
         self.tempAction.setCheckable(True)
         self.toolBar.addAction(self.tempAction)
         
-        poiIcon = QtGui.QIcon(QtGui.QPixmap("poitagger/ui/icons/poi2.png"))
+        poiIcon = QtGui.QIcon(QtGui.QPixmap(os.path.join(PATHS["ICONS"],"poi2.png")))
         self.poiAction = QtGui.QAction(poiIcon,"poi", self)
         self.poiAction.setToolTip("Point of Interest")
         self.poiAction.setCheckable(True)
