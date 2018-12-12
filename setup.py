@@ -1,4 +1,3 @@
-from cx_Freeze import setup, Executable
 from setuptools import setup, find_packages
 import sys, os, codecs, re
 
@@ -16,21 +15,7 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
-    
-base = None
-if sys.platform == 'win32':
-    base = 'Win32GUI'
-
-options = {
-    'build_exe': {
-        'includes': 'atexit'
-    }
-}
-
-executables = [
-    Executable('poitagger', base=base)
-]
-
+  
 
 setup(name='poitagger',
       version=find_version("poitagger", "__init__.py"),
