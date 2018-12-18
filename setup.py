@@ -15,7 +15,6 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
-
 setup(name='poitagger',
       version=find_version("poitagger", "__init__.py"),
       description="pyqt5 gui application for georeferencing drone based images",

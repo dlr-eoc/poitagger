@@ -8,7 +8,8 @@ Maintainer
 Requirements
 ------------
 
-  * python >= 3.4 
+
+  * python >= 3.4  (tested with python 3.6 and 3.7)
   * NumPy
   * PyQt5
   * pyqtgraph
@@ -19,10 +20,14 @@ and some smaller scripts available with pip
 Installation
 ------------
 Get the requirements:
-    `$ pip -r requirements.txt`
+    `$ pip install -r requirements.txt`
    
 To install system-wide from source distribution:
    `$ python setup.py install`
+
+For Windows you can create a standalone version with python-embedded-launcher
+   `$ pip install python-embedded-launcher`
+   `$ python setup.py bdist_launcher`
 
 Start
 -----
