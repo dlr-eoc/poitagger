@@ -182,25 +182,28 @@ class ImageJpg(Image):
             self.load(imgpath,onlyheader=onlyheader)
         
     def load(self,imgpath,onlyheader=False):
-        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
+        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"exif":{},"thumbnail":{},
             "calibration":{"geometric":{},"radiometric":{},"boresight":{}}
             }
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
         d, self.exif, self.xmp = self.get_meta(imgpath)
-        flirchunk = self.extract_flir_ifd(d)
+        flirchunk = self.extract_flir(d)
         if flirchunk is not None:
             width = int(str(self.exif.get("Raw Thermal Image Width",640)))
             height = int(str(self.exif.get("Raw Thermal Image Height",512)))
             if onlyheader:
                 self.fff = self.flir_header(flirchunk,width,height)
             else:
-                self.rawbody, self.fff = self.flir_data(flirchunk,width,height)
+                self.flir_data(flirchunk,width,height)
+                
               #  self.image = self.rawbody
-            self.fill_header_flir()
-        else:
-            #    self.rawbody = self.image
+        if str(self.exif.get("Image Make","")) == "DJI":
             self.fill_header_dji()
+        elif str(self.exif.get("Image Make","")) == "FLIR":
+            self.fill_header_flir()
+            #    self.rawbody = self.image
+        
         if not onlyheader:
             self.image = np.array(pilimage.open(imgpath))    
             
@@ -223,41 +226,46 @@ class ImageJpg(Image):
             logging.error(e)
         return d, exif, xmp
 
-    def extract_flir_ifd(self,bytearr):
-        def find_nth(haystack, needle, n):
-            start = haystack.find(needle)
-            while start >= 0 and n > 1:
-                start = haystack.find(needle, start+len(needle))
-                n -= 1
-            return start
-        i,pos =0,0
-        rawdata = None
-        while pos>-1:
-            i+=1
-            pos = find_nth(bytearr, b"\xff\xe1", i)
-            length = 256 * bytearr[pos+2] + bytearr[pos+3]
-            if pos>-1:
-                if bytearr[pos+4:pos+8]==b"FLIR":
-                    if bytearr[pos+12:pos+15]==b"FFF":
-                        rawdata = bytearr[pos+556:pos+length+2]
-                    else:    
-                        rawdata += bytearr[pos+12:pos+length+2]
+    
+    def extract_flir(self,bytearr):
+        flirdata = []
+        start = 0
+        arr = bytearr.split(b"\xff\xe1")
+        for i in arr:
+            length = 256 * i[0] + i[1]
+            if i[2:6] ==b"FLIR":
+                if i[10:13] == b"FFF":
+                    if i[14:18]==b"ATAU": #DJI XT2
+                        start = 170
+                    else: #VUE PRO
+                        start = 554
                 else:
-                    return None
-        return rawdata
+                    start = 10
+            else:
+                continue
+            if start<length:
+                flirdata.append(i[start:length])
+        return b"".join(flirdata)
+        
         
     def flir_data(self,rawdata,width,height):    
         fff = {}
-        img = np.frombuffer(rawdata, dtype="<u2",count=width*height) 
-        img = np.reshape(img,(height,width))
-        fffmeta = rawdata[width*height*2:]
-        for i in FFF:
-            val = struct.Struct("<"+i[2]).unpack_from(fffmeta,i[0])
-            if "s" in i[2]:
-                val = val[0].strip(b"\x00")
-            name = i[1]
-            fff[name]=val
-        return img, fff    
+        try:
+            img = np.frombuffer(rawdata, dtype="<u2",count=width*height) 
+            img = np.reshape(img,(height,width))
+            fffmeta = rawdata[width*height*2:]
+            for i in FFF:
+                val = struct.Struct("<"+i[2]).unpack_from(fffmeta,i[0])
+                if "s" in i[2]:
+                    val = val[0].strip(b"\x00")
+                name = i[1]
+                fff[name]=val
+            self.rawbody = img
+            self.fff = fff   
+            return True            
+        except:
+            self.fff = {}
+            return False
     
     def flir_header(self,rawdata,width,height):    
         fff = {}
@@ -359,6 +367,16 @@ class ImageJpg(Image):
         self.header["uav"]["pitch"] = a.get("drone-dji:flightpitchdegree",0)
         self.header["gps"]["abs_altitude"]=a.get("drone-dji:absolutealtitude",0)
         self.header["gps"]["rel_altitude"]=a.get("drone-dji:relativealtitude",0)
+        self.header["gps"]["latitude"] = self.convert_latlon("GPS GPSLatitude","GPS GPSLatitudeRef")
+        self.header["gps"]["longitude"] = self.convert_latlon("GPS GPSLongitude","GPS GPSLongitudeRef")
+        self.header["gps"]["gpsmapdatum"] = self.extract_exif("GPS GPSMapDatum")
+            
+        UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
+        self.header["gps"]["UTM_X"] = UTM_X
+        self.header["gps"]["UTM_Y"] = UTM_Y
+        self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
+        self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
+        
         self.header["file"]["about"]=a.get("rdf:about",0)
         self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
         self.header["file"]["createdate"]=a.get("xmp:createdate",0)
@@ -373,6 +391,45 @@ class ImageJpg(Image):
         self.header["image"]["bitdepth"] = 8     
         self.header["image"]["height"] = self.extract_exif("EXIF ExifImageLength")
         self.header["image"]["width"] = self.extract_exif("EXIF ExifImageWidth")
+        self.header["image"]["make"] = self.extract_exif("Image Make")
+        self.header["image"]["xresolution"] = self.extract_exif("Image XResolution")
+        self.header["image"]["yresolution"] = self.extract_exif("Image YResolution")
+        self.header["image"]["resolutionunit"] = self.extract_exif("Image ResolutionUnit")
+        self.header["image"]["software"] = self.extract_exif("Image Software")
+        self.header["image"]["datetime"] = self.extract_exif("Image DateTime")
+        self.header["image"]["artist"] = self.extract_exif("Image Artist")
+        self.header["image"]["copyright"] = self.extract_exif("Image Copyright")
+        self.header["image"]["exifoffset"] = self.extract_exif("Image ExifOffset")
+        self.header["image"]["gpsinfo"] = self.extract_exif("Image GPSInfo")
+        self.header["thumbnail"]["compression"] = self.extract_exif("Thumbnail Compression")
+        self.header["thumbnail"]["xresolution"] = self.extract_exif("Thumbnail XResolution")
+        self.header["thumbnail"]["yresolution"] = self.extract_exif("Thumbnail YResolution")
+        self.header["thumbnail"]["ResolutionUnit"] = self.extract_exif("Thumbnail ResolutionUnit")
+        self.header["thumbnail"]["JPEGInterchangeFormat"] = self.extract_exif("Thumbnail JPEGInterchangeFormat")
+        self.header["thumbnail"]["JPEGInterchangeFormatLength"] = self.extract_exif("Thumbnail JPEGInterchangeFormatLength")
+        
+        self.header["exif"]["FNumber"] = self.extract_exif("Exif FNumber")
+        self.header["exif"]["DateTimeOriginal"] = self.extract_exif("EXIF DateTimeOriginal")
+        self.header["exif"]["ApertureValue"] = self.extract_exif("EXIF ApertureValue")
+        self.header["exif"]["FocalLength"] = self.extract_exif("EXIF FocalLength")
+        self.header["exif"]["SubSecTimeOriginal"] = self.extract_exif("EXIF SubSecTimeOriginal")
+        self.header["exif"]["FocalPlaneResolutionUnit"] = self.extract_exif("EXIF FocalPlaneResolutionUnit")
+        
+        
+        self.header["calibration"]["radiometric"]["R"] = self.fff.get("PlanckR1",(0,))[0]
+        self.header["calibration"]["radiometric"]["F"] = self.fff.get("PlanckF",(1,))[0]
+        self.header["calibration"]["radiometric"]["B"] = self.fff.get("PlanckB",(0,))[0]
+        self.header["calibration"]["radiometric"]["R2"] = self.fff.get("PlanckR2",(0,))[0]
+        self.header["calibration"]["radiometric"]["timestamp"] = 0
+        self.header["calibration"]["radiometric"]["IRWindowTemperature"] = self.fff.get("IRWindowTemperature",(0,))[0]
+        self.header["calibration"]["radiometric"]["IRWindowTransmission"] = self.fff.get("IRWindowTransmission",(1,))[0]
+        self.header["calibration"]["radiometric"]["Emissivity"] = self.fff.get("Emissivity",(1,))[0]
+        self.header["calibration"]["radiometric"]["ObjectDistance"] = self.fff.get("ObjectDistance",(80,))[0]
+        self.header["calibration"]["radiometric"]["ReflectedApparentTemperature"] = self.fff.get("ReflectedApparentTemperature",(0,))[0]
+        self.header["calibration"]["radiometric"]["AtmosphericTemperature"] = self.fff.get("AtmosphericTemperature",(0,))[0]
+        self.header["calibration"]["radiometric"]["RelativeHumidity"] = self.fff.get("RelativeHumidity",(0.5,))[0]
+        self.header["calibration"]["radiometric"]["Coretemp"] = self.fff.get("Coretemp",(0,))[0]
+
         
 
 def UTCFromGps(gpsWeek, SOW, leapSecs=16,gpxstyle=False): 

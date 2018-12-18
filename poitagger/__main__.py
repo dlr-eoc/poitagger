@@ -421,7 +421,7 @@ def screenAt(*pos):
         srect = s.availableGeometry()
         if srect.contains(pos[0] + QtCore.QPoint(10,10)):
             return s
-    return None
+    return app.primaryScreen()
     
 
 def main():

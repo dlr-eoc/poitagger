@@ -190,6 +190,7 @@ class Img(QtGui.QWidget):
             img = self.ara.rawbody 
         else:
             img = self.ara.image 
+        
         # try:
             # if str(curimg).lower().endswith((".tiff",".tif")):
                 # self.ara = utils2.LoadTiff(curimg)
