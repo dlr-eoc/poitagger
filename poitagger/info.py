@@ -16,7 +16,9 @@ types = {"<class 'int'>":"int",
         "<class 'float'>":"float",
         "<class 'str'>":"str",
         "<class 'bool'>":"bool",
-        "<class 'bytes'>":"str"}
+        "<class 'bytes'>":"str",
+        "<class 'NoneType'>":"str",
+        }
 
 
 def paramtree(dic):
@@ -61,7 +63,11 @@ class ImportInfo(QtCore.QThread):
                     {"name":"uav",'type':"group"},
                     {"name":"image",'type':"group"},
                     {"name":"file",'type':"group"},
-                    {"name":"gps",'type':"group"}]
+                    {"name":"gps",'type':"group"},
+                    {"name":"exif",'type':"group"},
+                    {"name":"rawimage",'type':"group"},
+                    {"name":"thumbnail",'type':"group"},
+                    {"name":"calibration",'type':"group"},]
         self.p = Parameter.create(name='params', type='group',children=categories)
         
     def load(self,meta):

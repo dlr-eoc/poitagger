@@ -176,7 +176,11 @@ class Img(QtGui.QWidget):
         self.fliplr = True if self.infoUI.CVfliphorCheckBox.isChecked() else False
         self.flipud = True if self.infoUI.CVflipverCheckBox.isChecked() else False
         lrimage = img if not self.fliplr else np.fliplr(img)
-        return lrimage.T if not self.flipud else np.flipud(lrimage).T
+        out = lrimage if not self.flipud else np.flipud(lrimage)
+        if len(out.shape)==3: #rgb color image
+            return out.transpose([1,0,2])
+        else:
+            return out.T
         
     def loadImg(self,curimg):
         self.curimg = curimg
@@ -191,22 +195,10 @@ class Img(QtGui.QWidget):
         else:
             img = self.ara.image 
         
-        # try:
-            # if str(curimg).lower().endswith((".tiff",".tif")):
-                # self.ara = utils2.LoadTiff(curimg)
-            # elif str(curimg).lower().endswith((".tiff",".tif")):
-                # self.ara = utils2.LoadJpg(curimg)
-            # else:
-                #pass
-                
-        # except:
-            # print("no image loaded!")
-            # return 
         try:
             self.imheight,self.imwidth = img.shape[0],img.shape[1]
         except:
             print("ERROR!, shape:", img.shape)
-  #      self.proc.load(self.ara,self.conf)
         
         pixmap = QtGui.QPixmap(100, 100)
         pixmap.fill(QtCore.Qt.white)
@@ -222,38 +214,14 @@ class Img(QtGui.QWidget):
         
         painter.end()
         preprocessed = self.flip(img)
-        #preprocessed = self.flip(self.ara.image.astype(int))
-#        self.proc.viewCtrlUI.normkitz.setPixmap(pixmap)
-        
-  #      preprocessed, overlay = self.proc.preprocessed()
-        #self.overlay = np.zeros_like(self.image, np.uint8) 
-        
-        #self.flip(self.image), self.flip(self.overlay)
-        #if self.imgDebugUI.checkBox.isChecked():
-        #    preprocessed = np.array(preprocessed * 2 * self.mask, dtype=np.uint16)
-        #print ("####################")
-        #print("imgshape",preprocessed.shape)
-        if len(preprocessed.shape)<3:
-            self.image = pg.ImageItem(preprocessed)
-            self.temp.tempminmax(self.ara)
-            self.histlut.setImageItem(self.image)
-            self.vbox.clear()
-            self.vbox.addItem(self.image)
-        else:
-            print ("No Colorimages supported yet")
-            #self.vbox.setImage(self.ara.image)
-        #self.image = pg.ImageItem(self.ara.image)
-        #self.image = pg.image(self.ara.image)
+        #print("IMAGESHAPE:",preprocessed.shape,img.shape)
+        self.image = pg.ImageItem(preprocessed)
+        self.temp.tempminmax(self.ara)
+        self.histlut.setImageItem(self.image)
+        self.vbox.clear()
+        self.vbox.addItem(self.image)
         
         
-        
-      #  if self.proc.detectionUI.CVonCheckBox.isChecked():
-
-       #     overlay2 = cv2.merge((overlay.T*self.conf.r,overlay.T*self.conf.g,overlay.T*self.conf.b,overlay.T*self.conf.a))
-       #     overlay3 = QtGui.QPixmap.fromImage(utils2.toQImage(overlay2))
-       #     self.overlay = QtGui.QGraphicsPixmapItem(overlay3)
-       #     self.vbox.addItem(self.overlay)
-        #print(self.ara["header"])    
         try:
             if self.ara.header["calibration"].get("error_flags",0) & image.ERRORFLAGS.ALL_META:
                 hlstr = "QLabel { background-color : #ff0000; }"  #self.imagename.setStyleSheet();
