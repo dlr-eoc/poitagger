@@ -47,7 +47,6 @@ from . import utils2
 #widgets
 #import imageprocessing2
 from . import temp
-from . import PATHS   
 SIZE = 30 # This is just the distance for the Labeling of the Pois
 
 class Img(QtGui.QWidget):
@@ -189,7 +188,7 @@ class Img(QtGui.QWidget):
         if not os.path.isfile(curimg): return
         
         self.ara = image.Image.factory(curimg)
-        
+        self.log.emit(str(self.ara.exif))
         if hasattr(self.ara, 'rawbody'):
             img = self.ara.rawbody 
         else:

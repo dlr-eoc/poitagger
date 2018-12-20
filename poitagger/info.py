@@ -45,9 +45,10 @@ class Info(QtGui.QWidget):
         self.savedScrollPosition = self.t.verticalScrollBar().value()
         self.importer.load(ara)
         self.importer.start()
-       
+
     def reloaded(self):
         try:
+            pass
             self.t.verticalScrollBar().setValue(self.savedScrollPosition)
             lat = self.importer.p.child("gps").child("latitude").value()
             lon = self.importer.p.child("gps").child("longitude").value()
@@ -79,7 +80,7 @@ class ImportInfo(QtCore.QThread):
         self.p.restoreState({"name":"params", "type":"group", "children":paramtree(self.meta)})
         self.p.unblockTreeChangeSignal()
         self.finished.emit()
-        
+    
         
 if __name__=="__main__":
     pass

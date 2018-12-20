@@ -146,6 +146,7 @@ class Flight(QtCore.QThread):
         
     def preparePois(self,poisparam):
         #print("FM, POIS JETZT" )
+        if len(poisparam.getValues())==0: return
         poisdict = nested.Nested(poisparam.getValues(),nested.paramtodict,nested.pre_paramtodict,tupletype=list).data
         #print(poisdict)
       #  with open("test.txt","w") as f:
@@ -167,6 +168,7 @@ class Flight(QtCore.QThread):
        # if len(p)>0:
        #     print(p["0"])
     def prepareUavPath(self,uavpathparam):
+        if uavpathparam.value()== None : return
         pathlist = list(uavpathparam.value())
         self.uavpath.emit(pathlist)
         

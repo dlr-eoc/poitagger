@@ -69,11 +69,11 @@ class Main(QMainWindow):
     saveimgdir = None
     dockwidgets = []
     
-    
     def __init__(self, imgdir = None, rootdir = None,resetwindow = None):
         QMainWindow.__init__(self)
         #self.setIcon()
         #self.setWindowIcon(QtGui.QIcon('poitagger.png'))
+        self.useflight = True
         self.resetwindow = resetwindow
         self.msg = QMessageBox()
         self.settings = QtCore.QSettings(os.path.join(PATHS["BASE"],"conf.ini"), QtCore.QSettings.IniFormat)
@@ -90,8 +90,8 @@ class Main(QMainWindow):
         self.conf.setModal(True)       
         #self.dir = treeview.TreeView() #dirtree.DirTree(rd,id)
         self.img = imageview.Img(self.conf,os.path.join(id,startfilename))
-        self.flight = flightmeta.Flight(".poitagger.yml")
-        #self.flight.load(id,".poitagger.yml")
+        if self.useflight:
+            self.flight = flightmeta.Flight(".poitagger.yml")
         self.info = info.Info()
         self.calib = calib.Calib()
        # self.dem = dem.Dem()
@@ -123,7 +123,8 @@ class Main(QMainWindow):
         self.img.appendButtonsToToolBar(self.toolBar)
         
         self.flightmain = flightmeta.FlightWidget(self)
-        self.flightmain.setMeta(self.flight)
+        if self.useflight:
+            self.flightmain.setMeta(self.flight)
         
         self.Console = QTextEdit(self.ConsoleDockWidget)
         
@@ -207,8 +208,6 @@ class Main(QMainWindow):
         self.actionEinstellungen.triggered.connect(self.conf.openPropDialog)
         
         self.info.position.connect(self.geomain.view.moveUav)
-        #self.geomain.actionUAV_position.triggered.connect(lambda: self.geomain.view.panMap(self.img.ara.header["gps"]["latitude"],self.img.ara.header["gps"]["longitude"]))
-        self.geomain.actionFitMap.triggered.connect(lambda: self.geomain.view.fitBounds(paramreduce.load(self.flight.p.child("general").child("bounding").getValues())))
         
         #self.wf.progress.connect(self.AraLoaderProgressBar.setValue)
         self.log.connect(self.Console.append)
@@ -219,7 +218,6 @@ class Main(QMainWindow):
         self.pois.log.connect(self.Console.append)
         self.treemain.view.log.connect(self.Console.append)
         self.img.log.connect(self.Console.append)
- #       self.img.proc.log.connect(self.Console.append)
                 
         self.actionDrucken.triggered.connect(self.handlePrint)
         self.actionDruckansicht.triggered.connect(self.handlePreview)
@@ -231,25 +229,21 @@ class Main(QMainWindow):
         # aRA UEBERSCHREIBEN MIT EIGENEN wERTEN
         self.calib.conf.connect(lambda conf: self.wf.readFolder(self.treemain.view.imgdir,conf))
         
-       # self.flightmeta.importimages.connect(self.wf.readFolder)
+        #self.flightmeta.importimages.connect(self.wf.readFolder)
         
         [self.treemain.view.imgPathChanged.connect(c) for c in [self.img.loadImg,self.setWindowTitle]]
-        self.treemain.view.imgDirChanged.connect(lambda imgdir: self.flight.load(imgdir))
+        if self.useflight:
+            self.geomain.actionFitMap.triggered.connect(lambda: self.geomain.view.fitBounds(paramreduce.load(self.flight.p.child("general").child("bounding").getValues())))
+            self.treemain.view.imgDirChanged.connect(lambda imgdir: self.flight.load(imgdir))
+            self.flight.uavpath.connect(self.geomain.view.setUavPath)
+            self.flight.pois.connect(self.geomain.view.loadpois)
+            self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
         
-        self.flight.uavpath.connect(self.geomain.view.setUavPath)
-        self.flight.pois.connect(self.geomain.view.loadpois)
-        self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
-        #self.flight.meta.pois_changed.connect(self.geomain.view.loadpois)
-        #self.flight.meta.pois_changed.connect(lambda: self.pois.load(self.flightmeta.pois, self.flightmeta.path))
-                                            
-        #[self.dir.imgDirChanged.connect(c) for c in [self.pois.load_folder, lambda : self.geoview.loadpois(self.flightmeta.pois),lambda : self.geoview.setUavPath(os.path.join(self.dir.imgdir,"uavpositions.gpx"))]]#self.geoview.setAllPois(os.path.join(self.dir.imgdir,"pois.gpx"))
-        #]] #,self.geoview.prepareLoadGpx
+        
         self.img.loaded.connect(lambda: self.fill_values(self.img.ara))
-    #    self.treemain.view.imgDirChanged.connect(lambda: self.img.proc.setdirlist(self.treemain.view.aralist))
         self.treemain.view.rootDirChanged.connect(lambda rootdir: self.settings.setValue('PATHS/rootdir', rootdir))
         
         self.img.highlighting.connect(self.treemain.vb.imagename.setStyleSheet)
-        #self.info.uncalibrated.connect(self.dir.viewbuttonsUI.imagename.setStyleSheet)
         
         self.img.sigPixel.connect(self.pois.pos)
         self.img.sigMouseMode.connect(self.focusDockWidget)
@@ -257,7 +251,9 @@ class Main(QMainWindow):
     def gpx_to_gps(self):
         #print "GPX auf GPS uebertragen", 
         self.pois.save()
-        self.flight.save()
+    
+        if self.useflight:
+            self.flight.save()
         
         
         #print("imgdir",self.dir.imgdir)
@@ -410,7 +406,8 @@ class Main(QMainWindow):
         #print(self.settings.value('POIS/color'))
         self.writeSettings(self.settings)
         #self.flightmeta.change_pois(self.pois.poisxml)
-        self.flight.save()#self.flightmeta.path)
+        if self.useflight:
+            self.flight.save()#self.flightmeta.path)
         if e: e.accept()
 
 
@@ -458,5 +455,4 @@ def main():
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
-    print("LOCAL")
     main()
