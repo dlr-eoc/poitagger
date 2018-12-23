@@ -288,18 +288,24 @@ class ImageJpg(Image):
         segments = []
         parentend = 0
         for m in cpattern.finditer(d):
-            length = 256 * m.group()[2] + m.group()[3]
+            if len(m.group())>=4: 
+                length = 256 * m.group()[2] + m.group()[3]
+                id = MARKER[m.group()[:-2]]
+            else:
+                length = 0
+                id = MARKER[m.group()]
             if m.start()>parentend:
                 top = True
                 parentend = m.start() + length
             else:
                 top = False
-            segments.append({"id":MARKER[m.group()[:-2]], 
-             "pos":m.start(),
-             "len" : length,
-             "top": top})
-        return segments
+            segments.append({"id":id, 
+                "pos":m.start(),
+                "len" : length,
+                "top": top})
         
+        return segments
+      
     def get_size(self,segments,data):
         try:
             sof = [i for i in segments if i["id"]=="SOF0" and i["top"]==True ][0]

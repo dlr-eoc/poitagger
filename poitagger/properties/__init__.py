@@ -7,15 +7,12 @@ from . import pois_conf,gps_conf,image_conf,geoview_conf
 from .. import PATHS 
 class PropertyDialog(QtGui.QDialog):
    
-    def __init__(self,title):
+    def __init__(self,title,settings):
         QtGui.QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'properties.ui'),self)
         self.setWindowTitle(title)
         
-        
-        self.settings = QtCore.QSettings(os.path.join(PATHS["BASE"],"conf.ini"), QtCore.QSettings.IniFormat)
-        self.settings.setFallbacksEnabled(False) 
-        
+        self.settings = settings
         self.poisproperties = pois_conf.PoisProperties(self.settings)
         self.gpsproperties = gps_conf.GpsProperties(self.settings)
         self.imageproperties = image_conf.ImageProperties(self.settings)

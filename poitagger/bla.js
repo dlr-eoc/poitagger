@@ -1,9 +1,22 @@
+window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
+    if (errorMsg.includes("API access token") == true) {
+        var content = "Zur Nutzung der Karte ist ein Account bei MapBox erforderlich. Der public access token wird unter Einstellungen > allgemein > Geoview eingetragen. <br><br>JS Fehlermeldung: " + errorMsg ;
+        document.open();
+        document.write(content);
+        document.close();
+      
+      //  alert("Zur Nutzung der Karte ist ein <a href='https://www.mapbox.com/signup/'>Account bei MapBox</a> erforderlich. Der public access token wird unter Einstellungen > allgemein > Geoview eingetragen. (" + errorMsg + ")");//or any message
+        return false;
+    }
+}
+
 var map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/easy/cjfipwmk6eqii2rlhvjyymb2p',
     center: [11.0165, 48.1405],
     zoom: 18
 });
+
 
 map.on('load', function () {
 
