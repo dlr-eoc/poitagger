@@ -2,7 +2,7 @@ docopt
 PyQt5>=5.6
 numpy>=1.15
 lxml>=4.2.5
-pyqtgraph>=0.10
+pyqtgraph>=0.11
 tifffile>=2018.11.28
 utm>=0.4.2
 pytz>=2018.7

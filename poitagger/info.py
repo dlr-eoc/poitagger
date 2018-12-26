@@ -16,14 +16,16 @@ types = {"<class 'int'>":"int",
         "<class 'float'>":"float",
         "<class 'str'>":"str",
         "<class 'bool'>":"bool",
-        "<class 'bytes'>":"str"}
+        "<class 'bytes'>":"str",
+        "<class 'NoneType'>":"str",
+        }
 
 
 def paramtree(dic):
     params = []
     for k,v in dic.items():
         if type(v) is not dict:
-            params.append({"name": k, 'type': types.get(str(type(v)),"str"), 'decimals':9, 'value': v})
+            params.append({"name": k, 'type': types.get(str(type(v)),"str"), 'readonly':True, 'decimals':9, 'value': v})
         else:
             params.append({"name": k, 'type': "group", 'children': paramtree(v)})
     return params
@@ -34,7 +36,7 @@ class Info(QtGui.QWidget):
     
     def __init__(self):
         QtGui.QWidget.__init__(self)
-        self.t = ParameterTree()
+        self.t = ParameterTree(showHeader=False)
         self.importer = ImportInfo()
         self.t.setParameters(self.importer.p, showTop=False)
         self.importer.finished.connect(self.reloaded)
@@ -43,9 +45,10 @@ class Info(QtGui.QWidget):
         self.savedScrollPosition = self.t.verticalScrollBar().value()
         self.importer.load(ara)
         self.importer.start()
-       
+
     def reloaded(self):
         try:
+            pass
             self.t.verticalScrollBar().setValue(self.savedScrollPosition)
             lat = self.importer.p.child("gps").child("latitude").value()
             lon = self.importer.p.child("gps").child("longitude").value()
@@ -61,7 +64,11 @@ class ImportInfo(QtCore.QThread):
                     {"name":"uav",'type':"group"},
                     {"name":"image",'type':"group"},
                     {"name":"file",'type':"group"},
-                    {"name":"gps",'type':"group"}]
+                    {"name":"gps",'type':"group"},
+                    {"name":"exif",'type':"group"},
+                    {"name":"rawimage",'type':"group"},
+                    {"name":"thumbnail",'type':"group"},
+                    {"name":"calibration",'type':"group"},]
         self.p = Parameter.create(name='params', type='group',children=categories)
         
     def load(self,meta):
@@ -73,7 +80,7 @@ class ImportInfo(QtCore.QThread):
         self.p.restoreState({"name":"params", "type":"group", "children":paramtree(self.meta)})
         self.p.unblockTreeChangeSignal()
         self.finished.emit()
-        
+    
         
 if __name__=="__main__":
     pass

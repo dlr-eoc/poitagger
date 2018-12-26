@@ -2,16 +2,17 @@ import yaml
 import yamlordereddictloader
 import os
 import ast
-from . import image
 from lxml import etree
 import logging
-from . import utils2
 from PyQt5 import QtCore,QtGui,uic, QtWidgets
 from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
 import datetime
 from collections import OrderedDict,MutableMapping,MutableSequence
+
+from . import image
+from . import utils2
 from . import nested
 from . import PATHS
 
@@ -40,15 +41,15 @@ def dictToParam(k,v,**kwargs):
     '''
     l = len(kwargs["parentlist"])
     if l>0 and kwargs["parentlist"][0] == "uavpath":
-        if l==1: return {"name": str(k), 'type': "str", 'value': v}
+        if l==1: return {"name": str(k), 'type': "str", 'readonly':True,'value': v}
         return v
     if l>2 and kwargs["parentlist"][0] == "pois" and  kwargs["parentlist"][2] == "data" :
         if l>4: return v
-        elif l==4: return {"name": str(k), 'type': "str", 'value': v}
+        elif l==4: return {"name": str(k), 'type': "str", 'readonly':True,'value': v}
         return {"name": str(k), 'type': "group", 'children': v}
         
     if not isinstance(v,(MutableMapping,MutableSequence,tuple)):
-        return {"name": str(k), 'type': types.get(str(type(v)),"str"),  'decimals':9, 'value': v }
+        return {"name": str(k), 'type': types.get(str(type(v)),"str"), 'readonly':True, 'decimals':9, 'value': v }
     else:
         return {"name": str(k), 'type': "group", 'children': v}
     
@@ -80,7 +81,7 @@ class FlightWidget(QMainWindow):
         super(FlightWidget, self).__init__(parent)
         uic.loadUi(os.path.join(PATHS["UI"],'flightmain.ui'),self)
         self.setWindowFlags(QtCore.Qt.Widget)
-        self.t = ParameterTree()
+        self.t = ParameterTree(showHeader=False)
         self.horizontalLayout.addWidget(self.t)
         
     def setMeta(self,fm):
@@ -99,7 +100,7 @@ class FlightWidget(QMainWindow):
                 os.remove(mypath)
     
     def save(self):
-        tree = self.p.getValues()
+        tree = self.flight.p.getValues()
         n = nested.Nested(tree,nested.paramtodict,nested.paramtodict,tupletype=list)
         self.flight.set(n.data)
         
@@ -108,6 +109,11 @@ class FlightWidget(QMainWindow):
         if not c.isType("group"): c = c.parent()
         last = len(c.children())
         c.insertChild(last,{"name":"","value":"","type":"str", "readonly":False,"removable":True,"renamable":True})
+    
+    def addPoi(self,value):
+        c = self.flight.p.child("pois")
+        last = len(c.children())
+        c.insertChild(last,{"name":str(last),"value":value,"type":"str", "readonly":False,"removable":True,"renamable":True})
 
     def delParameter(self):
         c = self.t.currentItem().param
@@ -146,6 +152,7 @@ class Flight(QtCore.QThread):
         
     def preparePois(self,poisparam):
         #print("FM, POIS JETZT" )
+        if len(poisparam.getValues())==0: return
         poisdict = nested.Nested(poisparam.getValues(),nested.paramtodict,nested.pre_paramtodict,tupletype=list).data
         #print(poisdict)
       #  with open("test.txt","w") as f:
@@ -167,6 +174,7 @@ class Flight(QtCore.QThread):
        # if len(p)>0:
        #     print(p["0"])
     def prepareUavPath(self,uavpathparam):
+        if uavpathparam.value()== None : return
         pathlist = list(uavpathparam.value())
         self.uavpath.emit(pathlist)
         
@@ -361,7 +369,7 @@ if __name__ == "__main__":
     but3 = QPushButton()
     but3.setText("add Param")
     vbox.addWidget(but3)
-    but3.clicked.connect(win.addParameter)
+    but3.clicked.connect(lambda: win.addPoi("{'name':'blabla','id':'46'}"))
     
     but4 = QPushButton()
     but4.setText("del Param")

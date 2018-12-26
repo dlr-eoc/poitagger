@@ -57,7 +57,61 @@ def dms2dd(degrees, minutes, seconds, direction):
         dd *= -1
     return dd;
            
+MARKER = {
+b"\xff\xe0":"APP0" , # JFIF APP0 segment marker
+b"\xff\xe1":"APP1" ,
+b"\xff\xe2":"APP2" ,
+b"\xff\xe3":"APP3" ,
+b"\xff\xe4":"APP4" ,
+b"\xff\xe5":"APP5" ,
+b"\xff\xe6":"APP6" ,
+b"\xff\xe7":"APP7" ,
+b"\xff\xe8":"APP8" ,
+b"\xff\xe9":"APP9" ,
+b"\xff\xea":"APP10",
+b"\xff\xeb":"APP11",
+b"\xff\xec":"APP12",
+b"\xff\xed":"APP13",
+b"\xff\xee":"APP14",
+b"\xff\xef":"APP15",
+b"\xff\xc0":"SOF0" , # Start Of Frame (baseline JPEG) 
+b"\xff\xc1":"SOF1" , # Start Of Frame (baseline JPEG) 
+b"\xff\xc2":"SOF2" ,
+b"\xff\xc3":"SOF3" ,
+b"\xff\xc4":"SOF4" ,
+b"\xff\xc5":"SOF5" ,
+b"\xff\xc6":"SOF6" ,
+b"\xff\xc7":"SOF7" ,
+b"\xff\xc9":"SOF9" ,
+b"\xff\xca":"SOF10",
+b"\xff\xcb":"SOF11",
+b"\xff\xcd":"SOF13",
+b"\xff\xce":"SOF14",
+b"\xff\xcf":"SOF15",
+b"\xff\xc4":"DHT"  , # Define Huffman Table
+b"\xff\xdb":"DQT"  , # Define Quantization Table
+b"\xff\xda":"SOS"  ,  # Start of Scan
+b"\xff\xc8":"JPG"  ,
+b"\xff\xf0":"JPG0" ,
+b"\xff\xfd":"JPG13",
+b"\xff\xcc":"DAC"  , # Define Arithmetic Table, usually unsupport 
+b"\xff\xdc":"DNL"  ,
+b"\xff\xdd":"DRI"  , # Define Restart Interval
+b"\xff\xde":"DHP"  ,
+b"\xff\xdf":"EXP"  ,
+b"\xff\xd0":"RST0" ,  # RSTn are used for resync, may be ignored
+b"\xff\xd1":"RST1" ,
+b"\xff\xd2":"RST2" ,
+b"\xff\xd3":"RST3" ,
+b"\xff\xd4":"RST4" ,
+b"\xff\xd5":"RST5" ,
+b"\xff\xd6":"RST6" ,
+b"\xff\xd7":"RST7" ,
+b"\xff\x01":"TEM"  ,
+b"\xff\xfe":"COM"  } # Comment
 
+           
+           
 FFF = [[0x02,"Raw Thermal Image Width", "H"],
         [0x04,"Raw Thermal Image Height", "H"],
         [0x20,"Emissivity", "f"],
@@ -110,9 +164,9 @@ FFF = [[0x02,"Raw Thermal Image Width", "H"],
 
     
 class Image(object):
-    header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
-         "calibration":{"geometric":{},"radiometric":{},"boresight":{}}
-        }
+    header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
+         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
+                    "thumbnail":{},     }
     exif = None
     xmp = None
     
@@ -153,14 +207,29 @@ class Image(object):
             return None
         return text
 
+    # def convert_latlon(self,exif_deg,exif_ref):
+       # # print("LATLONCONVERT",exif_deg,exif_ref)
+        # deg = str(self.exif[exif_deg])
+        # ref = str(self.exif[exif_ref])
+        
+        # p = re.compile(r'[\[, \]]+')
+        # deglist = p.split(deg)[1:-1]
+        # out = dms2dd(deglist[0],deglist[1],self.evaldiv(deglist[2]),ref)
+     # #   print("OUT",out)
+        # return out 
+    
     def convert_latlon(self,exif_deg,exif_ref):
-        deg = str(self.exif[exif_deg])
-        ref = str(self.exif[exif_ref])
-        
-        p = re.compile(r'[\[, \]]+')
+        deg = str(exif_deg)
+        ref = str(exif_ref)
+        p = re.compile(r'[\(, \)]+|[\[, \]]+')
         deglist = p.split(deg)[1:-1]
-        return dms2dd(deglist[0],deglist[1],self.evaldiv(deglist[2]),ref)
-        
+        if len(deglist)==3:
+            return dms2dd(deglist[0],deglist[1],self.evaldiv(deglist[2]),ref)
+        if len(deglist)==6:
+            return dms2dd(float(deglist[0])/float(deglist[1]),float(deglist[2])/float(deglist[3]),float(deglist[4])/float(deglist[5]),ref)
+        else:
+            raise("Convert LatLon wrong size of input data")
+    
     def extract_exif(self,string):
         try:
             text = self.evaldiv(self.exif.get(string))
@@ -182,39 +251,82 @@ class ImageJpg(Image):
             self.load(imgpath,onlyheader=onlyheader)
         
     def load(self,imgpath,onlyheader=False):
-        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"exif":{},"thumbnail":{},
-            "calibration":{"geometric":{},"radiometric":{},"boresight":{}}
-            }
+        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
+         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
+                    "thumbnail":{},     }
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
         d, self.exif, self.xmp = self.get_meta(imgpath)
-        flirchunk = self.extract_flir(d)
+        segments = self.find_segments(d)
+        self.width,self.height,self.channels = self.get_size(segments,d)
+
+        flirchunk = self.extract_flir(d) #,jfifmeta
         if flirchunk is not None:
-            width = int(str(self.exif.get("Raw Thermal Image Width",640)))
-            height = int(str(self.exif.get("Raw Thermal Image Height",512)))
+            print ("whc",self.width,self.height,self.channels )
+            self.rwidth = int(str(self.exif.get("Raw Thermal Image Width",640)))
+            self.rheight = int(str(self.exif.get("Raw Thermal Image Height",512 )))
             if onlyheader:
-                self.fff = self.flir_header(flirchunk,width,height)
+                self.fff = self.flir_header(flirchunk,self.rwidth,self.rheight)
             else:
-                self.flir_data(flirchunk,width,height)
-                
-              #  self.image = self.rawbody
+                self.flir_data(flirchunk,self.rwidth,self.rheight)
+        
         if str(self.exif.get("Image Make","")) == "DJI":
             self.fill_header_dji()
         elif str(self.exif.get("Image Make","")) == "FLIR":
             self.fill_header_flir()
-            #    self.rawbody = self.image
         
         if not onlyheader:
             self.image = np.array(pilimage.open(imgpath))    
+            if len(self.image.shape)==3:
+                (self.height, self.width,self.channels) = self.image.shape
+            else:
+                (self.height,self.width) = self.image.shape
+                self.channels = 1
+                
+    def find_segments(self,d):
+        cpattern = re.compile(b"..|".join(MARKER.keys()))
+        segments = []
+        parentend = 0
+        for m in cpattern.finditer(d):
+            if len(m.group())>=4: 
+                length = 256 * m.group()[2] + m.group()[3]
+                id = MARKER[m.group()[:-2]]
+            else:
+                length = 0
+                id = MARKER[m.group()]
+            if m.start()>parentend:
+                top = True
+                parentend = m.start() + length
+            else:
+                top = False
+            segments.append({"id":id, 
+                "pos":m.start(),
+                "len" : length,
+                "top": top})
+        
+        return segments
+      
+    def get_size(self,segments,data):
+        try:
+            sof = [i for i in segments if i["id"]=="SOF0" and i["top"]==True ][0]
+            p = sof["pos"]
+            precision = data[p+4]
+            height = struct.unpack(">H", data[p+5:p+7])[0]
+            width = struct.unpack(">H", data[p+7:p+9])[0]
+            channels = data[p+9]
+            return (width,height,channels)
+        except:
+            return (0,0,1)
             
+        
     def get_meta(self,imgpath):
         exif = {}
         xmp = ""
         d = []
         try:
-            f = open(imgpath,"rb")
-            exif = exifread.process_file(f,details=False)
-            d = f.read()
+            with open(imgpath,"rb") as f:
+                exif = exifread.process_file(f,details=False)
+                d = f.read()
             
             xmp_start = d.find(b"<rdf:RDF")
             xmp_end = d.find(b"</rdf:RDF")
@@ -232,6 +344,7 @@ class ImageJpg(Image):
         start = 0
         arr = bytearr.split(b"\xff\xe1")
         for i in arr:
+            if len(i)<6: continue
             length = 256 * i[0] + i[1]
             if i[2:6] ==b"FLIR":
                 if i[10:13] == b"FFF":
@@ -245,7 +358,7 @@ class ImageJpg(Image):
                 continue
             if start<length:
                 flirdata.append(i[start:length])
-        return b"".join(flirdata)
+        return b"".join(flirdata)#,jfifmeta
         
         
     def flir_data(self,rawdata,width,height):    
@@ -279,9 +392,34 @@ class ImageJpg(Image):
         return fff    
         
     def fill_header_flir(self):
+        self.header["file"]["name"] = self.filename
+        self.header["image"]["width"] = self.width #self.extract_exif("Raw Thermal Image Width")
+        self.header["image"]["height"] = self.height #self.extract_exif("Raw Thermal Image Height")
+        self.header["image"]["bitdepth"] = 8      
+        
         self.header["camera"]["roll"] = self.extract_xmp("camera:roll") 
         self.header["camera"]["yaw"] = self.extract_xmp("camera:yaw")
         self.header["camera"]["pitch"] = self.extract_xmp("camera:pitch") 
+        self.header["camera"]["model"] = self.extract_exif("Image Model")
+        self.header["camera"]["make"] = self.extract_exif("Image Make")
+        self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
+        self.header["uav"]["yaw"] = self.extract_xmp("flir:mavyaw") 
+        self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch") 
+        
+        self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
+        self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
+        self.header["gps"]["rel_altitude"]= self.extract_xmp("flir:mavrelativealtitude")
+        self.header["gps"]["abs_altitude"] = self.extract_exif("GPS GPSAltitude")
+        
+        self.header["gps"]["timestamp"] = self.extract_exif("GPS GPSTimeStamp")
+        UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
+        self.header["gps"]["UTM_X"] = UTM_X
+        self.header["gps"]["UTM_Y"] = UTM_Y
+        self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
+        self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
+        
+        
+        
         self.header["camera"]["centralwavelength"] = self.extract_xmp("camera:centralwavelength") 
         self.header["camera"]["wavelengthfwhm"] = self.extract_xmp("camera:wavelengthfwhm") 
         self.header["camera"]["detectorbitdepth"] = self.extract_xmp("camera:detectorbitdepth")
@@ -290,15 +428,10 @@ class ImageJpg(Image):
         self.header["camera"]["isnormalized"] = self.extract_xmp("camera:isnormalized") 
         self.header["camera"]["fnumber"] = self.extract_exif("Image FNumber")
         self.header["camera"]["focallength"] = self.extract_exif("Image FocalLength")
-        self.header["camera"]["make"] = self.extract_exif("Image Make")
-        self.header["camera"]["model"] = self.extract_exif("Image Model")
-        self.header["camera"]["coretemp"] = self.fff.get("Coretemp",(1))[0]
         
         self.header["file"]["mavversion"] = self.extract_xmp("flir:mavversionid")
         self.header["file"]["mavcomponent"] = self.extract_xmp("flir:mavcomponentid")
         self.header["file"]["exifversion"] = self.extract_exif("EXIF ExifVersion")
-        self.header["file"]["name"] = self.filename
-        
         
         try:
             self.header["camera"]['PartNumber'] = self.fff.get("CameraPartNumber","").decode("utf-8") 
@@ -311,65 +444,62 @@ class ImageJpg(Image):
         #self.header["file"]["modifydate"] = self.fff.get("DateTimeOriginal",0)
         #self.header["file"]["createdate"] = self.fff.get("DateTimeOriginal",0)
     
-        self.header["gps"]["rel_altitude"]= self.extract_xmp("flir:mavrelativealtitude")
+        
         self.header["gps"]["hor_accuracy"]= self.extract_xmp("camera:gpsxyaccuracy")
         self.header["gps"]["ver_accuracy"]= self.extract_xmp("camera:gpszaccuracy")
         self.header["gps"]["climbrate"] = self.extract_xmp("flir:mavrateofclimb") 
         self.header["gps"]["climbrateref"] = self.extract_xmp("flir:mavrateofclimbref")
-        self.header["gps"]["abs_altitude"] = self.extract_exif("GPS GPSAltitude")
         self.header["gps"]["abs_altituderef"] = self.extract_exif("GPS GPSAltitudeRef")
-        self.header["gps"]["latitude"] = self.convert_latlon("GPS GPSLatitude","GPS GPSLatitudeRef")
-        self.header["gps"]["longitude"] = self.convert_latlon("GPS GPSLongitude","GPS GPSLongitudeRef")
         self.header["gps"]["speed"] = self.extract_exif("GPS GPSSpeed")
         self.header["gps"]["speedref"] = self.extract_exif("GPS GPSSpeedRef")
-        self.header["gps"]["timestamp"] = self.extract_exif("GPS GPSTimeStamp")
         self.header["gps"]["version"] = self.extract_exif("GPS GPSVersionID")
                 
-        UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
-        self.header["gps"]["UTM_X"] = UTM_X
-        self.header["gps"]["UTM_Y"] = UTM_Y
-        self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
-        self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
         
-        self.header["image"]["height"] = self.extract_exif("Raw Thermal Image Height")
-        self.header["image"]["width"] = self.extract_exif("Raw Thermal Image Width")
         self.header["image"]["colorspace"] = self.extract_exif("EXIF ColorSpace")
         self.header["image"]["componentsconfiguration"] = self.extract_exif("EXIF ComponentsConfiguration")
-        self.header["image"]["bitdepth"] = 16      
+        
+        self.header["rawimage"]["height"] = self.rheight
+        self.header["rawimage"]["width"] = self.rwidth 
+        self.header["rawimage"]["bitdepth"] = 16      
                 
-        self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
-        self.header["uav"]["yaw"] = self.extract_xmp("flir:mavyaw") 
-        self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch") 
         self.header["uav"]["rollrate"] = self.extract_xmp("flir:mavrollrate") 
         self.header["uav"]["yawrate"] = self.extract_xmp("flir:mavyawrate") 
         self.header["uav"]["pitchrate"] = self.extract_xmp("flir:mavpitchrate") 
         
-        self.header["calibration"]["radiometric"]["R"] = self.fff.get("PlanckR1",(0))[0]
-        self.header["calibration"]["radiometric"]["F"] = self.fff.get("PlanckF",(1))[0]
-        self.header["calibration"]["radiometric"]["B"] = self.fff.get("PlanckB",(0))[0]
-        self.header["calibration"]["radiometric"]["R2"] = self.fff.get("PlanckR2",(0))[0]
+        self.header["calibration"]["radiometric"]["R"] = float(self.fff.get("PlanckR1",(0))[0])
+        self.header["calibration"]["radiometric"]["F"] = float(self.fff.get("PlanckF",(1))[0])
+        self.header["calibration"]["radiometric"]["B"] = float(self.fff.get("PlanckB",(0))[0])
+        self.header["calibration"]["radiometric"]["R2"] = float(self.fff.get("PlanckR2",(0))[0])
+        self.header["calibration"]["radiometric"]["coretemp"] = self.fff.get("Coretemp",(1))[0]
+      
         self.header["calibration"]["radiometric"]["timestamp"] = 0
-        self.header["calibration"]["radiometric"]["IRWindowTemperature"] = self.fff.get("IRWindowTemperature",(0))[0]
-        self.header["calibration"]["radiometric"]["IRWindowTransmission"] = self.fff.get("IRWindowTransmission",(1))[0]
+        self.header["calibration"]["radiometric"]["IRWindowTemperature"] = float(self.fff.get("IRWindowTemperature",(0))[0])
+        self.header["calibration"]["radiometric"]["IRWindowTransmission"] = float(self.fff.get("IRWindowTransmission",(1))[0])
         
         
         
     def fill_header_dji(self):
         a = self.xmp.find("rdf:description")
         if a == None: return
-        self.header["camera"]["roll"] = a.get("drone-dji:gimbalrolldegree",0)
-        self.header["camera"]["yaw"] = a.get("drone-dji:gimbalyawdegree",0)
-        self.header["camera"]["pitch"] = a.get("drone-dji:gimbalpitchdegree",0)
+        self.header["file"]["name"] = self.filename
+        self.header["image"]["width"] = self.width #extract_exif("EXIF ExifImageWidth")
+        self.header["image"]["height"] = self.height
+        self.header["image"]["bitdepth"] = 8     
+        
+        self.header["camera"]["roll"] = float(a.get("drone-dji:gimbalrolldegree",0))
+        self.header["camera"]["yaw"] = float(a.get("drone-dji:gimbalyawdegree",0))
+        self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",0))
         self.header["camera"]["model"] = a.get("tiff:model",0)
         self.header["camera"]["make"] = a.get("tiff:make",0)
-        self.header["uav"]["roll"] = a.get("drone-dji:flightrolldegree",0)
-        self.header["uav"]["yaw"] = a.get("drone-dji:flightyawdegree",0)
-        self.header["uav"]["pitch"] = a.get("drone-dji:flightpitchdegree",0)
-        self.header["gps"]["abs_altitude"]=a.get("drone-dji:absolutealtitude",0)
-        self.header["gps"]["rel_altitude"]=a.get("drone-dji:relativealtitude",0)
-        self.header["gps"]["latitude"] = self.convert_latlon("GPS GPSLatitude","GPS GPSLatitudeRef")
-        self.header["gps"]["longitude"] = self.convert_latlon("GPS GPSLongitude","GPS GPSLongitudeRef")
-        self.header["gps"]["gpsmapdatum"] = self.extract_exif("GPS GPSMapDatum")
+        self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
+        self.header["uav"]["yaw"] = float(a.get("drone-dji:flightyawdegree",0))
+        self.header["uav"]["pitch"] = float(a.get("drone-dji:flightpitchdegree",0))
+        self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
+        self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
+        self.header["gps"]["rel_altitude"]=float(a.get("drone-dji:relativealtitude",0))
+        self.header["gps"]["abs_altitude"]=float(a.get("drone-dji:absolutealtitude",0))
+        
+        
             
         UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
         self.header["gps"]["UTM_X"] = UTM_X
@@ -377,20 +507,18 @@ class ImageJpg(Image):
         self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
         self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
         
+        self.header["gps"]["gpsmapdatum"] = self.extract_exif("GPS GPSMapDatum")
+        
         self.header["file"]["about"]=a.get("rdf:about",0)
         self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
         self.header["file"]["createdate"]=a.get("xmp:createdate",0)
         self.header["file"]["format"]=a.get("dc:format",0)
         self.header["file"]["version"]=a.get("crs:version",0)
-        self.header["file"]["name"] = self.filename
         
-        self.header["calibration"]["geometric"]["fx"]=a.get("drone-dji:calibratedfocallength",0)
-        self.header["calibration"]["geometric"]["cx"]=a.get("drone-dji:calibratedopticalcenterx",0)
-        self.header["calibration"]["geometric"]["cy"]=a.get("drone-dji:calibratedopticalcentery",0)
+        self.header["calibration"]["geometric"]["fx"]=float(a.get("drone-dji:calibratedfocallength",0))
+        self.header["calibration"]["geometric"]["cx"]=float(a.get("drone-dji:calibratedopticalcenterx",0))
+        self.header["calibration"]["geometric"]["cy"]=float(a.get("drone-dji:calibratedopticalcentery",0))
         
-        self.header["image"]["bitdepth"] = 8     
-        self.header["image"]["height"] = self.extract_exif("EXIF ExifImageLength")
-        self.header["image"]["width"] = self.extract_exif("EXIF ExifImageWidth")
         self.header["image"]["make"] = self.extract_exif("Image Make")
         self.header["image"]["xresolution"] = self.extract_exif("Image XResolution")
         self.header["image"]["yresolution"] = self.extract_exif("Image YResolution")
@@ -401,6 +529,11 @@ class ImageJpg(Image):
         self.header["image"]["copyright"] = self.extract_exif("Image Copyright")
         self.header["image"]["exifoffset"] = self.extract_exif("Image ExifOffset")
         self.header["image"]["gpsinfo"] = self.extract_exif("Image GPSInfo")
+        
+        self.header["rawimage"]["height"] = self.rheight
+        self.header["rawimage"]["width"] = self.rwidth 
+        self.header["rawimage"]["bitdepth"] = 16      
+        
         self.header["thumbnail"]["compression"] = self.extract_exif("Thumbnail Compression")
         self.header["thumbnail"]["xresolution"] = self.extract_exif("Thumbnail XResolution")
         self.header["thumbnail"]["yresolution"] = self.extract_exif("Thumbnail YResolution")
@@ -416,19 +549,19 @@ class ImageJpg(Image):
         self.header["exif"]["FocalPlaneResolutionUnit"] = self.extract_exif("EXIF FocalPlaneResolutionUnit")
         
         
-        self.header["calibration"]["radiometric"]["R"] = self.fff.get("PlanckR1",(0,))[0]
-        self.header["calibration"]["radiometric"]["F"] = self.fff.get("PlanckF",(1,))[0]
-        self.header["calibration"]["radiometric"]["B"] = self.fff.get("PlanckB",(0,))[0]
-        self.header["calibration"]["radiometric"]["R2"] = self.fff.get("PlanckR2",(0,))[0]
+        self.header["calibration"]["radiometric"]["R"] = float(self.fff.get("PlanckR1",(0,))[0])
+        self.header["calibration"]["radiometric"]["F"] = float(self.fff.get("PlanckF",(1,))[0])
+        self.header["calibration"]["radiometric"]["B"] = float(self.fff.get("PlanckB",(0,))[0])
+        self.header["calibration"]["radiometric"]["R2"] = float(self.fff.get("PlanckR2",(0,))[0])
         self.header["calibration"]["radiometric"]["timestamp"] = 0
-        self.header["calibration"]["radiometric"]["IRWindowTemperature"] = self.fff.get("IRWindowTemperature",(0,))[0]
-        self.header["calibration"]["radiometric"]["IRWindowTransmission"] = self.fff.get("IRWindowTransmission",(1,))[0]
-        self.header["calibration"]["radiometric"]["Emissivity"] = self.fff.get("Emissivity",(1,))[0]
-        self.header["calibration"]["radiometric"]["ObjectDistance"] = self.fff.get("ObjectDistance",(80,))[0]
-        self.header["calibration"]["radiometric"]["ReflectedApparentTemperature"] = self.fff.get("ReflectedApparentTemperature",(0,))[0]
-        self.header["calibration"]["radiometric"]["AtmosphericTemperature"] = self.fff.get("AtmosphericTemperature",(0,))[0]
-        self.header["calibration"]["radiometric"]["RelativeHumidity"] = self.fff.get("RelativeHumidity",(0.5,))[0]
-        self.header["calibration"]["radiometric"]["Coretemp"] = self.fff.get("Coretemp",(0,))[0]
+        self.header["calibration"]["radiometric"]["IRWindowTemperature"] = float(self.fff.get("IRWindowTemperature",(0,))[0])
+        self.header["calibration"]["radiometric"]["IRWindowTransmission"] = float(self.fff.get("IRWindowTransmission",(1,))[0])
+        self.header["calibration"]["radiometric"]["Emissivity"] = float(self.fff.get("Emissivity",(1,))[0])
+        self.header["calibration"]["radiometric"]["ObjectDistance"] = float(self.fff.get("ObjectDistance",(80,))[0])
+        self.header["calibration"]["radiometric"]["ReflectedApparentTemperature"] = float(self.fff.get("ReflectedApparentTemperature",(0,))[0])
+        self.header["calibration"]["radiometric"]["AtmosphericTemperature"] = float(self.fff.get("AtmosphericTemperature",(0,))[0])
+        self.header["calibration"]["radiometric"]["RelativeHumidity"] = float(self.fff.get("RelativeHumidity",(0.5,))[0])
+        self.header["calibration"]["radiometric"]["coretemp"] = float(self.fff.get("Coretemp",(0,))[0])
 
         
 
@@ -455,9 +588,10 @@ class ImageAra(Image):
             self.load(imgpath,onlyheader=onlyheader)
         
     def load(self,imgpath,headersize = 512 ,resolution = (640,512),bitsPerPixel = np.uint16,onlyheader=False):
-        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
-            "calibration":{"geometric":{},"radiometric":{},"boresight":{}}
-            }
+        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
+         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
+                    "thumbnail":{},     }
+    
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
         try:
@@ -543,11 +677,46 @@ class ImageAra(Image):
     def get_meta(self):
         self.exif = self.rawheader
         self.xmp = ""
-        self.header["file"]["size"] = self.rawheader["bitmap"]["filelength"]            
+        
+        self.header["file"]["name"] = self.filename        
         self.header["image"]["width"] = self.rawheader["bitmap"]["width"]               
         self.header["image"]["height"] = self.rawheader["bitmap"]["height"]       
-        self.header["file"]["name"] = self.filename        
         self.header["image"]["bitdepth"] = self.rawheader["bitmap"]["bitperpixel"]      
+        
+        self.header["camera"]["roll"] = self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
+        self.header["camera"]["yaw"] = self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
+        self.header["camera"]["pitch"] = self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2        
+        self.header["camera"]["model"] = str(self.rawheader["camera"]["partnum"].strip(b"\x00"))
+        self.header["camera"]["make"] = "Intel"
+        
+        self.header["uav"]["roll"] = self.rawheader["falcon"]["angle_roll"]/10.0**2             
+        self.header["uav"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2               
+        self.header["uav"]["pitch"] = self.rawheader["falcon"]["angle_pitch"]/10.0**2              
+        
+        self.header["gps"]["latitude"] = self.rawheader["falcon"]["gps_lat"]/10.0**7            
+        self.header["gps"]["longitude"] = self.rawheader["falcon"]["gps_long"]/10.0**7      
+        self.header["gps"]["rel_altitude"] = self.rawheader["falcon"]["baro_height"]/10.0**3        
+        #self.header["gps"]["abs_altitude"] = -9999
+        
+        self.header["gps"]["date time"] = UTCFromGps(self.rawheader["falcon"]["gps_week"],
+                                                        self.rawheader["falcon"]["gps_time_ms"])
+        
+        UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
+        
+        self.header["gps"]["UTM_X"] = UTM_X
+        self.header["gps"]["UTM_Y"] = UTM_Y
+        self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
+        self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
+        
+        
+        self.header["gps"]["hor_accuracy"] = self.rawheader["falcon"]["gps_hor_accuracy"]/10.0**3       
+        self.header["gps"]["hor_accuracy"] = self.rawheader["falcon"]["gps_vert_accuracy"]/10.0**3  
+        self.header["gps"]["speed_accuracy"] = self.rawheader["falcon"]["gps_speed_accuracy"]/10.0**3   
+        self.header["gps"]["speed_x"] = self.rawheader["falcon"]["gps_speed_x"]/10.0**3             
+        self.header["gps"]["speed_y"] = self.rawheader["falcon"]["gps_speed_y"]/10.0**3             
+        
+        
+        self.header["file"]["size"] = self.rawheader["bitmap"]["filelength"]            
         self.header["image"]["compression"] = self.rawheader["bitmap"]["compression"]       
         
         self.header["file"]["asctec_version"] = self.rawheader["asctec"]["version"]         
@@ -562,30 +731,11 @@ class ImageAra(Image):
         self.header["camera"]["serial_sensor"] = self.rawheader["camera"]["sernum_sensor"]        
         self.header["camera"]["version"] = self.rawheader["camera"]["version"]              
         self.header["camera"]["fw_version"] = self.rawheader["camera"]["fw_version"]        
-        self.header["camera"]["coretemp"] = self.rawheader["camera"]["sensortemperature"]/10.0
-        self.header["camera"]["model"] = self.rawheader["camera"]["partnum"]            
         self.header["camera"]["pixelshift_x"] = 17e-6            
         self.header["camera"]["pixelshift_y"] = 17e-6
-        self.header["gps"]["date time"] = UTCFromGps(self.rawheader["falcon"]["gps_week"],
-                                                        self.rawheader["falcon"]["gps_time_ms"])
         self.header["gps"]["dateTtime"] = UTCFromGps(self.rawheader["falcon"]["gps_week"],
                                                         self.rawheader["falcon"]["gps_time_ms"])
         
-        self.header["gps"]["longitude"] = self.rawheader["falcon"]["gps_long"]/10.0**7      
-        self.header["gps"]["latitude"] = self.rawheader["falcon"]["gps_lat"]/10.0**7            
-        self.header["gps"]["rel_altitude"] = self.rawheader["falcon"]["baro_height"]/10.0**3        
-        self.header["gps"]["hor_accuracy"] = self.rawheader["falcon"]["gps_hor_accuracy"]/10.0**3       
-        self.header["gps"]["hor_accuracy"] = self.rawheader["falcon"]["gps_vert_accuracy"]/10.0**3  
-        self.header["gps"]["speed_accuracy"] = self.rawheader["falcon"]["gps_speed_accuracy"]/10.0**3   
-        self.header["gps"]["speed_x"] = self.rawheader["falcon"]["gps_speed_x"]/10.0**3             
-        self.header["gps"]["speed_y"] = self.rawheader["falcon"]["gps_speed_y"]/10.0**3             
-        
-        self.header["uav"]["pitch"] = self.rawheader["falcon"]["angle_pitch"]/10.0**2              
-        self.header["uav"]["roll"] = self.rawheader["falcon"]["angle_roll"]/10.0**2             
-        self.header["uav"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2               
-        self.header["camera"]["pitch"] = self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2        
-        self.header["camera"]["roll"] = self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
-        self.header["camera"]["yaw"] = self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
         
         self.header["file"]["asctec_fw_version"] = {"major":self.rawheader["firmware_version"]["major"],
                                                     "minor":self.rawheader["firmware_version"]["minor"],
@@ -604,12 +754,6 @@ class ImageAra(Image):
         self.header["gps"]["acc_x"] = self.rawheader["dlr"]["gps_acc_x"]/10.0**3           
         self.header["gps"]["acc_y"] = self.rawheader["dlr"]["gps_acc_y"]/10.0**3
         
-        UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
-        
-        self.header["gps"]["UTM_X"] = UTM_X
-        self.header["gps"]["UTM_Y"] = UTM_Y
-        self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
-        self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
         
         self.header["calibration"]["changed_flags"] = self.rawheader["dlr"]["changed_flags"]     
         self.header["calibration"]["error_flags"] = self.rawheader["dlr"]["error_flags"]         
@@ -621,7 +765,10 @@ class ImageAra(Image):
         self.header["calibration"]["radiometric"]["B"] = self.rawheader["dlr"]["radiometric_B"]/10.0**2     
         self.header["calibration"]["radiometric"]["R"] = self.rawheader["dlr"]["radiometric_R"]/10.0**3     
         self.header["calibration"]["radiometric"]["F"] = self.rawheader["dlr"]["radiometric_F"]/10.0**3     
+        self.header["calibration"]["radiometric"]["coretemp"] = self.rawheader["camera"]["sensortemperature"]/10.0
+        
         self.header["calibration"]["radiometric"]["timestamp"] = self.rawheader["dlr"]["radiometric_calib_timestamp"] 
+        
         self.header["calibration"]["geometric"]["fx"] = self.rawheader["dlr"]["geometric_fx"]/10.0**1       
         self.header["calibration"]["geometric"]["fy"] = self.rawheader["dlr"]["geometric_fy"]/10.0**1       
         self.header["calibration"]["geometric"]["cx"] = self.rawheader["dlr"]["geometric_cx"]/10.0**1       
@@ -648,9 +795,9 @@ class ImageTiff(Image):
             self.load(imgpath,onlyheader=onlyheader)
         
     def load(self,imgpath,onlyheader=False):
-        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
-            "calibration":{"geometric":{},"radiometric":{},"boresight":{}}
-            }
+        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
+         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
+                    "thumbnail":{},     }
         self.exif = {}
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
@@ -663,9 +810,15 @@ class ImageTiff(Image):
                     for tag in page.tags.values():
                         self.exif[tag.name] = tag.value
             self.xmp = BeautifulSoup(self.exif["XMP"],"lxml")
-            self.get_meta()
+           # print ("EXIF",self.exif)      
+           # print ("XMP",self.xmp)      
+            if str(self.exif.get("Make","")) == "DJI":
+                self.fill_header_dji()
+            elif str(self.exif.get("Make","")) == "FLIR":
+                self.fill_header_flir()
+                
         except FileNotFoundError as e:
-            logging.error(e)
+            logging.error(e,exc_info=True)
             
         except:
             logging.error("ImageTiff load image failed", exc_info=True)
@@ -680,35 +833,98 @@ class ImageTiff(Image):
             dd *= -1
         return dd;
 
-    def get_meta(self):
+    def fill_header_flir(self):
         self.header["file"]["name"] = self.filename
-        
-        self.header["gps"]["latitude"]  = self.dms2dd(self.exif["GPSTag"]["GPSLatitude"],self.exif["GPSTag"]["GPSLatitudeRef"])
-        self.header["gps"]["longitude"] = self.dms2dd(self.exif["GPSTag"]["GPSLongitude"],self.exif["GPSTag"]["GPSLongitudeRef"])
-        
-        self.header["gps"]["relaltitude"] = self.evaldiv(self.xmp.find("flir:mavrelativealtitude").text)
-        self.header["gps"]["absaltitude"] = float(self.exif["GPSTag"]["GPSAltitude"][0])/self.exif["GPSTag"]["GPSAltitude"][1]
-        self.header["gps"]["datetime"] = self.exif["ExifTag"]["DateTimeOriginal"]
-        
-        self.header["uav"]["pitch"] = self.evaldiv(self.xmp.find("flir:mavpitch").text)
-        self.header["uav"]["roll"] = self.evaldiv(self.xmp.find("flir:mavroll").text)
-        self.header["uav"]["yaw"] = self.evaldiv(self.xmp.find("flir:mavyaw").text)
-        
-        self.header["camera"]["serial"] = self.exif["CameraSerialNumber"]
-        self.header["camera"]["model"] = self.exif["Model"]
-        self.header["camera"]["make"] = self.exif["Make"]
-        self.header["file"]["fw_version"] = self.exif["Software"]
-        
-        self.header["camera"]["pitch"] = self.evaldiv(self.xmp.find("camera:pitch").text)
-        self.header["camera"]["roll"] = self.evaldiv(self.xmp.find("camera:roll").text)
-        self.header["camera"]["yaw"] = self.evaldiv(self.xmp.find("camera:yaw").text)
-        
         self.header["image"]["width"] = self.exif["ImageWidth"]
         self.header["image"]["height"] = self.exif["ImageLength"]
         self.header["image"]["bitdepth"] = self.exif["BitsPerSample"]
+        
+        self.header["camera"]["roll"] = self.extract_xmp("camera:roll")
+        self.header["camera"]["yaw"] = self.extract_xmp("camera:yaw")
+        self.header["camera"]["pitch"] = self.extract_xmp("camera:pitch")
+        self.header["camera"]["model"] = self.exif["Model"]
+        self.header["camera"]["make"] = self.exif["Make"]
+        self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
+        self.header["uav"]["yaw"] = self.extract_xmp("flir:mavyaw")
+        self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch")
+        self.header["gps"]["latitude"]  = self.convert_latlon(self.exif["GPSTag"]["GPSLatitude"],self.exif["GPSTag"]["GPSLatitudeRef"])
+        self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPSTag"]["GPSLongitude"],self.exif["GPSTag"]["GPSLongitudeRef"])
+        self.header["gps"]["rel_altitude"] = self.extract_xmp("flir:mavrelativealtitude")
+        self.header["gps"]["abs_altitude"] = float(self.exif["GPSTag"]["GPSAltitude"][0])/self.exif["GPSTag"]["GPSAltitude"][1]
+        
         self.header["image"]["compression"] = self.exif["Compression"]
+        self.header["gps"]["datetime"] = self.exif["ExifTag"]["DateTimeOriginal"]
+        self.header["camera"]["serial"] = self.exif["CameraSerialNumber"]
+        self.header["file"]["fw_version"] = self.exif["Software"]
+        
+ 
+    def fill_header_dji(self):
+        a = self.xmp.find("rdf:description")
+        if a == None: return
+        self.header["file"]["name"] = self.filename
+        self.header["image"]["width"] = self.extract_exif("ImageWidth")#self.width #extract_exif("EXIF ExifImageWidth")
+        self.header["image"]["height"] = self.extract_exif("ImageLength")#self.height
+        self.header["image"]["bitdepth"] = self.extract_exif("BitsPerSample")     
+        
+        self.header["camera"]["roll"] = float(a.get("drone-dji:gimbalrolldegree",0))
+        self.header["camera"]["yaw"] = float(a.get("drone-dji:gimbalyawdegree",0))
+        self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",0))
+        self.header["camera"]["model"] = a.get("tiff:model",0)
+        self.header["camera"]["make"] = a.get("tiff:make",0)
+        self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
+        self.header["uav"]["yaw"] = float(a.get("drone-dji:flightyawdegree",0))
+        self.header["uav"]["pitch"] = float(a.get("drone-dji:flightpitchdegree",0))
+        self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPSTag"]["GPSLatitude"],self.exif["GPSTag"]["GPSLatitudeRef"])
+        self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPSTag"]["GPSLongitude"],self.exif["GPSTag"]["GPSLongitudeRef"])
+        self.header["gps"]["rel_altitude"]=float(a.get("drone-dji:relativealtitude",0))
+        self.header["gps"]["abs_altitude"]=float(a.get("drone-dji:absolutealtitude",0))
+        self.header["gps"]["gpsmapdatum"] = self.exif["GPSTag"]["GPSMapDatum"]
             
-   
+        UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
+        self.header["gps"]["UTM_X"] = UTM_X
+        self.header["gps"]["UTM_Y"] = UTM_Y
+        self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
+        self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
+        
+        self.header["file"]["about"]=a.get("rdf:about",0)
+        self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
+        self.header["file"]["createdate"]=a.get("xmp:createdate",0)
+        self.header["file"]["format"]=a.get("dc:format",0)
+        self.header["file"]["version"]=a.get("crs:version",0)
+         
+        self.header["calibration"]["geometric"]["fx"]=float(a.get("drone-dji:calibratedfocallength",0))
+        self.header["calibration"]["geometric"]["cx"]=float(a.get("drone-dji:calibratedopticalcenterx",0))
+        self.header["calibration"]["geometric"]["cy"]=float(a.get("drone-dji:calibratedopticalcentery",0))
+        
+        self.header["image"]["make"] = self.extract_exif("Make")
+        self.header["image"]["xresolution"] = self.extract_exif("Image XResolution")
+        self.header["image"]["yresolution"] = self.extract_exif("Image YResolution")
+        self.header["image"]["resolutionunit"] = self.extract_exif("Image ResolutionUnit")
+        self.header["image"]["software"] = self.extract_exif("Image Software")
+        self.header["image"]["datetime"] = self.extract_exif("Image DateTime")
+        self.header["image"]["artist"] = self.extract_exif("Image Artist")
+        self.header["image"]["copyright"] = self.extract_exif("Image Copyright")
+        self.header["image"]["exifoffset"] = self.extract_exif("Image ExifOffset")
+        self.header["image"]["gpsinfo"] = self.extract_exif("Image GPSInfo")
+        
+        self.header["rawimage"]["height"] = self.extract_exif("ImageLength")
+        self.header["rawimage"]["width"] = self.extract_exif("ImageWidth")
+        self.header["rawimage"]["bitdepth"] = self.extract_exif("BitsPerSample")          
+        
+        self.header["thumbnail"]["compression"] = self.extract_exif("Thumbnail Compression")
+        self.header["thumbnail"]["xresolution"] = self.extract_exif("Thumbnail XResolution")
+        self.header["thumbnail"]["yresolution"] = self.extract_exif("Thumbnail YResolution")
+        self.header["thumbnail"]["ResolutionUnit"] = self.extract_exif("Thumbnail ResolutionUnit")
+        self.header["thumbnail"]["JPEGInterchangeFormat"] = self.extract_exif("Thumbnail JPEGInterchangeFormat")
+        self.header["thumbnail"]["JPEGInterchangeFormatLength"] = self.extract_exif("Thumbnail JPEGInterchangeFormatLength")
+        
+        self.header["exif"]["FNumber"] = self.extract_exif("Exif FNumber")
+        self.header["exif"]["DateTimeOriginal"] = self.extract_exif("EXIF DateTimeOriginal")
+        self.header["exif"]["ApertureValue"] = self.extract_exif("EXIF ApertureValue")
+        self.header["exif"]["FocalLength"] = self.extract_exif("EXIF FocalLength")
+        self.header["exif"]["SubSecTimeOriginal"] = self.extract_exif("EXIF SubSecTimeOriginal")
+        self.header["exif"]["FocalPlaneResolutionUnit"] = self.extract_exif("EXIF FocalPlaneResolutionUnit")
+    
         
             
 if  __name__=="__main__":

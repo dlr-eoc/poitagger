@@ -32,6 +32,8 @@ from __future__ import print_function
 from PyQt5 import QtCore,QtGui,uic
 import pyqtgraph as pg
 import pyqtgraph.exporters
+from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
+
 import numpy as np
 #import cv2
 
@@ -41,14 +43,66 @@ import logging
 
 from . import image 
 from . import PATHS
+from . import nested
 #import asctec
 from . import utils2
 
 #widgets
 #import imageprocessing2
 from . import temp
-from . import PATHS   
 SIZE = 30 # This is just the distance for the Labeling of the Pois
+
+
+class Action2ParameterItem(ParameterItem):
+    def __init__(self, param, depth):
+        ParameterItem.__init__(self, param, depth)
+        
+        
+        self.layoutWidget = QtGui.QWidget()
+        self.layout = QtGui.QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(2)
+        self.layoutWidget.setLayout(self.layout)
+        icon  = QtGui.QIcon(os.path.join(PATHS["ICONS"],'maximize-512.png'))
+        self.button = QtGui.QPushButton()
+        self.button.setIcon(icon)
+        self.displayLabel = QtGui.QLabel()
+        self.displayLabel.setText(param.name())
+        self.layout.addWidget(self.displayLabel)
+        self.layout.addSpacing(100)
+        self.layout.addWidget(self.button)
+        self.layout.addStretch()
+        self.button.clicked.connect(self.buttonClicked)
+        param.sigNameChanged.connect(self.paramRenamed)
+        self.setText(0, '')
+        
+    def treeWidgetChanged(self):
+        ParameterItem.treeWidgetChanged(self)
+        tree = self.treeWidget()
+        if tree is None:
+            return
+        
+        tree.setFirstItemColumnSpanned(self, True)
+        tree.setItemWidget(self, 0, self.layoutWidget)
+        
+    def paramRenamed(self, param, name):
+        self.button.setText(name)
+        
+    def buttonClicked(self):
+        self.param.activate()
+        
+class Action2Parameter(Parameter):
+    """Used for displaying a button within the tree."""
+    itemClass = Action2ParameterItem
+    sigActivated = QtCore.Signal(object)
+    
+    def activate(self):
+        self.sigActivated.emit(self)
+        self.emitStateChanged('activated', None)
+        
+registerParameterType('action2', Action2Parameter, override=True)
+
+    
 
 class Img(QtGui.QWidget):
     log = QtCore.pyqtSignal(str)
@@ -60,12 +114,10 @@ class Img(QtGui.QWidget):
     imwidth = 640
     imheight = 512
     
-    def __init__(self,conf,startimage):
+    def __init__(self,conf,startimage,settings):
         QtGui.QWidget.__init__(self)
         self.w = pg.GraphicsLayoutWidget()
-        
-        self.settings = QtCore.QSettings("conf.ini", QtCore.QSettings.IniFormat)
-        self.settings.setFallbacksEnabled(False) 
+        self.settings = settings
         
         self.vbox = self.w.addViewBox(lockAspect=True,enableMenu=False,invertY=True)
         self.vbox.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight))#,padding=0.0
@@ -75,14 +127,44 @@ class Img(QtGui.QWidget):
         self.vboxdebug.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight))#,padding=0.0
         
         
+        self.imgUI = uic.loadUi(os.path.join(PATHS["UI"],"image.ui"))
         self.infoUI = uic.loadUi(os.path.join(PATHS["UI"],"imgInfo.ui"))
         self.viewCtrlUI = uic.loadUi(os.path.join(PATHS["UI"],'viewcontrol.ui'))
         self.imgDebugUI = uic.loadUi(os.path.join(PATHS["UI"],"imgDebug.ui"))
         self.normkitzUI = uic.loadUi(os.path.join(PATHS["UI"],"normkitz.ui"))
         
+        self.t = ParameterTree(showHeader=False)
+        self.imgUI.horizontalLayout.addWidget(self.t)
+        
+        params = [
+            {'name': 'Mouse', 'type': 'group', 'children': [
+                {'name': 'x', 'type': 'int', 'value': 0, 'readonly':True},
+                {'name': 'y', 'type': 'int', 'value': 0, 'readonly':True},
+                {'name': 'Wert (dn)', 'type': 'int', 'value': 0, 'readonly':True},
+                {'name': 'Temp', 'type': 'float', 'value': 0 , 'visible':False, 'suffix': '°C', 'readonly':True}]},
+            {'name': 'Image', 'type': 'group', 'children': [
+                {'name': 'dn min', 'type': 'int', 'value': 0, 'readonly':True},
+                {'name': 'dn max', 'type': 'int', 'value': 0, 'readonly':True},
+                {'name': 'temp min', 'type': 'float', 'value': 0, 'suffix': '°C', 'readonly':True},
+                {'name': 'temp max', 'type': 'float', 'value': 0, 'suffix': '°C', 'readonly':True}
+            ]},
+            {'name': 'Zoom', 'type': 'int', 'value': 100, 'suffix': '%'},
+            {'name': 'fullscreen', 'type': 'action'},
+            {'name': 'flip lr', 'type': 'bool'},
+            {'name': 'flip up', 'type': 'bool'},
+            ]
+    
+            
+            
+        self.p = Parameter.create(name='params', type='group',children=params)
+        self.t.setParameters(self.p, showTop=False)
+        self.p.child("fullscreen").sigActivated.connect(lambda: self.vbox.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight),padding=0.0))
         self.conf = conf
         #self.settings = settings
         self.histlut = pg.HistogramLUTWidget()
+        self.imgUI.horizontalLayout.addWidget(self.histlut)
+        
+        #self.histlut.setMinimumHeight(95)
         #self.proc = imageprocessing2.ImageProcessing(self.settings)
         self.temp = temp.Temp()
         self.curimg = startimage
@@ -95,15 +177,18 @@ class Img(QtGui.QWidget):
         
         self.infoUI.zoom.editingFinished.connect(lambda: self.setZoom(self.infoUI.zoom.value()))#lambda: self.vbox.setRange(QtCore.QRect(0,0,640,512)
         
+        self.p.child('flip lr').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
+        self.p.child('flip up').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
         
         self.w.scene().sigMouseMoved.connect(self.mouseMoved)
         self.w.scene().sigMouseClicked.connect(self.pixelClicked)
+        
       #  self.proc.reload.connect(lambda: self.loadImg(self.curimg))
         
-        self.temp.verticalLayout.addWidget(self.normkitzUI)
-        self.temp.verticalLayout.addWidget(self.infoUI)
-        self.temp.histVL.addWidget(self.histlut)
-        self.temp.histVL.addWidget(self.histlut)
+        #self.temp.verticalLayout.addWidget(self.normkitzUI)
+     #   self.temp.verticalLayout.addWidget(self.infoUI)
+       # self.temp.histVL.addWidget(self.histlut)
+      #  self.imgUI.horizontalLayout.addWidget(self.histlut)
         
      #   self.imgDebugUI.pushButton.clicked.connect(self.proc.cutout)
             
@@ -141,6 +226,7 @@ class Img(QtGui.QWidget):
         swidth = self.vbox.screenGeometry().width()
         width = x2-x1
         zoom = swidth / width *100
+        self.p.child('Zoom').setValue(zoom)
         self.infoUI.zoom.setValue(zoom)
         self.infoUI.x_view.setValue(x1)
         self.infoUI.y_view.setValue(y1)
@@ -153,8 +239,20 @@ class Img(QtGui.QWidget):
     def mouseMoved(self,pos):
         try:
             pt = self.image.mapFromScene(pos)
-            self.infoUI.x_mouse.setValue(pt.x())
-            self.infoUI.y_mouse.setValue(pt.y())
+            x,y = int(pt.x()),int(pt.y())
+            self.p.child('Mouse').child('x').setValue(x)
+            self.p.child('Mouse').child('y').setValue(y)
+            if not  0 <= x < self.imwidth: 
+                self.p.child('Mouse').child('Wert (dn)').setValue(0)
+                return
+            if not  0 <= y < self.imheight: 
+                self.p.child('Mouse').child('Wert (dn)').setValue(0)
+                return
+            dn = self.ara.rawbody[y, x]
+            self.p.child('Mouse').child('Wert (dn)').setValue(dn)
+            
+            #self.infoUI.x_mouse.setValue(pt.x())
+            #self.infoUI.y_mouse.setValue(pt.y())
         except:
             pass
         
@@ -173,10 +271,14 @@ class Img(QtGui.QWidget):
             return 1
             
     def flip(self,img):
-        self.fliplr = True if self.infoUI.CVfliphorCheckBox.isChecked() else False
-        self.flipud = True if self.infoUI.CVflipverCheckBox.isChecked() else False
+        self.fliplr = True if self.p.child('flip lr').value() else False
+        self.flipud = True if self.p.child('flip up').value() else False
         lrimage = img if not self.fliplr else np.fliplr(img)
-        return lrimage.T if not self.flipud else np.flipud(lrimage).T
+        out = lrimage if not self.flipud else np.flipud(lrimage)
+        if len(out.shape)==3: #rgb color image
+            return out.transpose([1,0,2])
+        else:
+            return out.T
         
     def loadImg(self,curimg):
         self.curimg = curimg
@@ -185,28 +287,16 @@ class Img(QtGui.QWidget):
         if not os.path.isfile(curimg): return
         
         self.ara = image.Image.factory(curimg)
-        
+        self.log.emit(str(self.ara.exif))
         if hasattr(self.ara, 'rawbody'):
             img = self.ara.rawbody 
         else:
             img = self.ara.image 
         
-        # try:
-            # if str(curimg).lower().endswith((".tiff",".tif")):
-                # self.ara = utils2.LoadTiff(curimg)
-            # elif str(curimg).lower().endswith((".tiff",".tif")):
-                # self.ara = utils2.LoadJpg(curimg)
-            # else:
-                #pass
-                
-        # except:
-            # print("no image loaded!")
-            # return 
         try:
             self.imheight,self.imwidth = img.shape[0],img.shape[1]
         except:
             print("ERROR!, shape:", img.shape)
-  #      self.proc.load(self.ara,self.conf)
         
         pixmap = QtGui.QPixmap(100, 100)
         pixmap.fill(QtCore.Qt.white)
@@ -222,38 +312,20 @@ class Img(QtGui.QWidget):
         
         painter.end()
         preprocessed = self.flip(img)
-        #preprocessed = self.flip(self.ara.image.astype(int))
-#        self.proc.viewCtrlUI.normkitz.setPixmap(pixmap)
+        #print("IMAGESHAPE:",preprocessed.shape,img.shape)
+        self.image = pg.ImageItem(preprocessed)
         
-  #      preprocessed, overlay = self.proc.preprocessed()
-        #self.overlay = np.zeros_like(self.image, np.uint8) 
+        min = np.min(img)
+        max = np.max(img)
+        self.p.child('Image').child("dn min").setValue(min)
+        self.p.child('Image').child("dn max").setValue(max)
         
-        #self.flip(self.image), self.flip(self.overlay)
-        #if self.imgDebugUI.checkBox.isChecked():
-        #    preprocessed = np.array(preprocessed * 2 * self.mask, dtype=np.uint16)
-        #print ("####################")
-        #print("imgshape",preprocessed.shape)
-        if len(preprocessed.shape)<3:
-            self.image = pg.ImageItem(preprocessed)
-            self.temp.tempminmax(self.ara)
-            self.histlut.setImageItem(self.image)
-            self.vbox.clear()
-            self.vbox.addItem(self.image)
-        else:
-            print ("No Colorimages supported yet")
-            #self.vbox.setImage(self.ara.image)
-        #self.image = pg.ImageItem(self.ara.image)
-        #self.image = pg.image(self.ara.image)
+        self.temp.tempminmax(self.ara)
+        self.histlut.setImageItem(self.image)
+        self.vbox.clear()
+        self.vbox.addItem(self.image)
         
         
-        
-      #  if self.proc.detectionUI.CVonCheckBox.isChecked():
-
-       #     overlay2 = cv2.merge((overlay.T*self.conf.r,overlay.T*self.conf.g,overlay.T*self.conf.b,overlay.T*self.conf.a))
-       #     overlay3 = QtGui.QPixmap.fromImage(utils2.toQImage(overlay2))
-       #     self.overlay = QtGui.QGraphicsPixmapItem(overlay3)
-       #     self.vbox.addItem(self.overlay)
-        #print(self.ara["header"])    
         try:
             if self.ara.header["calibration"].get("error_flags",0) & image.ERRORFLAGS.ALL_META:
                 hlstr = "QLabel { background-color : #ff0000; }"  #self.imagename.setStyleSheet();
