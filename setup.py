@@ -35,7 +35,6 @@ setup(name='poitagger',
         'PyQt5',
         'numpy',
         'lxml',
-        'pyqtgraph>=0.11',
         'tifffile',
         'utm',
         'pytz',
@@ -48,6 +47,9 @@ setup(name='poitagger',
         'simplejson',
         'exifread',
         'Pillow'
+      ],
+      dependency_links = [
+        'https://github.com/pyqtgraph/pyqtgraph/archive/develop.zip'
       ],
       package_data={
             '': ['*.js','*.html','*.css','*.ui','ui/*.*','ui/icons/*.*','*.ini'],

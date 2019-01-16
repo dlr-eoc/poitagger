@@ -5,14 +5,11 @@ Fehlermeldungen - Popup:
  
 sonstiges, Bugfixes:
 - bei klick auf "sd-karte einlesen", wenn keine SD-Karte drin ist führt zu Absturz
-- beim Foto durchblättern nicht gleich wieder von vorne anfangen durchzublättern
 
 - normkitz beim zoomen refresh
 - zweite SD-Karte einlesen: kein progressbar (ist bei 100%)
 - automatisches neuladen nach kalibrierung übertragen
 
-- ID-Zählreihenfolge bei alle Pois anzeigen ist falsch
-- springe zu Bild wenn poi bei "alle Pois" angeklickt
 - Höhenmodell einbauen bei poi.projekt
 
 - semaphore bei workflow, damit nicht zwei einleseprozesse gleichzeitig vorkommen
@@ -33,13 +30,16 @@ generell/neu/system:
 - config/properties komplett überarbeiten. generelle Struktur überlegen, wie man properties global behandelt und Einstellungen vornehmen kann.
 - ar2-Files mit optimierten vorschau Bildern 
 - Handling von Plugins/neuen Methoden
-- Methode für generell Ordnerbasierte (nicht einzelbild-basierte) Anwendung
-- Umstrukturierung der UI
 
 
 
 
 erledigt:
+- ID-Zählreihenfolge bei alle Pois anzeigen ist falsch
+- springe zu Bild wenn poi bei "alle Pois" angeklickt
+- Methode für generell Ordnerbasierte (nicht einzelbild-basierte) Anwendung
+- Umstrukturierung der UI
+- beim Foto durchblättern nicht gleich wieder von vorne anfangen durchzublättern
 - geoview: bei ISA-Copter Track anzeigen # if not (raw.header.start_lat,raw.header.start_lon) == (0,0): rausgenommen aus workflow.py (line 195)
 - Geoview: Pois anzeigen
 - pois-xml wird bei ver py3 mit leer überschrieben
