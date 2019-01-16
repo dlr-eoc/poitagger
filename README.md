@@ -10,6 +10,7 @@ Requirements
 
 
   * python >= 3.4  (tested with python 3.6 and 3.7)
+  * pip >=18.1 
   * NumPy
   * PyQt5
   * pyqtgraph
