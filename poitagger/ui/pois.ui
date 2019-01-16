@@ -38,8 +38,9 @@
    </attribute>
    <addaction name="actionNeuerMarker"/>
    <addaction name="actionReproMarker"/>
-   <addaction name="actionAllePois"/>
-   <addaction name="actionUpload"/>
+   <addaction name="actionshow"/>
+   <addaction name="separator"/>
+   <addaction name="actiondelLayer"/>
   </widget>
   <action name="actionNeuerMarker">
    <property name="checkable">
@@ -90,6 +91,25 @@
    </property>
    <property name="text">
     <string>Upload</string>
+   </property>
+  </action>
+  <action name="actionnewLayer">
+   <property name="text">
+    <string>newLayer</string>
+   </property>
+  </action>
+  <action name="actiondelLayer">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/delete_.png</normaloff>icons/delete_.png</iconset>
+   </property>
+   <property name="text">
+    <string>delLayer</string>
+   </property>
+  </action>
+  <action name="actionshow">
+   <property name="text">
+    <string>show</string>
    </property>
   </action>
  </widget>

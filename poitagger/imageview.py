@@ -53,54 +53,54 @@ from . import temp
 SIZE = 30 # This is just the distance for the Labeling of the Pois
 
 
-class Action2ParameterItem(ParameterItem):
-    def __init__(self, param, depth):
-        ParameterItem.__init__(self, param, depth)
+# class Action2ParameterItem(ParameterItem):
+    # def __init__(self, param, depth):
+        # ParameterItem.__init__(self, param, depth)
         
         
-        self.layoutWidget = QtGui.QWidget()
-        self.layout = QtGui.QHBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(2)
-        self.layoutWidget.setLayout(self.layout)
-        icon  = QtGui.QIcon(os.path.join(PATHS["ICONS"],'maximize-512.png'))
-        self.button = QtGui.QPushButton()
-        self.button.setIcon(icon)
-        self.displayLabel = QtGui.QLabel()
-        self.displayLabel.setText(param.name())
-        self.layout.addWidget(self.displayLabel)
-        self.layout.addSpacing(100)
-        self.layout.addWidget(self.button)
-        self.layout.addStretch()
-        self.button.clicked.connect(self.buttonClicked)
-        param.sigNameChanged.connect(self.paramRenamed)
-        self.setText(0, '')
+        # self.layoutWidget = QtGui.QWidget()
+        # self.layout = QtGui.QHBoxLayout()
+        # self.layout.setContentsMargins(0, 0, 0, 0)
+        # self.layout.setSpacing(2)
+        # self.layoutWidget.setLayout(self.layout)
+        # icon  = QtGui.QIcon(os.path.join(PATHS["ICONS"],'maximize-512.png'))
+        # self.button = QtGui.QPushButton()
+        # self.button.setIcon(icon)
+        # self.displayLabel = QtGui.QLabel()
+        # self.displayLabel.setText(param.name())
+        # self.layout.addWidget(self.displayLabel)
+        # self.layout.addSpacing(100)
+        # self.layout.addWidget(self.button)
+        # self.layout.addStretch()
+        # self.button.clicked.connect(self.buttonClicked)
+        # param.sigNameChanged.connect(self.paramRenamed)
+        # self.setText(0, '')
         
-    def treeWidgetChanged(self):
-        ParameterItem.treeWidgetChanged(self)
-        tree = self.treeWidget()
-        if tree is None:
-            return
+    # def treeWidgetChanged(self):
+        # ParameterItem.treeWidgetChanged(self)
+        # tree = self.treeWidget()
+        # if tree is None:
+            # return
         
-        tree.setFirstItemColumnSpanned(self, True)
-        tree.setItemWidget(self, 0, self.layoutWidget)
+        # tree.setFirstItemColumnSpanned(self, True)
+        # tree.setItemWidget(self, 0, self.layoutWidget)
         
-    def paramRenamed(self, param, name):
-        self.button.setText(name)
+    # def paramRenamed(self, param, name):
+        # self.button.setText(name)
         
-    def buttonClicked(self):
-        self.param.activate()
+    # def buttonClicked(self):
+        # self.param.activate()
         
-class Action2Parameter(Parameter):
-    """Used for displaying a button within the tree."""
-    itemClass = Action2ParameterItem
-    sigActivated = QtCore.Signal(object)
+# class Action2Parameter(Parameter):
+    # """Used for displaying a button within the tree."""
+    # itemClass = Action2ParameterItem
+    # sigActivated = QtCore.Signal(object)
     
-    def activate(self):
-        self.sigActivated.emit(self)
-        self.emitStateChanged('activated', None)
+    # def activate(self):
+        # self.sigActivated.emit(self)
+        # self.emitStateChanged('activated', None)
         
-registerParameterType('action2', Action2Parameter, override=True)
+# registerParameterType('action2', Action2Parameter, override=True)
 
     
 
@@ -109,7 +109,7 @@ class Img(QtGui.QWidget):
     loaded = QtCore.pyqtSignal(bool)
     highlighting = QtCore.pyqtSignal(str)
     sigMouseMode = QtCore.pyqtSignal(str) #["poi" , "temp"]
-    sigPixel = QtCore.pyqtSignal(int,int) #x,y,digitalNumber
+    sigPixel = QtCore.pyqtSignal(str,int,int) #x,y,digitalNumber
     saveimgdir = None
     imwidth = 640
     imheight = 512
@@ -347,21 +347,21 @@ class Img(QtGui.QWidget):
 #        x = x_mouse if not self.proc.fliplr else self.imwidth - x_mouse -1
 #        y = y_mouse if not self.proc.flipud else self.imheight - y_mouse -1
         return x,y
-        
+    
     def paintPois(self,liste): 
         if self.ara.header["calibration"].get("error_flags",0) & image.ERRORFLAGS.ALL_META: return
         for item in self.vbox.addedItems[:]:# nur die Overlays loeschen #self.scene.items():
             if type(item) in [QtGui.QGraphicsTextItem, QtGui.QGraphicsEllipseItem,]: # pg.graphicsItems.ImageItem.ImageItem: 
                 self.vbox.removeItem(item)
         for i in liste:
-            x,y = i[3],i[4]
-            y2 = i[4]+SIZE/2.0 #if not self.proc.flipud else self.imheight - i[4]+SIZE/2.0 -1
+            x,y = i["x"],i["y"]
+            y2 = y+SIZE/2.0 #if not self.proc.flipud else self.imheight - i[4]+SIZE/2.0 -1
             eli = QtGui.QGraphicsEllipseItem(x-SIZE/2.0,y-SIZE/2.0,SIZE,SIZE)
-            mytext = QtGui.QGraphicsTextItem(str(i[2])) 
+            mytext = QtGui.QGraphicsTextItem(str(i["name"])) 
             mytext.setPos(x-SIZE/2.0,y2)
-            if i[1]==self.imgname:
-                pcol = QtGui.QPen(QtGui.QColor("#ff0000")) if i[13] else QtGui.QPen(QtGui.QColor("#55ff00"))
-                col =  QtGui.QColor("#ff0000") if i[13] else QtGui.QColor("#55ff00") #self.conf.poicolor.color if i[13] else self.conf.poicolor2.color
+            if i["filename"]==self.imgname:
+                pcol = QtGui.QPen(QtGui.QColor("#ff0000"))
+                col =  QtGui.QColor("#ff0000") 
                 eli.setPen(pcol)
                 mytext.setDefaultTextColor(col)
             else:
@@ -382,10 +382,10 @@ class Img(QtGui.QWidget):
             if not  0 <= y < self.imheight: return 
             dn = self.ara.rawbody[y, x]
             if self.poiAction.isChecked():
-                eli = QtGui.QGraphicsEllipseItem(int(pt.x())-SIZE/2.0,int(pt.y())-SIZE/2.0,SIZE,SIZE)
-                eli.setPen(QtGui.QPen(QtGui.QColor("#ff0000")))
-                self.vbox.addItem(eli)
-                self.sigPixel.emit(x,y)
+    #            eli = QtGui.QGraphicsEllipseItem(int(pt.x())-SIZE/2.0,int(pt.y())-SIZE/2.0,SIZE,SIZE)
+    #            eli.setPen(QtGui.QPen(QtGui.QColor("#ff0000")))
+    #            self.vbox.addItem(eli)
+                self.sigPixel.emit(self.imgname,x,y)
             elif self.tempAction.isChecked():
                 self.temp.fill_pixtemp(x,y,dn)
         except:

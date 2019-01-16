@@ -35,7 +35,7 @@ from . import PATHS
 # Widgets
 from . import save_as
 from . import workflow
-from . import pois2
+from . import poiview
 from . import info
 from . import calib
 from . import geoview
@@ -68,7 +68,8 @@ class Main(QMainWindow):
         self.saveDialog = save_as.SaveAsDialog(self)
         
         self.conf = properties.PropertyDialog("Einstellungen",self.settings)
-        self.conf.setModal(True)       
+        self.conf.setModal(True)   
+        
         self.img = imageview.Img(self.conf,os.path.join(id,startfilename),self.settings)
         if self.useflight:
             self.flight = flightmeta.Flight(".poitagger.yml")
@@ -76,19 +77,25 @@ class Main(QMainWindow):
         self.calib = calib.Calib()
        # self.dem = dem.Dem()
         self.wf = workflow.Araloader()
+        
         #self.pois = pois.Pois(self.conf)
-        self.pois = pois2.PoisWidget()
-        self.pois.setMeta(self.flight.p.child("pois"))    
+        self.pois = poiview.PoiView()
+        self.pois.setMeta(self.flight.p.child("pois")) 
+        
         self.geomain = geoview.GeoWidget(self.settings)
+        
         self.treemain = treeview.TreeWidget(self)
         self.treemain.setRoot(rd)
         self.treeview = self.treemain.view
         self.treemodel = self.treeview.model
         self.treemodel.metafilename = ".poitagger.yml"
+        
         self.loadUI()
         self.shortcuts()
         self.connections()
+        
         self.treemain.view.setFocus()
+        
         self.log.emit("SETTINGS-FILE: "+PATHS["CONF"] + " , cwd: "+os.getcwd() +" , file: "+os.path.realpath(__file__) )
         
     def loadUI(self):
@@ -184,6 +191,10 @@ class Main(QMainWindow):
         self.escAction.triggered.connect(self.close)
         
     #    self.pois.liste.connect(self.img.paintPois) #selektierter Poi
+        self.pois.model.sigPois.connect(self.img.paintPois)
+        self.pois.sigJumpTo.connect(self.treemain.view.setCurrent)
+        self.pois.model.sigPois.connect(self.treemodel.pois)
+        self.pois.model.sigPois.connect(self.treemain.reloadPoiFiles)
         
         # aRA UEBERSCHREIBEN MIT EIGENEN wERTEN
         self.calib.conf.connect(lambda conf: self.wf.readFolder(self.treemain.view.imgdir,conf))
@@ -194,6 +205,7 @@ class Main(QMainWindow):
         if self.useflight:
             self.geomain.actionFitMap.triggered.connect(lambda: self.geomain.view.fitBounds(paramreduce.load(self.flight.p.child("general").child("bounding").getValues())))
             self.treemain.view.imgDirChanged.connect(lambda imgdir: self.flight.load(imgdir))
+          #  self.treemain.view.imgDirChanged.connect(self.pois.loadComboBox)
             self.flight.uavpath.connect(self.geomain.view.setUavPath)
             self.flight.pois.connect(self.geomain.view.loadpois)
     #        self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
@@ -204,7 +216,7 @@ class Main(QMainWindow):
         
         self.img.highlighting.connect(self.treemain.vb.imagename.setStyleSheet)
         
-        self.img.sigPixel.connect(self.pois.pos)
+        self.img.sigPixel.connect(self.pois.addView)
         self.img.sigMouseMode.connect(self.focusDockWidget)
         
     def gpx_to_gps(self):
@@ -338,6 +350,7 @@ class Main(QMainWindow):
     def fill_values(self,ara):
         self.info.load_data(ara.header)
         self.calib.load_data(ara.header)
+        self.pois.model.getPois(ara.filename)
     #    self.pois.load_data(ara,self.treemain.view.imgname,self.calib)#self.img.araalt,
         
     def isTopDockWidget(self,widget):

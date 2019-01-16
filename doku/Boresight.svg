@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="475.28125"
+   height="389.5625"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.5 r10040"
+   sodipodi:docname="Neues Dokument 1">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="115.82811"
+     inkscape:cy="45.540668"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="991"
+     inkscape:window-height="583"
+     inkscape:window-x="225"
+     inkscape:window-y="225"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-110.375,-101.8125)">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:10.7942667;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3761"
+       width="464.492"
+       height="378.75772"
+       x="115.7702"
+       y="107.20824"
+       inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\winkel.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#0000ff;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-opacity:0.99615383;stroke-dasharray:none"
+       id="path2989"
+       sodipodi:cx="401.03055"
+       sodipodi:cy="469.50415"
+       sodipodi:rx="120.20815"
+       sodipodi:ry="120.20815"
+       d="m 521.2387,469.50415 c 0,66.38913 -53.81902,120.20815 -120.20815,120.20815 -66.38913,0 -120.20815,-53.81902 -120.20815,-120.20815 0,-66.38913 53.81902,-120.20815 120.20815,-120.20815 66.38913,0 120.20815,53.81902 120.20815,120.20815 z"
+       transform="translate(-123.07617,-119.11678)"
+       inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\winkel.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 139.40105,157.36703 12.12183,317.1879 262.63966,-4.04061 8.08122,-111.11678 -139.40105,-10.10153 z"
+       id="path2991"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccc"
+       inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\winkel.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:10;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 137.14286,149.50504 145.71428,200 274.28572,8.57143"
+       id="path2985"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\winkel.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+  </g>
+</svg>

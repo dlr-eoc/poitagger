@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolBut
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
 import datetime
-from collections import OrderedDict,MutableMapping,MutableSequence
+from collections import OrderedDict,MutableMapping,MutableSequence,defaultdict
+import numpy as np
 
 from . import image
 from . import utils2
@@ -43,10 +44,12 @@ def dictToParam(k,v,**kwargs):
     if l>0 and kwargs["parentlist"][0] == "uavpath":
         if l==1: return {"name": str(k), 'type': "str", 'readonly':True,'value': v}
         return v
-    if l>2 and kwargs["parentlist"][0] == "pois" and  kwargs["parentlist"][2] == "data" :
-        if l>4: return v
-        elif l==4: return {"name": str(k), 'type': "str", 'readonly':True,'value': v}
-        return {"name": str(k), 'type': "group", 'children': v}
+    if l>0 and kwargs["parentlist"][0] == "pois":
+        return v
+    #if l>2 and kwargs["parentlist"][0] == "pois" and  kwargs["parentlist"][2] == "data" :
+    #    if l>4: return v
+    #    elif l==4: return {"name": str(k), 'type': "str", 'readonly':True,'value': v}
+    #    return {"name": str(k), 'type': "group", 'children': v}
         
     if not isinstance(v,(MutableMapping,MutableSequence,tuple)):
         return {"name": str(k), 'type': types.get(str(type(v)),"str"), 'readonly':True, 'decimals':9, 'value': v }
@@ -126,15 +129,16 @@ class FlightWidget(QMainWindow):
                 yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
                 
     
-class Flight(QtCore.QThread):
+class Flight(QtCore.QObject):
     import_enabled = False
     pois = QtCore.pyqtSignal(list)
     uavpath = QtCore.pyqtSignal(list)
     calibration = QtCore.pyqtSignal(dict)
     general = QtCore.pyqtSignal(dict)
     changed = QtCore.pyqtSignal()
+    loadfinished = QtCore.pyqtSignal()
     path = None
-    def __init__(self, filename= "flightmeta.yml"):
+    def __init__(self, filename= ".poitagger.yml"):
         super().__init__()
         self.filename= filename
         self.ifm = ImportFlightMeta()
@@ -148,7 +152,7 @@ class Flight(QtCore.QThread):
         #self.p.child("general").sigTreeStateChanged.connect(self.general.emit)
         #self.p.child("pois").sigTreeStateChanged.connect(self.pois.emit)
         self.p.child("uavpath").sigValueChanged.connect(self.prepareUavPath)
-        self.p.child("pois").sigTreeStateChanged.connect(self.preparePois)
+        #self.p.child("pois").sigTreeStateChanged.connect(self.preparePois)
         
     def preparePois(self,poisparam):
         #print("FM, POIS JETZT" )
@@ -184,10 +188,12 @@ class Flight(QtCore.QThread):
    
     def setFromImport(self,value):
         self.task = "restoreParameter"
+        #print(value)
         self.meta = nested.Nested(value,dictToParam).data
+       # print(self.meta)
         self.start()
 
-    def run(self):
+    def start(self): #run
         if self.task == "restoreParameter":
             self.p.restoreState(self.meta)
             
@@ -197,9 +203,16 @@ class Flight(QtCore.QThread):
                     self.p.restoreState(yaml.load(stream,Loader=yamlordereddictloader.Loader))
             except:
                 logging.error("Flightmeta load", exc_info=True)
-                
+        else:
+            self.p.child("general").clearChildren()
+            self.p.child("pois").clearChildren()
+            #self.p.child("images").clearChildren()
+            self.p.child("uavpath").clearChildren()
+            self.p.child("calibration").clearChildren()
+        self.loadfinished.emit()
         
     def load(self,path=None,filename=None):
+   #     print ("LOAD")
         if path:
             self.path = path
         if filename:
@@ -210,9 +223,17 @@ class Flight(QtCore.QThread):
                 self.ifm.load(self.path)
             elif os.path.exists(myyaml):
                 self._loadYaml()
+            else:
+    #            print("Empty")
+                self._loadEmpty()
         except:
-            logging.warning("Loading flightmeta failed")
+     #       print("Empty")
+            self._loadEmpty()
+#            logging.warning("Loading flightmeta failed")
     
+    def _loadEmpty(self):
+        self.task = "loadEmpty"
+        self.start()
     def _loadYaml(self):
         self.task = "loadYaml"
         self.start()
@@ -220,6 +241,10 @@ class Flight(QtCore.QThread):
     def save(self):
         if self.path == None: return
         try:
+            ppath = str(self.p.child("general").child("path").value())
+            text = "Der Pfad aus .poitagger.yml stimmt nicht mit dem Speicherort überein.\n .poitagger.yml: {0}, Speicherort: {1}".format(ppath,self.path)
+            if not ppath==self.path:
+                logging.warning(text)
             fpath = os.path.join(self.path,self.filename)
             if os.name == "nt":
                 import ctypes
@@ -233,10 +258,10 @@ class Flight(QtCore.QThread):
         except:
             logging.error("Flightmeta save", exc_info=True)
             
-    def change(self):
-        print("flight.change()")
-        print (self.p.child("uavpath").value())
-        print(self.p.child("general").child("bounding").getValues())
+    #def change(self):
+    #    print("flight.change()")
+    #    print (self.p.child("uavpath").value())
+    #    print(self.p.child("general").child("bounding").getValues())
        # print (self.p.child("uavpath").saveState())
        ##print (self.p.child("general").saveState())
        # self.set("blablabla",["general","path"])
@@ -247,7 +272,7 @@ class ImportFlightMeta(QtCore.QThread):
     finished = QtCore.pyqtSignal(dict)
     def __init__(self):
         QtCore.QObject.__init__(self)
-        self.Meta = {"general":None,"pois":[],"uavpath":[],"calibration":None}
+        self.Meta = {"general":None,"pois":[],"uavpath":[],"images":[], "calibration":None}
         
     def load(self,path=None):
         self.path = path
@@ -286,14 +311,33 @@ class ImportFlightMeta(QtCore.QThread):
             if lon is not None: Lon.append(lon) 
         if 0 in [len(Lat),len(Lon)]: return [[None,None],[None,None]]
         return [[min(Lon),min(Lat)],[max(Lon),max(Lat)]]
-    
+        
+    def _loadCalibration(self):
+        Geom = defaultdict(list)
+        Radi = defaultdict(list)
+        Bore = defaultdict(list)
+        for i in self.ImgHdr:
+            for k,v in i["calibration"]["geometric"].items(): Geom[k].append(v)
+            for k,v in i["calibration"]["radiometric"].items(): Radi[k].append(v)
+            for k,v in i["calibration"]["boresight"].items(): Bore[k].append(v)
+        geom,radi,bore = {},{},{}
+        
+        for k,v in Geom.items(): geom[k] = np.bincount(v).argmax()
+        for k,v in Radi.items(): radi[k] = np.bincount(v).argmax()
+        for k,v in Bore.items(): bore[k] = np.bincount(v).argmax()
+            
+        self.calibration = {"geometric":geom,"radiometric":radi,"boresight":bore}
+        
+        print (self.calibration)
+                                        
+        
+            
     def _importPois(self, poisxmlfile = "pois.xml"):
         xslt_root = etree.XML('''\
     <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:template match="/pois">
     <xsl:for-each select="p1oi">
-    - name: <xsl:value-of select="name/text()"/>
-      id: <xsl:value-of select="id/text()"/>
+    - name: <xsl:value-of select="name/text()"/>_<xsl:value-of select="id/text()"/>
       filename: <xsl:value-of select="filename/text()"/>
       latitude: <xsl:value-of select="latitude/text()"/>
       longitude: <xsl:value-of select="longitude/text()"/>
@@ -318,15 +362,35 @@ class ImportFlightMeta(QtCore.QThread):
         pois = yaml.load(str(result_tree)[23:])
         if pois == None: pois = []
         ts = datetime.datetime.fromtimestamp(os.path.getmtime(self.path)).isoformat()
-        return [{"timestamp": ts,"description":"initial dataset","data":pois}]
+        P = []
+        for i in pois:
+            if not i["found_time"] is None: 
+                try:
+                    ft = i["found_time"].isoformat()
+                except:
+                    ft = datetime.datetime.fromtimestamp(i["found_time"]).isoformat()
+            else:
+                ft = ""
+            P.append({"name":str(i["name"]), "type":"group", 
+                        "expanded":False, "renamable":True, "removable":True, "children": [{ 
+                        "name":i["filename"],"value":(i["pixel_x"],i["pixel_y"]), 
+                        "readonly":True, "paramtyp":"view", "removeable":True, "type":"str","renameable":False, 
+                        "latitude":i["latitude"],"longitude":i["longitude"],"elevation":i["elevation"],
+                        "found_time":ft}]})
+        out = {"name":"pois","type":"group", "expanded":True, "children":[{"name":"0","type":"group","children": [{"name":"timestamp","type":"str","readonly":True,
+                "value":ts},{"name":"description","type":"str","readonly":False,"value":"initial dataset"},
+                        {"name":"data","type":"group","readonly":True,"expanded":True, "children":P}]}]}
+        return out
     
     def run(self):
-        self.pois = []
+        self.pois = {"name":"pois","type":"group", "expanded":True, "children":[]}
+        self. images = []
         self.calibration = {}
         self.ImgHdr = self._loadImagesHeader()
+        self._loadCalibration()
         self._createUavPath()
         self.general = {"bounding":self._getBounding(self.ImgHdr),"path":self.path}
-        m = {"general": self.general, "pois":self.pois, "calibration": self.calibration, "uavpath": self.uavpath}
+        m = {"general": self.general, "pois":self.pois, "calibration": self.calibration, "images": self.images, "uavpath": self.uavpath}
         self.Meta.update(m)
         poispath = os.path.join(self.path, "pois.xml")
         if os.path.exists(poispath):
@@ -356,10 +420,10 @@ if __name__ == "__main__":
     
     vbox = QVBoxLayout()
     win.horizontalLayout.addLayout(vbox)
-    but = QPushButton()
-    but.setText("change")
-    vbox.addWidget(but)
-    but.clicked.connect(fm.change)
+   # but = QPushButton()
+   # but.setText("change")
+   # vbox.addWidget(but)
+   # but.clicked.connect(fm.change)
     
     but2 = QPushButton()
     but2.setText("save")

@@ -31,7 +31,23 @@ class TreeWidget(QMainWindow):
     def connections(self):
         self.vb.steps.connect(self.view.move)
         self.view.imgPathChanged.connect(self.progress)
+        self.actiontest.triggered.connect(self.setFilter)
+        self.view.imgDirChanged.connect(self.releasePoiFilter)
         
+    def releasePoiFilter(self):
+        if self.actiontest.isChecked():
+            self.actiontest.trigger()
+            
+    def reloadPoiFiles(self,poilist):
+        self.poifiles = [i["filename"] for i in poilist]
+        self.setFilter()
+        
+    def setFilter(self):
+        if self.actiontest.isChecked():
+            self.view.model.setNameFilters(self.poifiles)
+        else:
+            self.view.model.setNameFilters(["*"+x for x in image.SUPPORTED_EXTENSIONS])
+          
     def progress(self, path): 
         currentIdx = self.view.currentIndex()
         imgamount = self.view.model.rowCount(currentIdx.parent())
@@ -136,7 +152,10 @@ class TreeView(QTreeView):
         self.model.setNameFilters(["*"+x for x in image.SUPPORTED_EXTENSIONS])
         self.model.setNameFilterDisables(False)
         self.model.directoryLoaded.connect(self.rootPathLoaded)
+     #   self.sortByColumn(1,QtCore.Qt.AscendingOrder)
+     #   self.setSortingEnabled(True)
         
+     
     def loadRoot(self,root):
         self.rootdir = root
         self.model.setRootPath(root)
@@ -154,6 +173,12 @@ class TreeView(QTreeView):
             firstchild = self.model.index(0,0,rootindex)
             self.setCurrentIndex(firstchild)
     
+    def setCurrent(self,name):
+        curpath = self.current_path()        
+        curdir = curpath if os.path.isdir(curpath) else os.path.dirname(curpath)    
+        index = self.model.index(os.path.join(curdir,name))
+        self.setCurrentIndex(index)
+        
     def move(self,steps):
         i = self.currentIndex()
         newindex = self.model.sibling(i.row()+steps,0,i)
@@ -177,6 +202,7 @@ class TreeView(QTreeView):
         if upper.isValid():
             if self.visualRect(upper).y() < 0:
                 self.scrollTo(upper)
+        
         curpath = self.current_path()        
         lastpath = str(self.model.fileInfo(last).absoluteFilePath())
         self.currentPath.emit(curpath)

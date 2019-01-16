@@ -12,7 +12,8 @@ class TreeModel(QFileSystemModel):
         super(TreeModel, self).__init__(parent)
         self.loadpixmaps()
         self.metafilename = "flightmeta.yml"
-            
+        self.poifiles = []
+        
     def loadpixmaps(self):
         self.foldericon = QFileIconProvider().icon(QFileIconProvider.Folder).pixmap(16,16)
         #self.foldernotok = QtGui.QPixmap(os.path.join(PATHS["ICONS"],"file-poi.png"))
@@ -31,8 +32,14 @@ class TreeModel(QFileSystemModel):
             if section == 0:
                 return self.rootPath()
         
+    def pois(self,poilist):
+        self.poifiles = [i["filename"] for i in poilist]
+        self.layoutChanged.emit()
+        
     def data(self, index, role):
         dataoutput = super(TreeModel, self).data(index, role)
+       # fname = self.fileName(index)
+       # fpath = self.filePath(index)
         fileInfo = QtCore.QFileInfo(self.filePath(index))
         base, ext = os.path.splitext(self.filePath(index))
         if (role == QtCore.Qt.DecorationRole and index.column() == 0):
@@ -42,12 +49,14 @@ class TreeModel(QFileSystemModel):
                 else:
                     return self.foldericon     
             else:
-                if ext.lower() in [".ara",".raw",".ar2"]:
-                    return self.fileicon
-                elif ext.lower() in [".tif",".tiff"]:
-                    return self.fileicon
-                elif ext.lower() in [".jpg",".jpeg"]:
+                if self.fileName(index) in self.poifiles:
                     return self.filepoi
+        #        if ext.lower() in [".ara",".raw",".ar2"]:
+        #            return self.fileicon
+        #        elif ext.lower() in [".tif",".tiff"]:
+        #            return self.fileicon
+        #        elif ext.lower() in [".jpg",".jpeg"]:
+        #            return self.filepoi
                 else:
                     return self.fileicon
                         

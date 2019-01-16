@@ -4016,3 +4016,7 @@ poitagger/test/wheelhouse/six-1.12.0-py2.py3-none-any.whl
 poitagger/test/wheelhouse/tifffile-2018.11.28-py2.py3-none-any.whl
 poitagger/test/wheelhouse/urllib3-1.24.1-py2.py3-none-any.whl
 poitagger/test/wheelhouse/utm-0.4.2-cp36-none-any.whl
+poitagger/test/nested.py
+poitagger/test/pois.xml
+poitagger/test/Untitled.ipynb
+poitagger/test/.ipynb_checkpoints/Untitled-checkpoint.ipynb

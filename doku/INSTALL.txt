@@ -1,0 +1,56 @@
+
+download python 2.7 
+install python 2.7 
+install pip
+
+
+
+===WINDOWS===
+for windows it is recomended to install a python distribution like Python(x,y) or WinPython.
+They have most of the relevant Packages e.g. PyQt4 and OpenCV included.
+
+you can download precompiled Libs from Christph Gohlkes Homepage:
+http://www.lfd.uci.edu/~gohlke/pythonlibs/
+
+ 
+ 
+This Software is tested with Winpython 32bit_python2.7 
+(https://sourceforge.net/projects/winpython/files/WinPython_2.7/)
+
+ 
+ 
+the following own libs are required:
+asctec, camera2, rotation, gpstime
+
+they are located in folder INSTALL-FILES!!!
+
+
+use these commands to install:
+pip install asctec-0.1dev_r0-py2-none-any.whl
+pip install gpstime-0.1dev_r0-py2-none-any.whl
+pip install camera2-0.2-py2-none-any.whl
+pip install rotation-0.1dev_r0-py2-none-any.whl
+
+
+and the following external libs are also required: 
+utm, opencv, numpy, gdal, 
+*pyqt4, *docopt, *ConfigParser, 
+
+*(this lib is included in WinPython distribution)
+
+use these commands to install:
+pip install docopt
+pip install utm
+
+pip install opencv_python-2.4.13-cp27-cp27m-win32.whl
+pip install numpy-1.11.0+mkl-cp27-cp27m-win32.whl
+pip install gdal-2.0.2-cp27-none-win32.whl
+
+
+
+
+to start the programm use:
+
+python poi_tagger2.py
+
+

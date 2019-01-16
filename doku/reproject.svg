@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="448.28125"
+   height="302.5625"
+   id="svg3048"
+   version="1.1"
+   inkscape:version="0.48.5 r10040"
+   inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\reproject.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90"
+   sodipodi:docname="Neues Dokument 4">
+  <defs
+     id="defs3050">
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend"
+       style="overflow:visible">
+      <path
+         id="path3885"
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Lstart"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow2Lstart"
+       style="overflow:visible">
+      <path
+         id="path3894"
+         style="fill-rule:evenodd;stroke-width:0.625;stroke-linejoin:round"
+         d="M 8.7185878,4.0337352 -2.2072895,0.01601326 8.7185884,-4.0017078 c -1.7454984,2.3720609 -1.7354408,5.6174519 -6e-7,8.035443 z"
+         transform="matrix(1.1,0,0,1.1,1.1,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow2Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow2Lend"
+       style="overflow:visible">
+      <path
+         id="path3897"
+         style="fill-rule:evenodd;stroke-width:0.625;stroke-linejoin:round"
+         d="M 8.7185878,4.0337352 -2.2072895,0.01601326 8.7185884,-4.0017078 c -1.7454984,2.3720609 -1.7354408,5.6174519 -6e-7,8.035443 z"
+         transform="matrix(-1.1,0,0,-1.1,-1.1,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.35"
+     inkscape:cx="297.41497"
+     inkscape:cy="14.856579"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1123"
+     inkscape:window-height="743"
+     inkscape:window-x="2018"
+     inkscape:window-y="122"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata3053">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-15.15625,-244.65625)">
+    <rect
+       style="fill:#e6e6e6;fill-opacity:1;stroke:#1a1a1a;stroke-width:4;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3058"
+       width="328.57144"
+       height="220"
+       x="17.142857"
+       y="246.6479"
+       inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\path3102.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="opacity:0.51999996;fill:#e6e6e6;fill-opacity:1;stroke:#000000;stroke-width:4;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3058-8"
+       width="328.57144"
+       height="220"
+       x="132.85709"
+       y="325.21933"
+       inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\path3102.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       sodipodi:type="arc"
+       style="opacity:0.51999996;fill:#ff0000;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3080"
+       sodipodi:cx="98.571426"
+       sodipodi:cy="355.21933"
+       sodipodi:rx="21.428572"
+       sodipodi:ry="17.142857"
+       d="m 120,355.21933 c 0,9.46774 -9.5939,17.14286 -21.428574,17.14286 -11.834673,0 -21.428571,-7.67512 -21.428571,-17.14286 0,-9.46774 9.593898,-17.14286 21.428571,-17.14286 11.834674,0 21.428574,7.67512 21.428574,17.14286 z"
+       inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\path3102.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       transform="translate(209.99999,39.999996)"
+       sodipodi:type="arc"
+       style="opacity:0.51999996;fill:#008000;fill-opacity:1;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="path3080-2"
+       sodipodi:cx="98.571426"
+       sodipodi:cy="355.21933"
+       sodipodi:rx="21.428572"
+       sodipodi:ry="17.142857"
+       d="m 120,355.21933 c 0,9.46774 -9.5939,17.14286 -21.428574,17.14286 -11.834673,0 -21.428571,-7.67512 -21.428571,-17.14286 0,-9.46774 9.593898,-17.14286 21.428571,-17.14286 11.834674,0 21.428574,7.67512 21.428574,17.14286 z"
+       inkscape:export-filename="C:\Users\isra_ma\Documents\dev\py\Poitagger\icons\path3102.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:6;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:36, 6;stroke-dashoffset:0;marker-start:none;marker-end:url(#Arrow1Mend)"
+       d="m 91.42857,146.71428 c 0,0 15.2381,97.14286 94.28571,82.85714 33.33333,-20 80,-51.42858 80,-51.42858"
+       id="path3102"
+       inkscape:connector-curvature="0"
+       transform="translate(16.642857,246.1479)"
+       sodipodi:nodetypes="ccc"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+  </g>
+</svg>

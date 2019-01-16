@@ -1,0 +1,57 @@
+Fehlermeldungen - Popup:
+- bei Flügen, bei denen keine Bilder gespeichert wurden, nachfragen, ob wirklich gelöscht werden soll (generell fragen).
+- 2 SD-Karten eingesteckt
+
+ 
+sonstiges, Bugfixes:
+- bei klick auf "sd-karte einlesen", wenn keine SD-Karte drin ist führt zu Absturz
+- beim Foto durchblättern nicht gleich wieder von vorne anfangen durchzublättern
+
+- normkitz beim zoomen refresh
+- zweite SD-Karte einlesen: kein progressbar (ist bei 100%)
+- automatisches neuladen nach kalibrierung übertragen
+
+- ID-Zählreihenfolge bei alle Pois anzeigen ist falsch
+- springe zu Bild wenn poi bei "alle Pois" angeklickt
+- Höhenmodell einbauen bei poi.projekt
+
+- semaphore bei workflow, damit nicht zwei einleseprozesse gleichzeitig vorkommen
+
+- bei Bildern mit verzerrtem Temp-Range: angepasster Bereich speichern
+- homogenisieren/prepared view als Standard
+- Kalibrierungs-Optimizer
+- Schrittweite bei Bild-Up/Down einstellbar
+
+- üeberschreiben der aktuellen GPS-Daten auf dem Handheld-GPS
+- größe der ringe der pois einstellbar
+- laden und speichern der conf.ini aufraeumen (in properties auslagern)
+
+- zentrieren der Pois in einem eigenen Prozess
+
+
+generell/neu/system:
+- config/properties komplett überarbeiten. generelle Struktur überlegen, wie man properties global behandelt und Einstellungen vornehmen kann.
+- ar2-Files mit optimierten vorschau Bildern 
+- Handling von Plugins/neuen Methoden
+- Methode für generell Ordnerbasierte (nicht einzelbild-basierte) Anwendung
+- Umstrukturierung der UI
+
+
+
+
+erledigt:
+- geoview: bei ISA-Copter Track anzeigen # if not (raw.header.start_lat,raw.header.start_lon) == (0,0): rausgenommen aus workflow.py (line 195)
+- Geoview: Pois anzeigen
+- pois-xml wird bei ver py3 mit leer überschrieben
+- Normkitz
+- Tabreihenfolge bei Kalibrierung
+- wenn Imgdir nicht lesbar: trotzdem Poitagger öffnen
+- wenn in conf.ini schmarrn steht, -> lässt sich das Programm nicht starten
+- Reprojektion wird nach Kalibrierung nicht für die GPS-Koordinaten im GPX-File durchgeführt
+- viewControl: flip horizontal/flip vertical merken!
+- beim Start im letzten Ordner letztes Bild öffnen (wenn nicht mehr da, dann im Rootverzeichnis starten)
+
+- Popup: Erfolgreich auf GPS übertragen
+- Popup: kann die SD-Karte nicht finden!
+- Invertierte Kamera Georef horizontal falsch
+

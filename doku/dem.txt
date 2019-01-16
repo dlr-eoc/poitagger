@@ -1,0 +1,10 @@
+from PyQt4 import QtCore,QtGui,uic
+
+class Info(QtGui.QWidget):
+    log = QtCore.pyqtSignal(QtCore.QString)
+    
+    def __init__(self):
+        QtGui.QWidget.__init__(self)
+        uic.loadUi('info.ui',self)
+        
+    def load_data(self,ara):    
