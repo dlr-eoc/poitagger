@@ -50,7 +50,7 @@ setup(name='poitagger',
         'Pillow'
       ],
       dependency_links = [
-        'https://github.com/pyqtgraph/pyqtgraph/archive/develop#egg=pyqtgraph-0.11.0'
+        'https://github.com/pyqtgraph/pyqtgraph/archive/develop.zip#egg=pyqtgraph-0.11.0'
       ],
       package_data={
             '': ['*.js','*.html','*.css','*.ui','ui/*.*','ui/icons/*.*','*.ini'],
