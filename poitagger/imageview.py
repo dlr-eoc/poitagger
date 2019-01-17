@@ -52,7 +52,11 @@ from . import utils2
 from . import temp
 SIZE = 30 # This is just the distance for the Labeling of the Pois
 
-
+class ORIENTATION(object):
+    FLIP_LR = 0x01
+    FLIP_UP = 0x02
+    FLIP_DIAG = 0x04
+    
 # class Action2ParameterItem(ParameterItem):
     # def __init__(self, param, depth):
         # ParameterItem.__init__(self, param, depth)
@@ -110,6 +114,7 @@ class Img(QtGui.QWidget):
     highlighting = QtCore.pyqtSignal(str)
     sigMouseMode = QtCore.pyqtSignal(str) #["poi" , "temp"]
     sigPixel = QtCore.pyqtSignal(str,int,int) #x,y,digitalNumber
+    sigOrientation = QtCore.pyqtSignal(int)
     saveimgdir = None
     imwidth = 640
     imheight = 512
@@ -150,8 +155,11 @@ class Img(QtGui.QWidget):
             ]},
             {'name': 'Zoom', 'type': 'int', 'value': 100, 'suffix': '%'},
             {'name': 'fullscreen', 'type': 'action'},
-            {'name': 'flip lr', 'type': 'bool'},
-            {'name': 'flip up', 'type': 'bool'},
+            {'name': 'orientation', 'type': 'group', 'children': [
+                {'name': 'flip lr', 'type': 'bool'},
+                {'name': 'flip up', 'type': 'bool'},
+                {'name': 'flip diag', 'type': 'bool'}
+            ]},
             ]
     
             
@@ -177,8 +185,12 @@ class Img(QtGui.QWidget):
         
         self.infoUI.zoom.editingFinished.connect(lambda: self.setZoom(self.infoUI.zoom.value()))#lambda: self.vbox.setRange(QtCore.QRect(0,0,640,512)
         
-        self.p.child('flip lr').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
-        self.p.child('flip up').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
+        self.p.child('orientation').sigTreeStateChanged.connect(lambda: self.loadImg(self.curimg))
+        self.p.child('orientation').sigTreeStateChanged.connect(self.emitOrientation)
+        
+        self.p.child('orientation').child('flip lr').sigTreeStateChanged.connect(lambda: self.loadImg(self.curimg))
+        self.p.child('orientation').child('flip up').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
+        self.p.child('orientation').child('flip diag').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
         
         self.w.scene().sigMouseMoved.connect(self.mouseMoved)
         self.w.scene().sigMouseClicked.connect(self.pixelClicked)
@@ -191,7 +203,27 @@ class Img(QtGui.QWidget):
       #  self.imgUI.horizontalLayout.addWidget(self.histlut)
         
      #   self.imgDebugUI.pushButton.clicked.connect(self.proc.cutout)
+     
+    def emitOrientation(self,param):
+        a = int(param.child('flip lr').value())*ORIENTATION.FLIP_LR
+        b = int(param.child('flip up').value())*ORIENTATION.FLIP_UP
+        c = int(param.child('flip diag').value())*ORIENTATION.FLIP_DIAG
+        self.sigOrientation.emit(a+b+c)
+        
+    def setOrientation(self,flightgeneral):
+        #orient = flightgeneral.child("orientation")
+        #print ("ORIENTATION",orient)
+        try:
+            imgor = flightgeneral.child("images").child("orientation").value()
+            imgorparam = self.p.child('orientation')    
+            with imgorparam.treeChangeBlocker():
+                imgorparam.child('flip lr').setValue(imgor & ORIENTATION.FLIP_LR)
+                imgorparam.child('flip up').setValue(imgor & ORIENTATION.FLIP_UP)
+                imgorparam.child('flip diag').setValue(imgor & ORIENTATION.FLIP_DIAG)
+        except:
+            pass
             
+        
     def appendButtonsToToolBar(self,toolBar):
         self.toolBar = toolBar
         
@@ -271,15 +303,19 @@ class Img(QtGui.QWidget):
             return 1
             
     def flip(self,img):
-        self.fliplr = True if self.p.child('flip lr').value() else False
-        self.flipud = True if self.p.child('flip up').value() else False
+        self.fliplr = True if self.p.child('orientation').child('flip lr').value() else False
+        self.flipud = True if self.p.child('orientation').child('flip up').value() else False
+        self.flipdiag = True if self.p.child('orientation').child('flip diag').value() else False
         lrimage = img if not self.fliplr else np.fliplr(img)
         out = lrimage if not self.flipud else np.flipud(lrimage)
-        if len(out.shape)==3: #rgb color image
-            return out.transpose([1,0,2])
+        if self.flipdiag:
+            return out
         else:
-            return out.T
-        
+            if len(out.shape)==3: #rgb color image
+                return out.transpose([1,0,2])
+            else:
+                return out.T
+            
     def loadImg(self,curimg):
         self.curimg = curimg
         self.imgdir, self.imgname = os.path.split(str(curimg))

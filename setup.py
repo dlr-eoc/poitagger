@@ -20,7 +20,12 @@ setup(name='poitagger',
       description="pyqt5 gui application for georeferencing drone based images",
       long_description="""\
 """,
-      classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'Intended Audience :: End Users/Desktop',
+          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+          'Programming Language :: Python :: 3'
+      ], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='uav drone thermal flir georeferencing computer vision localization gps exif pyqt5 qt image tagging geo gps',
       author='Martin Israel',
       author_email='martin.israel@dlr.de',
@@ -35,7 +40,7 @@ setup(name='poitagger',
         'PyQt5',
         'numpy',
         'lxml',
-        'pyqtgraph==0.11.0',
+        'pyqtgraph @ https://github.com/pyqtgraph/pyqtgraph/archive/develop.zip#egg=pyqtgraph-0.11.0',
         'tifffile',
         'utm',
         'pytz',
@@ -47,10 +52,8 @@ setup(name='poitagger',
         'requests_cache',
         'simplejson',
         'exifread',
-        'Pillow'
-      ],
-      dependency_links = [
-        'https://github.com/pyqtgraph/pyqtgraph/archive/develop.zip#egg=pyqtgraph-0.11.0'
+        'Pillow',
+        'camproject'
       ],
       package_data={
             '': ['*.js','*.html','*.css','*.ui','ui/*.*','ui/icons/*.*','*.ini'],

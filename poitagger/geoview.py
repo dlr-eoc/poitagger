@@ -3,7 +3,7 @@ QWebKit wurde ersetzt durch QWebEngine.
 Funktioniert ganz anders, deshalb geht das alles hier  nicht!
 """
 
-from PyQt5 import QtCore,QtGui,uic, QtWebEngineWidgets
+from PyQt5 import QtCore,QtGui,uic, QtWebEngineWidgets, QtPrintSupport
 from PyQt5.QtWidgets import QMainWindow,QApplication,QPushButton
 
 from lxml import etree
@@ -28,6 +28,8 @@ class GeoWidget(QMainWindow):
         self.view = Browser(settings)
         self.view.setSizeHint(200,300)
         self.setCentralWidget(self.view)
+        self.imgdir = ""
+        self.imgheader = {}
         #self.view.lat = 0.0
         #self.view.lon = 0.0
         self.connections()
@@ -37,7 +39,50 @@ class GeoWidget(QMainWindow):
         self.actionDroneVisible.triggered.connect(lambda: self.view.setLayerVisible("uav",self.actionDroneVisible.isChecked()))
         self.actionPoisVisible.triggered.connect(lambda: self.view.setLayerVisible("pois",self.actionPoisVisible.isChecked()))
         self.actionUAV_position.toggled.connect(self.view.followUavPosition)
+        self.actionGoogleMaps.triggered.connect(self.loadGoogleMaps)
+        self.actionDrucken.triggered.connect(self.handlePrint)
+        self.actionDruckansicht.triggered.connect(self.handlePreview)
+        
+    def loadGoogleMaps(self):
+        try:
+            url = QtCore.QUrl("https://www.google.de/maps/place//@%s,%s,17z/data=!3m1!1e3!4m2!3m1!1s0x0:0x0" % (self.imgheader["gps"]["latitude"],self.imgheader["gps"]["longitude"]))
+            QtGui.QDesktopServices.openUrl(url)
+        except:
+            logging.error("loadGoogleMaps failed!")
+            
+    def handlePrint(self):
+        dialog = QtPrintSupport.QPrintDialog()
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.handlePaintRequest(dialog.printer())
+        
+    def handlePreview(self):
+        dialog = QtPrintSupport.QPrintPreviewDialog()
+        dialog.paintRequested.connect(self.handlePaintRequest)
+        dialog.exec_()
     
+    def setCurrentDir(self,imgdir):
+        self.imgdir = imgdir
+        
+    def setCurrentImg(self,imgheader):
+        self.imgheader = imgheader
+    
+    def handlePaintRequest(self, printer):
+        painter = QtGui.QPainter()
+        painter.begin(printer)
+        painter.setPen(QtGui.QPen(QtGui.QColor(0, 0, 0)))
+        
+        self.view.render(painter,painter.deviceTransform().map(QtCore.QPoint(0,45)))   #painter.deviceTransform().map(QtCore.QPoint(0,45))
+        
+        font = QtGui.QFont("times", 12)
+        painter.setFont(font)
+        fm = QtGui.QFontMetrics(font)
+        text = "Flug: " + self.imgdir
+        pixelsWidth = fm.width(text)
+        pixelsHeight = fm.height()
+        painter.drawText(20, 20, pixelsWidth, pixelsHeight, QtCore.Qt.AlignLeft, text)
+        
+        painter.end()
+        
         
         #self.actionUAV_position.
         
@@ -116,7 +161,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         
     def loadpois(self,pois):
         if not self.jsloaded: return 
-        #print("geoview: loadPois",pois)
+        print("geoview: loadPois",pois)
         arr = []
         if pois==[] or pois == None:
             self.page.runJavaScript('map.getSource("pois").setData({{"type": "FeatureCollection","features": {} }})'.format(arr))

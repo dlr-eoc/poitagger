@@ -45,6 +45,10 @@
    <addaction name="actionDroneVisible"/>
    <addaction name="actionUAV_Pfad"/>
    <addaction name="actionPoisVisible"/>
+   <addaction name="separator"/>
+   <addaction name="actionGoogleMaps"/>
+   <addaction name="actionDrucken"/>
+   <addaction name="actionDruckansicht"/>
   </widget>
   <action name="actionUAV_position">
    <property name="checkable">
@@ -113,6 +117,39 @@
    </property>
    <property name="text">
     <string>Pois</string>
+   </property>
+  </action>
+  <action name="actionDrucken">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/Printer-icon.png</normaloff>icons/Printer-icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Drucken (Strg+p)</string>
+   </property>
+   <property name="toolTip">
+    <string>Drucken (Strg+p)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionDruckansicht">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/Preview-icon.png</normaloff>icons/Preview-icon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Druckansicht</string>
+   </property>
+  </action>
+  <action name="actionGoogleMaps">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/world_marker.jpg</normaloff>icons/world_marker.jpg</iconset>
+   </property>
+   <property name="text">
+    <string>googleMaps</string>
    </property>
   </action>
  </widget>

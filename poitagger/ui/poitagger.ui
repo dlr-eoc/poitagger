@@ -210,9 +210,6 @@
    <addaction name="actionAra_korrigieren"/>
    <addaction name="actionSave_poi_gpx"/>
    <addaction name="actionGpx_to_gps"/>
-   <addaction name="actionGoogleMaps"/>
-   <addaction name="actionDrucken"/>
-   <addaction name="actionDruckansicht"/>
   </widget>
   <widget class="QDockWidget" name="GeoViewDockWidget">
    <property name="windowTitle">

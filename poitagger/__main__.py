@@ -17,14 +17,13 @@ from docopt import docopt
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning) # PyQtGraph has a FutureWarning: h5py: Conversion from float to np.floating is deprecated
 
-from PyQt5 import QtCore,QtGui,uic, QtWidgets, QtPrintSupport
+from PyQt5 import QtCore,QtGui,uic, QtWidgets
 from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow,QMessageBox,QTextEdit
 
 import numpy as np
 
 import sys
 import os
-import traceback
 import shutil
 
 from . import nested
@@ -128,34 +127,7 @@ class Main(QMainWindow):
         self.loadSettings(self.settings)
         
         self.show()
-    
-    def handlePrint(self):
-        dialog = QtPrintSupport.QPrintDialog()
-        if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            self.handlePaintRequest(dialog.printer())
-        
-    def handlePreview(self):
-        dialog = QtPrintSupport.QPrintPreviewDialog()
-        dialog.paintRequested.connect(self.handlePaintRequest)
-        dialog.exec_()
-
-    def handlePaintRequest(self, printer):
-        painter = QtGui.QPainter()
-        painter.begin(printer)
-        painter.setPen(QtGui.QPen(QtGui.QColor(0, 0, 0)))
-        
-        self.geomain.view.render(painter,painter.deviceTransform().map(QtCore.QPoint(0,45)))   #painter.deviceTransform().map(QtCore.QPoint(0,45))
-        
-        font = QtGui.QFont("times", 12)
-        painter.setFont(font)
-        fm = QtGui.QFontMetrics(font)
-        text = "Flug: " + self.treemain.view.imgdir
-        pixelsWidth = fm.width(text)
-        pixelsHeight = fm.height()
-        painter.drawText(20, 20, pixelsWidth, pixelsHeight, QtCore.Qt.AlignLeft, text)
-        
-        painter.end()
-        
+  
     def setDockWidget(self,dockwidget,settingsprefix,widget=None):
         if not widget == None:
             dockwidget.setWidget(widget) 
@@ -171,7 +143,6 @@ class Main(QMainWindow):
         self.actionPng_export.triggered.connect(self.img.save_png)
         self.actionConvert_folder_to_jpg.triggered.connect(lambda: self.wf.convertFolderJpg(self.treemain.view.current_path()))
         self.actionCreate_subimages.triggered.connect(lambda: self.wf.createSubimages(self.treemain.view.current_path()))
-        self.actionGoogleMaps.triggered.connect(self.loadGoogleMaps)
         self.actionGpx_to_gps.triggered.connect(self.gpx_to_gps)
         self.actionEinstellungen.triggered.connect(self.conf.openPropDialog)
         self.info.position.connect(self.geomain.view.moveUav)
@@ -185,8 +156,6 @@ class Main(QMainWindow):
         self.treemain.view.log.connect(self.Console.append)
         self.img.log.connect(self.Console.append)
                 
-        self.actionDrucken.triggered.connect(self.handlePrint)
-        self.actionDruckansicht.triggered.connect(self.handlePreview)
         
         self.escAction.triggered.connect(self.close)
         
@@ -204,10 +173,13 @@ class Main(QMainWindow):
         [self.treemain.view.imgPathChanged.connect(c) for c in [self.img.loadImg,self.setWindowTitle]]
         if self.useflight:
             self.geomain.actionFitMap.triggered.connect(lambda: self.geomain.view.fitBounds(paramreduce.load(self.flight.p.child("general").child("bounding").getValues())))
-            self.treemain.view.imgDirChanged.connect(lambda imgdir: self.flight.load(imgdir))
+            [self.treemain.view.imgDirChanged.connect(c) for c in [self.flight.load,self.geomain.setCurrentDir]]
+            
           #  self.treemain.view.imgDirChanged.connect(self.pois.loadComboBox)
             self.flight.uavpath.connect(self.geomain.view.setUavPath)
-            self.flight.pois.connect(self.geomain.view.loadpois)
+          #  self.flight.pois.connect(self.geomain.view.loadpois)
+            self.flight.general.connect(self.img.setOrientation)
+            self.img.sigOrientation.connect(self.flight.setOrientation)
     #        self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
         
         
@@ -234,7 +206,8 @@ class Main(QMainWindow):
     #            self.gpxgen.add_wpt(str(i[5]),str(i[6]),str(i[7]),self.img.ara.header["gps"]["dateTtime"],str(i[2]),"poi")
             self.gpxgen.save(poisfilename,False)
         except:
-            traceback.print_exc()#"save gpx failed"
+            logging.error("GPS_TO_GPS save failed",exc_info=True)
+            #traceback.print_exc()#"save gpx failed"
         
         self.exportgpx(poisfilename)#,self.conf)
         #cmd = 'gpsbabel -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + poisfilename + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
@@ -342,15 +315,12 @@ class Main(QMainWindow):
     def createKeyCtrl(self,actionName, key):
         actionName.setShortcut(QtGui.QKeySequence(key))
         self.addAction(actionName)
-    
-    def loadGoogleMaps(self):
-        url = QtCore.QUrl("https://www.google.de/maps/place//@%s,%s,17z/data=!3m1!1e3!4m2!3m1!1s0x0:0x0" % (self.img.ara.header["gps"]["latitude"],self.img.ara.header["gps"]["longitude"]))
-        QtGui.QDesktopServices.openUrl(url)
         
     def fill_values(self,ara):
         self.info.load_data(ara.header)
         self.calib.load_data(ara.header)
         self.pois.model.getPois(ara.filename)
+        self.geomain.setCurrentImg(ara.header)
     #    self.pois.load_data(ara,self.treemain.view.imgname,self.calib)#self.img.araalt,
         
     def isTopDockWidget(self,widget):

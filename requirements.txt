@@ -14,7 +14,7 @@ requests_cache>=0.4.13
 simplejson>=3.16.0
 exifread>=2.1
 Pillow>=5.3
-
+camproject
 #opencv-python>=3.4.4    
 #scipy>=1.1.0
 #scikit-image>=0.14

@@ -7,10 +7,11 @@ import logging
 from PyQt5 import QtCore,QtGui,uic, QtWidgets
 from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout
 import pyqtgraph as pg
-from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
+from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 import datetime
 from collections import OrderedDict,MutableMapping,MutableSequence,defaultdict
 import numpy as np
+import time
 
 from . import image
 from . import utils2
@@ -134,7 +135,7 @@ class Flight(QtCore.QObject):
     pois = QtCore.pyqtSignal(list)
     uavpath = QtCore.pyqtSignal(list)
     calibration = QtCore.pyqtSignal(dict)
-    general = QtCore.pyqtSignal(dict)
+    general = QtCore.pyqtSignal(Parameter)
     changed = QtCore.pyqtSignal()
     loadfinished = QtCore.pyqtSignal()
     path = None
@@ -149,10 +150,13 @@ class Flight(QtCore.QObject):
                     {"name":"uavpath",'type':"group"}]
         self.p = Parameter.create(name="flightparam",type="group",children=categories)
         self.ifm.finished.connect(self.setFromImport)
-        #self.p.child("general").sigTreeStateChanged.connect(self.general.emit)
-        #self.p.child("pois").sigTreeStateChanged.connect(self.pois.emit)
+        self.p.child("general").sigTreeStateChanged.connect(self.prepareGeneral)
         self.p.child("uavpath").sigValueChanged.connect(self.prepareUavPath)
-        #self.p.child("pois").sigTreeStateChanged.connect(self.preparePois)
+       # self.p.child("pois").sigTreeStateChanged.connect(self.preparePois)
+        
+    def prepareGeneral(self,generalparam):
+        if generalparam.children()== [] : return
+        self.general.emit(generalparam)
         
     def preparePois(self,poisparam):
         #print("FM, POIS JETZT" )
@@ -163,9 +167,8 @@ class Flight(QtCore.QObject):
       #      f.write(str(poisdict["0"]["data"]))
         pois = []
         try:
-            
             for i in poisdict["0"]["data"]:
-                #print ("POI",i)
+                print ("POI",i)
                 entry = eval(i)
                 #entry = dict(i)
                 if "id" in entry:
@@ -181,6 +184,9 @@ class Flight(QtCore.QObject):
         if uavpathparam.value()== None : return
         pathlist = list(uavpathparam.value())
         self.uavpath.emit(pathlist)
+    
+    def setOrientation(self,val):
+        self.p.child("general").child("images").child("orientation").setValue(val)
         
     def enableImport(self,toggle):
         self.import_enabled = toggle
@@ -190,7 +196,12 @@ class Flight(QtCore.QObject):
         self.task = "restoreParameter"
         #print(value)
         self.meta = nested.Nested(value,dictToParam).data
-       # print(self.meta)
+        #print(self.meta)
+        # self.meta["children"]["general"]["children"]["orientation"] = {'name': 'orientation', 'type': 'group', 'children': [
+            # {'name': 'flip lr', 'type': 'bool'},
+            # {'name': 'flip up', 'type': 'bool'},
+            # {'name': 'flip diag', 'type': 'bool'}
+        # ]}
         self.start()
 
     def start(self): #run
@@ -302,6 +313,36 @@ class ImportFlightMeta(QtCore.QThread):
         except:
             logging.error("FM _createUavPath failed",exc_info=True)
         
+    def _generalParams(self):
+        Width = []
+        Height = []
+        Bitdepth = []
+        width = 0
+        height = 0
+        bitdepth = 0
+        orientation = 7
+        try:
+            for i in self.ImgHdr:
+                if i["rawimage"].get("width") != None:
+                    Width.append(i["rawimage"].get("width"))
+                    Height.append(i["rawimage"].get("height"))
+                    Bitdepth.append(i["rawimage"].get("bitdepth"))
+                elif i["image"].get("width") != None:
+                    Width.append(i["image"].get("width"))
+                    Height.append(i["image"].get("height"))
+                    Bitdepth.append(i["image"].get("bitdepth"))
+            
+            if Width.count(Width[0])==len(Width): width = Width[0]
+            else: width = np.bincount(Width).argmax() #achtung rundet ab!
+            if Height.count(Height[0])==len(Height): height = Height[0]
+            else: height = np.bincount(Height).argmax() #achtung rundet ab!
+            if Bitdepth.count(Bitdepth[0])==len(Bitdepth): bitdepth = Bitdepth[0]
+            else: bitdepth = np.bincount(Bitdepth).argmax() #achtung rundet ab!
+        except:
+            logging.error("FM _generalParams failed",exc_info=True)
+        return {"bounding":self._getBounding(self.ImgHdr),"path":self.path,"images": {"width":width,"height":height,"bitdepth":bitdepth,"orientation":orientation}}
+        
+        
     def _getBounding(self,ImgHdr):
         Lat, Lon = [],[]
         for i in ImgHdr:
@@ -319,16 +360,25 @@ class ImportFlightMeta(QtCore.QThread):
         for i in self.ImgHdr:
             for k,v in i["calibration"]["geometric"].items(): Geom[k].append(v)
             for k,v in i["calibration"]["radiometric"].items(): Radi[k].append(v)
-            for k,v in i["calibration"]["boresight"].items(): Bore[k].append(v)
+            for k,v in i["calibration"]["boresight"].items(): 
+                #print("boresight:",k,v)
+                Bore[k].append(v)
         geom,radi,bore = {},{},{}
         
-        for k,v in Geom.items(): geom[k] = np.bincount(v).argmax()
-        for k,v in Radi.items(): radi[k] = np.bincount(v).argmax()
-        for k,v in Bore.items(): bore[k] = np.bincount(v).argmax()
+        for k,v in Geom.items(): 
+            if v.count(v[0])==len(v): geom[k] = v[0]
+            else: geom[k] = np.bincount(v).argmax() #achtung rundet ab!
+        for k,v in Radi.items(): 
+            if v.count(v[0])==len(v): radi[k] = v[0]
+            else: radi[k] = np.bincount(v).argmax() #achtung rundet ab!
+        for k,v in Bore.items(): 
+            if v.count(v[0])==len(v): bore[k] = v[0]
+            else: bore[k] = np.bincount(v).argmax() #achtung rundet ab!
+            
             
         self.calibration = {"geometric":geom,"radiometric":radi,"boresight":bore}
         
-        print (self.calibration)
+       # print (self.calibration)
                                         
         
             
@@ -337,7 +387,7 @@ class ImportFlightMeta(QtCore.QThread):
     <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:template match="/pois">
     <xsl:for-each select="p1oi">
-    - name: <xsl:value-of select="name/text()"/>_<xsl:value-of select="id/text()"/>
+    - name: <xsl:value-of select="name/text()"/>
       filename: <xsl:value-of select="filename/text()"/>
       latitude: <xsl:value-of select="latitude/text()"/>
       longitude: <xsl:value-of select="longitude/text()"/>
@@ -363,7 +413,7 @@ class ImportFlightMeta(QtCore.QThread):
         if pois == None: pois = []
         ts = datetime.datetime.fromtimestamp(os.path.getmtime(self.path)).isoformat()
         P = []
-        for i in pois:
+        for k,i in enumerate(pois):
             if not i["found_time"] is None: 
                 try:
                     ft = i["found_time"].isoformat()
@@ -371,11 +421,15 @@ class ImportFlightMeta(QtCore.QThread):
                     ft = datetime.datetime.fromtimestamp(i["found_time"]).isoformat()
             else:
                 ft = ""
-            P.append({"name":str(i["name"]), "type":"group", 
+            P.append({"name":"_".join([str(i["name"]),str(k)]), "type":"group", 
                         "expanded":False, "renamable":True, "removable":True, "children": [{ 
                         "name":i["filename"],"value":(i["pixel_x"],i["pixel_y"]), 
                         "readonly":True, "paramtyp":"view", "removeable":True, "type":"str","renameable":False, 
                         "latitude":i["latitude"],"longitude":i["longitude"],"elevation":i["elevation"],
+                        "uav_lat":i["uav_latitude"],"uav_lon":i["uav_longitude"],"uav_ele":i["uav_elevation"],
+                        "cam_yaw":i["uav_yaw"],"cam_pitch":i["cam_pitch"],"cam_roll":0,
+                        "cam_dx":0.2,"cam_dy":0,"cam_dz":0,"euler_dir":"ZXY",
+                        "pitch_offset":i["pitch_offset"],"roll_offset":i["roll_offset"],"yaw_offset":i["yaw_offset"],
                         "found_time":ft}]})
         out = {"name":"pois","type":"group", "expanded":True, "children":[{"name":"0","type":"group","children": [{"name":"timestamp","type":"str","readonly":True,
                 "value":ts},{"name":"description","type":"str","readonly":False,"value":"initial dataset"},
@@ -383,19 +437,31 @@ class ImportFlightMeta(QtCore.QThread):
         return out
     
     def run(self):
+       # t0 = time.time()
         self.pois = {"name":"pois","type":"group", "expanded":True, "children":[]}
         self. images = []
         self.calibration = {}
         self.ImgHdr = self._loadImagesHeader()
+       # t1 = time.time()
+       # print("LoadImages",t1-t0)
         self._loadCalibration()
+       # t2 = time.time()
+       # print("CAL",t2-t1)
         self._createUavPath()
-        self.general = {"bounding":self._getBounding(self.ImgHdr),"path":self.path}
+       # t3 = time.time()
+       # print("UAVPATH",t3-t2)
+        self.general = self._generalParams()
+         
+       # t4 = time.time()
+       # print("GETBOUNDS",t4-t3)
         m = {"general": self.general, "pois":self.pois, "calibration": self.calibration, "images": self.images, "uavpath": self.uavpath}
         self.Meta.update(m)
         poispath = os.path.join(self.path, "pois.xml")
         if os.path.exists(poispath):
             self.pois = self._importPois(poispath)
         self.Meta["pois"] = self.pois
+       # t5 = time.time()
+       # print("POIS",t5-t4)
         self.finished.emit(self.Meta)
         
         

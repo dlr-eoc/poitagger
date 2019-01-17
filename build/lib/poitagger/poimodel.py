@@ -6,19 +6,18 @@ import sys
 import utm
 import collections
 import datetime
+from . import camera2
+from . import gpx
 import math
 import xml.etree.ElementTree as ET
-import traceback
-from ast import literal_eval
-from PyQt5 import QtGui,QtCore,uic
-
-import camproject
-
-from . import gpx
 from . import image
 from . import PATHS
+import traceback
+from ast import literal_eval
+
 from . import upload
 
+from PyQt5 import QtGui,QtCore,uic
         
         
 class PoiModel(QtCore.QObject):
@@ -27,30 +26,12 @@ class PoiModel(QtCore.QObject):
     
     def __init__(self):
         super().__init__()
-        self.Cam = camproject.Camera()
-        self.CamR = camproject.Camera()
+        self.Cam = camera2.Camera()
+        self.CamR = camera2.Camera()
             
     def setMeta(self,param):
         self.p = param
     
-    def load(self,imgheader):
-        try:
-            self.pitch_offset = imgheader["calibration"]["boresight"].get("cam_pitch_offset",0)
-            self.roll_offset = imgheader["calibration"]["boresight"].get("cam_roll_offset",0)
-            self.yaw_offset = imgheader["calibration"]["boresight"].get("cam_yaw_offset",0)
-            
-            self.filename = imgheader["file"]["filename"]
-      
-            self.Cam.pose(0,0,imgheader["uav"]["yaw"],imgheader["gps"].get("UTM_X",0),imgheader["gps"].get("UTM_Y",0),imgheader["gps"].get("rel_altitude",0))
-            self.Cam.gimbal(roll=imgheader["camera"]["roll"],pitch=imgheader["camera"]["pitch"],yaw=imgheader["camera"]["yaw"],dx=0.2,dy=0,dz=0,dir="ZXY")
-            self.Cam.boresight(self.yaw_offset, self.pitch_offset, self.roll_offset,0,0,0)
-            self.Cam.intrinsics(640,512,1115,320,256)
-            self.Cam.transform()
-            
-        except:
-            logging.error("pois load data failed",exc_info=True)
-        
-        
     def __loadPoisList(self):
         layer = self.p.children()
         self.pois = []
@@ -78,34 +59,12 @@ class PoiModel(QtCore.QObject):
                 Reprojected.append(i)
                 
         self.sigPois.emit(self.pois)
-    
-    def ray_intersect_plane(self,raypos, raydir, plane, front_only=True):
-        p = plane[:3] * plane[3]
-        n = plane[:3]
-        rd_n = np.dot(raydir.ravel(), n)
-        if rd_n == 0.0:
-            return np.array([[None],[None],[None]])
-        if front_only == True:
-            if rd_n >= 0.0:
-                return np.array([[None],[None],[None]])
-        pd = np.dot(p, n)
-        p0_n = np.dot(raypos.ravel(), n)
-        t = (pd - p0_n) / rd_n
-        return raypos + (raydir * t)
 
-       
-    def reproject(self,x,y,cam):#muesste eigentlich reproject heissen, weil vom pixel auf 3d-Punkt zurueckprojiziert wird.
+    def project(self,x,y,cam):#muesste eigentlich reproject heissen, weil vom pixel auf 3d-Punkt zurueckprojiziert wird.
             #erzeugt latitude, longitude und elevation  
         try:
             #rp = self.Cam.reproject(np.array([[x],[y]]))
-            #poi = self.reprojectZPlane(x,y,0) #Todo: hier wird angenommen, dass das DEM eine Ebene bei Z = 0 ist.
-            ele = 0
-            poi_cam = np.array([[x],[y],[1],[1]])
-            rp = cam.reproject(poi_cam)
-            campos = cam.position()
-            raydir = rp - campos
-            poi = self.ray_intersect_plane(campos[0:3],raydir[0:3],np.array([0,0,1,ele]))
-            
+            poi = cam.poi(x,y,0) #Todo: hier wird angenommen, dass das DEM eine Ebene bei Z = 0 ist.
             if poi.any() == None:
                 print("any(POI) = None",poi)
            #     return (0,0,0)
@@ -113,8 +72,6 @@ class PoiModel(QtCore.QObject):
             return str("%2.6f"%ll[0]),str("%2.6f"%ll[1]),str(poi[2][0])
         except:
             logging.error("project did not work", exc_info=True)    
-
-            
    # def getReprojected(self,filename):
    #     pois = [{"name":"Kitz1","x":234,"y":510,"layer":0,"filename":"0102344_0324.ARA"}]
    #     self.sig_reprojected.emit(pois)
@@ -153,32 +110,42 @@ class PoiModel(QtCore.QObject):
         
    
         
-    def project(self,poi):
-    # Wir machen das hier nur , um in echtzeit aenderungen an yaw_offset, pitch_offset und roll_offset sichtbar zu machen
-        #        0, 1        ,2  ,3,4,5, 6,  7,   8 ,    9     , 10,      11,    12
-        #poi: [id,filename,name,x,y,lat,lon,ele,uav_lat,uav_lon,uav_ele,uav_yaw,cam_pitch]
-        UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(poi["uav_lat"],poi["uav_lon"])
-        self.CamR.pose(0,0,poi["uav_yaw"],UTM_X,UTM_Y,poi["uav_ele"])
-        self.CamR.attitudeMat(poi["attitudeMat"])
-        #self.CamR.gimbal(roll=poi["cam_roll"],pitch=poi["cam_pitch"],yaw=poi["cam_yaw"],dx=poi["cam_dx"],dy=poi["cam_dy"],dz=poi["cam_dz"],dir=poi["euler_dir"]) #"ZXY"
-        #self.CamR.boresight(poi["yaw_offset"], poi["pitch_offset"], poi["roll_offset"],0,0,0)
-        self.CamR.intrinsics(poi["width"],poi["height"],poi["fx"],poi["cx"],poi["cy"])
-        self.CamR.transform()
-        #x_geo,y_geo = self.checkcamorientation(poi[3],poi[4])
-        try:
-            lat,lon,ele = self.reproject(poi["x"],poi["y"],self.CamR) #-------------------------------- bis hier hin
-        except:
-            lat,lon,ele = 0,0,0
-            logging.error("reproject did not work", exc_info=True)
-        u = utm.from_latlon(float(lat),float(lon))#,self.ara.header.ZoneNumber)
-        V = np.array([[u[1]],[u[0]],[float(ele)],[1]])
-        X = self.Cam.project(V)
-        if self.Cam.visible(X):
-            q = poi.copy()
-            q["x"] = X[0][0]
-            q["y"] = X[1][0]
-            q["reprojected"] = True
-            return q
+    # def reproject(self,poi):
+    # # Wir machen das hier nur , um in echtzeit aenderungen an yaw_offset, pitch_offset und roll_offset sichtbar zu machen
+       # # print("REPROJECT: ",poi)
+        # #print self.ara.header.gps_time
+        # #poi: [id,filename,name,x,y,lat,lon,ele,uav_lat,uav_lon,uav_ele,uav_yaw,cam_pitch]
+        # UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(poi[8],poi[9])
+        # self.CamR.pose(0,0,poi[11],UTM_X,UTM_Y,poi[10])
+        # self.CamR.gimbal(roll=0,pitch=poi[12],yaw=0,dx=0.2,dy=0,dz=0,dir="ZXY")
+        # self.CamR.boresight(self.yaw_offset, self.pitch_offset, self.roll_offset,0,0,0)
+        # self.CamR.intrinsics(640,512,1115,320,256)
+        # self.CamR.transform()
+        # x_geo,y_geo = self.checkcamorientation(poi[3],poi[4])
+        # #x_geo = poi[3]
+        # #y_geo = poi[4]
+        # try:
+            # lat,lon,ele = self.project(x_geo,y_geo,self.CamR) #-------------------------------- bis hier hin
+        # except:
+            # lat,lon,ele = 0,0,0
+            # logging.error("reproject did not work", exc_info=True)
+        # #self.Cam.project()
+        
+        # #print "latlon",lat,lon,ele,type(lat),type(lon),type(ele)
+        # u = utm.from_latlon(float(lat),float(lon))#,self.ara.header.ZoneNumber)
+        
+        # V = np.array([[u[1]],[u[0]],[float(ele)],[1]])
+       # # print ("V",V, self.Cam.position(),self.Cam.R_gimbal,self.Cam.R_uav)
+        # X = self.Cam.project(V)
+       # # print ("X",X)
+        # if self.Cam.visible(X):
+            # q = []
+            # q[:] = poi[:]
+            # q[3] = X[0][0]
+            # q[4] = X[1][0]
+            # q.append(2)
+            # return q
+            # #            pois_vis.append(q)
             
             
     # def load_data(self,ara,imgname,calib):
