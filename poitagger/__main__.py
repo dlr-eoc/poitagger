@@ -29,7 +29,7 @@ import shutil
 from . import nested
 from . import gpx
 from . import utils2
-from . import flightmeta
+from . import flightjson
 from . import PATHS
 # Widgets
 from . import save_as
@@ -71,7 +71,7 @@ class Main(QMainWindow):
         
         self.img = imageview.Img(self.conf,os.path.join(id,startfilename),self.settings)
         if self.useflight:
-            self.flight = flightmeta.Flight(".poitagger.yml")
+            self.flight = flightjson.Flight(".poitagger.json")
         self.info = info.Info()
         self.calib = calib.Calib()
        # self.dem = dem.Dem()
@@ -79,7 +79,8 @@ class Main(QMainWindow):
         
         #self.pois = pois.Pois(self.conf)
         self.pois = poiview.PoiView()
-        self.pois.setMeta(self.flight.p.child("pois")) 
+        if self.useflight:
+            self.pois.setMeta(self.flight.p.child("pois")) 
         
         self.geomain = geoview.GeoWidget(self.settings)
         
@@ -87,7 +88,7 @@ class Main(QMainWindow):
         self.treemain.setRoot(rd)
         self.treeview = self.treemain.view
         self.treemodel = self.treeview.model
-        self.treemodel.metafilename = ".poitagger.yml"
+        self.treemodel.metafilename = ".poitagger.json"
         
         self.loadUI()
         self.shortcuts()
@@ -103,7 +104,7 @@ class Main(QMainWindow):
         
         self.img.appendButtonsToToolBar(self.toolBar)
         
-        self.flightmain = flightmeta.FlightWidget(self)
+        self.flightmain = flightjson.FlightWidget(self)
         if self.useflight:
             self.flightmain.setMeta(self.flight)
         

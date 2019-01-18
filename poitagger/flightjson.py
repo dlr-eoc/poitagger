@@ -1,11 +1,12 @@
 import yaml
 import yamlordereddictloader
+import json
 import os
 import ast
 from lxml import etree
 import logging
 from PyQt5 import QtCore,QtGui,uic, QtWidgets
-from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout
+from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout,QProgressDialog
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 import datetime
@@ -87,6 +88,8 @@ class FlightWidget(QMainWindow):
         self.setWindowFlags(QtCore.Qt.Widget)
         self.t = ParameterTree(showHeader=False)
         self.horizontalLayout.addWidget(self.t)
+        self.progressDialog = QProgressDialog("Task in progress...", "Cancel", 0,100,self)
+        self.progressDialog.setWindowModality(QtCore.Qt.WindowModal)
         
     def setMeta(self,fm):
         self.flight = fm
@@ -95,7 +98,14 @@ class FlightWidget(QMainWindow):
         self.actionimport.toggled.connect(self.flight.enableImport)
         self.actionsave.triggered.connect(self.flight.save)
         self.actionreload.triggered.connect(self.flight.load)
+        self.flight.sigStart.connect(self.progressBar)
+        self.flight.loadfinished.connect(lambda: self.progressDialog.setValue(100))
+        
     
+    def progressBar(self):
+        self.progressDialog.setValue(0)
+        self.flight.ifm.progress.connect(self.progressDialog.setValue)
+      
     def delete(self):
         mypath = os.path.join(self.flight.path,self.flight.filename)
         if os.path.exists(mypath):
@@ -126,8 +136,8 @@ class FlightWidget(QMainWindow):
             c.remove()
         
     def saveState(self):
-           with open("saveState.yml", 'w') as outfile:
-                yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
+           with open("saveState.json", 'w') as outfile:
+                json.dump(self.p.saveState(), outfile) #, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
                 
     
 class Flight(QtCore.QObject): #QThread
@@ -138,8 +148,9 @@ class Flight(QtCore.QObject): #QThread
     general = QtCore.pyqtSignal(Parameter)
     changed = QtCore.pyqtSignal()
     loadfinished = QtCore.pyqtSignal()
+    sigStart = QtCore.pyqtSignal()
     path = None
-    def __init__(self, filename= ".poitagger.yml"):
+    def __init__(self, filename= ".poitagger.json"):
         super().__init__()
         self.filename= filename
         self.ifm = ImportFlightMeta()
@@ -150,6 +161,7 @@ class Flight(QtCore.QObject): #QThread
                     {"name":"uavpath",'type':"group"}]
         self.p = Parameter.create(name="flightparam",type="group",children=categories)
         self.ifm.finished.connect(self.setFromImport)
+        
         self.p.child("general").sigTreeStateChanged.connect(self.prepareGeneral)
         self.p.child("uavpath").sigValueChanged.connect(self.prepareUavPath)
        # self.p.child("pois").sigTreeStateChanged.connect(self.preparePois)
@@ -204,16 +216,18 @@ class Flight(QtCore.QObject): #QThread
         # ]}
         self.start()
 
+    
     def start(self): #run
+    
         t0 = time.time()
         
         if self.task == "restoreParameter":
             self.p.restoreState(self.meta)
             
-        elif self.task == "loadYaml":
+        elif self.task == "loadJson":
             try:
                 with open(os.path.join(self.path,self.filename), 'r') as stream:
-                    self.p.restoreState(yaml.load(stream,Loader=yamlordereddictloader.Loader))
+                    self.p.restoreState(json.load(stream))#,Loader=yamlordereddictloader.Loader))
             except:
                 logging.error("Flightmeta load", exc_info=True)
         else:
@@ -228,17 +242,18 @@ class Flight(QtCore.QObject): #QThread
         self.loadfinished.emit()
         
     def load(self,path=None,filename=None):
+        self.sigStart.emit()
    #     print ("LOAD")
         if path:
             self.path = path
         if filename:
             self.filename = filename
         try:
-            myyaml = os.path.join(self.path,self.filename)
+            myjson = os.path.join(self.path,self.filename)
             if self.import_enabled:
                 self.ifm.load(self.path)
-            elif os.path.exists(myyaml):
-                self._loadYaml()
+            elif os.path.exists(myjson):
+                self._loadJson()
             else:
     #            print("Empty")
                 self._loadEmpty()
@@ -246,19 +261,19 @@ class Flight(QtCore.QObject): #QThread
      #       print("Empty")
             self._loadEmpty()
 #            logging.warning("Loading flightmeta failed")
-    
+        
     def _loadEmpty(self):
         self.task = "loadEmpty"
         self.start()
-    def _loadYaml(self):
-        self.task = "loadYaml"
+    def _loadJson(self):
+        self.task = "loadJson"
         self.start()
         
     def save(self):
         if self.path == None: return
         try:
             ppath = str(self.p.child("general").child("path").value())
-            text = "Der Pfad aus .poitagger.yml stimmt nicht mit dem Speicherort überein.\n .poitagger.yml: {0}, Speicherort: {1}".format(ppath,self.path)
+            text = "Der Pfad aus .poitagger.json stimmt nicht mit dem Speicherort überein.\n .poitagger.json: {0}, Speicherort: {1}".format(ppath,self.path)
             if not ppath==self.path:
                 logging.warning(text)
             fpath = os.path.join(self.path,self.filename)
@@ -266,11 +281,11 @@ class Flight(QtCore.QObject): #QThread
                 import ctypes
                 ctypes.windll.kernel32.SetFileAttributesW(fpath, 128)
                 with open(fpath, 'w') as outfile:
-                    yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
+                    json.dump(self.p.saveState(), outfile)#, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
                 ctypes.windll.kernel32.SetFileAttributesW(fpath, 2)
             else:
                 with open(fpath, 'w') as outfile:
-                    yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
+                    json.dump(self.p.saveState(), outfile)#, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
         except:
             logging.error("Flightmeta save", exc_info=True)
             
@@ -286,6 +301,7 @@ class Flight(QtCore.QObject): #QThread
         
 class ImportFlightMeta(QtCore.QThread):
     finished = QtCore.pyqtSignal(dict)
+    progress = QtCore.pyqtSignal(int)
     def __init__(self):
         QtCore.QObject.__init__(self)
         self.Meta = {"general":None,"pois":[],"uavpath":[],"images":[], "calibration":None}
@@ -293,14 +309,21 @@ class ImportFlightMeta(QtCore.QThread):
     def load(self,path=None):
         self.path = path
         self.start()
-        
+    
+      
     def _loadImagesHeader(self):
         self.ImgHdr = []
         self.ImgList = []
         path = self.path
         if path == "": return self.ImgHdr
+        Dir = sorted(os.listdir(path))
+        num = float(len(Dir))
+        print(num)
         try:
-            for file in sorted(os.listdir(path)):
+            for k,file in enumerate(Dir):
+                #print(int((k/num)*60))
+                if k%10==0:
+                    self.progress.emit(int((k/num)*60))
                 if os.path.splitext(file)[1].lower() not in image.SUPPORTED_EXTENSIONS: continue
                 img = image.Image.factory(os.path.join(path,file),onlyheader=True)    
                 self.ImgHdr.append(img.header)
@@ -325,7 +348,7 @@ class ImportFlightMeta(QtCore.QThread):
         width = 0
         height = 0
         bitdepth = 0
-        orientation = 7
+        orientation = 0
         try:
             for i in self.ImgHdr:
                 if i["rawimage"].get("width") != None:
@@ -391,41 +414,39 @@ class ImportFlightMeta(QtCore.QThread):
         xslt_root = etree.XML('''\
     <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <xsl:template match="/pois">
-    <xsl:for-each select="p1oi">
-    - name: <xsl:value-of select="name/text()"/>
-      filename: <xsl:value-of select="filename/text()"/>
-      latitude: <xsl:value-of select="latitude/text()"/>
-      longitude: <xsl:value-of select="longitude/text()"/>
-      pixel_x:  <xsl:value-of select="pixel_x/text()"/>
-      pixel_y:  <xsl:value-of select="pixel_y/text()"/>
-      elevation:  <xsl:value-of select="elevation/text()"/>
-      uav_longitude:  <xsl:value-of select="uav_longitude/text()"/>
-      uav_latitude:  <xsl:value-of select="uav_latitude/text()"/>
-      uav_elevation:  <xsl:value-of select="uav_elevation/text()"/>
-      uav_yaw:  <xsl:value-of select="uav_yaw/text()"/>
-      cam_pitch:  <xsl:value-of select="cam_pitch/text()"/>
-      pitch_offset:  <xsl:value-of select="pitch_offset/text()"/>
-      roll_offset:  <xsl:value-of select="roll_offset/text()"/>
-      yaw_offset:  <xsl:value-of select="yaw_offset/text()"/>
-      found_time:  <xsl:value-of select="found_time/text()"/>
-    </xsl:for-each>
-    </xsl:template>
+    [<xsl:for-each select="p1oi">{ "name": "<xsl:value-of select="name/text()"/>",
+      "filename": "<xsl:value-of select="filename/text()"/>",
+      "latitude": "<xsl:value-of select="latitude/text()"/>",
+      "longitude": "<xsl:value-of select="longitude/text()"/>",
+      "pixel_x":  "<xsl:value-of select="pixel_x/text()"/>",
+      "pixel_y":  "<xsl:value-of select="pixel_y/text()"/>",
+      "elevation":  "<xsl:value-of select="elevation/text()"/>",
+      "uav_longitude":  "<xsl:value-of select="uav_longitude/text()"/>",
+      "uav_latitude":  "<xsl:value-of select="uav_latitude/text()"/>",
+      "uav_elevation":  "<xsl:value-of select="uav_elevation/text()"/>",
+      "uav_yaw":  "<xsl:value-of select="uav_yaw/text()"/>",
+      "cam_pitch":  "<xsl:value-of select="cam_pitch/text()"/>",
+      "pitch_offset":  "<xsl:value-of select="pitch_offset/text()"/>",
+      "roll_offset":  "<xsl:value-of select="roll_offset/text()"/>",
+      "yaw_offset":  "<xsl:value-of select="yaw_offset/text()"/>",
+      "found_time":  "<xsl:value-of select="found_time/text()"/>"},</xsl:for-each>]</xsl:template>
     </xsl:stylesheet>''')
         transform = etree.XSLT(xslt_root)
         doc = etree.parse(poisxmlfile)
         result_tree = transform(doc)
-        pois = yaml.load(str(result_tree)[23:])
+        #print (str(result_tree)[23:-3]+"]")
+        pois = json.loads(str(result_tree)[23:-3]+"]")
         if pois == None: pois = []
         ts = datetime.datetime.fromtimestamp(os.path.getmtime(self.path)).isoformat()
         P = []
         for k,i in enumerate(pois):
-            if not i["found_time"] is None: 
-                try:
-                    ft = i["found_time"].isoformat()
-                except:
-                    ft = datetime.datetime.fromtimestamp(i["found_time"]).isoformat()
-            else:
-                ft = ""
+            # if not i["found_time"] is None: 
+                # try:
+                    # ft = i["found_time"].isoformat()
+                # except:
+                    # ft = datetime.datetime.fromtimestamp(i["found_time"]).isoformat()
+            # else:
+                # ft = ""
             P.append({"name":"_".join([str(i["name"]),str(k)]), "type":"group", 
                         "expanded":False, "renamable":True, "removable":True, "children": [{ 
                         "name":i["filename"],"value":(i["pixel_x"],i["pixel_y"]), 
@@ -435,27 +456,33 @@ class ImportFlightMeta(QtCore.QThread):
                         "cam_yaw":i["uav_yaw"],"cam_pitch":i["cam_pitch"],"cam_roll":0,
                         "cam_dx":0.2,"cam_dy":0,"cam_dz":0,"euler_dir":"ZXY",
                         "pitch_offset":i["pitch_offset"],"roll_offset":i["roll_offset"],"yaw_offset":i["yaw_offset"],
-                        "found_time":ft}]})
+                        "found_time":i["found_time"] }]})
         out = {"name":"pois","type":"group", "expanded":True, "children":[{"name":"0","type":"group","children": [{"name":"timestamp","type":"str","readonly":True,
                 "value":ts},{"name":"description","type":"str","readonly":False,"value":"initial dataset"},
                         {"name":"data","type":"group","readonly":True,"expanded":True, "children":P}]}]}
         return out
     
     def run(self):
+        #self.progressBar()
         t0 = time.time()
         self.pois = {"name":"pois","type":"group", "expanded":True, "children":[]}
         self. images = []
         self.calibration = {}
+        #self.progress.emit(10)
         self.ImgHdr = self._loadImagesHeader()
         t1 = time.time()
         print("LoadImages",t1-t0)
+        self.progress.emit(60)
         self._loadCalibration()
         t2 = time.time()
         print("CAL",t2-t1)
+        self.progress.emit(70)
         self._createUavPath()
+        self.progress.emit(80)
         t3 = time.time()
         print("UAVPATH",t3-t2)
         self.general = self._generalParams()
+        self.progress.emit(90)
          
         t4 = time.time()
         print("generalParams",t4-t3)
@@ -467,6 +494,8 @@ class ImportFlightMeta(QtCore.QThread):
         self.Meta["pois"] = self.pois
         t5 = time.time()
         print("POIS",t5-t4)
+        self.progress.emit(100)
+        
         self.finished.emit(self.Meta)
         
         
@@ -491,10 +520,6 @@ if __name__ == "__main__":
     
     vbox = QVBoxLayout()
     win.horizontalLayout.addLayout(vbox)
-   # but = QPushButton()
-   # but.setText("change")
-   # vbox.addWidget(but)
-   # but.clicked.connect(fm.change)
     
     but2 = QPushButton()
     but2.setText("save")
@@ -517,7 +542,11 @@ if __name__ == "__main__":
     vbox.addWidget(but5)
     but5.clicked.connect(win.saveState)
     
-    #root.editingFinished.connect(lambda: fm.load(str(root.text())))
+    # but6 = QPushButton()
+    # but6.setText("progressDialog")
+    # vbox.addWidget(but6)
+    # but6.clicked.connect(win.progressBar)
+    
     ldbut.clicked.connect(lambda: fm.load(str(root.text())))
     win.show()
     

@@ -13,7 +13,7 @@ from collections import OrderedDict,MutableMapping,MutableSequence
 
 from . import image
 from . import utils2
-from . import flightmeta
+from . import flightjson
 from . import nested
 from . import PATHS
 from . import poimodel
@@ -33,6 +33,7 @@ class PoiView(QMainWindow):
         self.actiondelLayer.triggered.connect(self.delLayer)
         #self.actionnewLayer.triggered.connect(self.newLayer)
         self.actionshow.triggered.connect(self.jumpTo)
+        
     def setMeta(self,fmpois):
         self.model.setMeta(fmpois)
         self.toolBar.addWidget(self.cb)
@@ -134,7 +135,7 @@ if __name__ == "__main__":
     
     poi = PoiView()
     
-    fm = flightmeta.Flight()
+    fm = flightjson.Flight()
     fm.load(path)
     #fm.loadfinished.connect(lambda: poi.setMeta(fm.p.child("pois")))
     poi.setMeta(fm.p.child("pois"))    

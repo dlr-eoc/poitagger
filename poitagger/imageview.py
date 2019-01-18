@@ -390,7 +390,8 @@ class Img(QtGui.QWidget):
             if type(item) in [QtGui.QGraphicsTextItem, QtGui.QGraphicsEllipseItem,]: # pg.graphicsItems.ImageItem.ImageItem: 
                 self.vbox.removeItem(item)
         for i in liste:
-            x,y = i["x"],i["y"]
+            x,y = float(i["x"]),float(i["y"])
+            #print (type(x),type(y))
             y2 = y+SIZE/2.0 #if not self.proc.flipud else self.imheight - i[4]+SIZE/2.0 -1
             eli = QtGui.QGraphicsEllipseItem(x-SIZE/2.0,y-SIZE/2.0,SIZE,SIZE)
             mytext = QtGui.QGraphicsTextItem(str(i["name"])) 
