@@ -60,7 +60,6 @@ class Main(QMainWindow):
         self.settings.setFallbacksEnabled(False) 
         rd = rootdir if rootdir is not None else str(self.settings.value('PATHS/rootdir'))
         id = imgdir if imgdir is not None else str(self.settings.value('PATHS/last'))
-        
         self.imgdiff = 1 if imgdir is not None else int(self.settings.value('PATHS/lastimgid',0))
         startfilename = str(self.settings.value('PATHS/lastimgname'))
         
@@ -80,7 +79,7 @@ class Main(QMainWindow):
         #self.pois = pois.Pois(self.conf)
         self.pois = poiview.PoiView()
         if self.useflight:
-            self.pois.setMeta(self.flight.p.child("pois")) 
+            self.pois.setMeta(self.flight.p) 
         
         self.geomain = geoview.GeoWidget(self.settings)
         
@@ -137,6 +136,46 @@ class Main(QMainWindow):
         self.dockwidgets.append((dockwidget,settingsprefix))
         
     def connections(self):
+        self.actionconnects()
+        self.logconnects()
+        self.info.position.connect(self.geomain.view.moveUav)
+        #self.wf.progress.connect(self.AraLoaderProgressBar.setValue)
+        self.wf.critical.connect(lambda txt : QtGui.QMessageBox.critical(self, "SD-Karte einlesen",txt))
+        self.wf.info.connect(lambda txt : QtGui.QMessageBox.information(self, "SD-Karte einlesen",txt))
+        self.escAction.triggered.connect(self.close)
+        
+        self.pois.sigJumpTo.connect(self.treemain.view.setCurrent)
+    #    self.pois.liste.connect(self.img.paintPois) #selektierter Poi
+        self.pois.model.sigPois.connect(self.img.paintPois)
+       # self.pois.model.sig_reprojected.connect(self.img.paintPois)
+      #  self.pois.model.sigPois.connect(self.treemodel.pois)
+        
+        # aRA UEBERSCHREIBEN MIT EIGENEN wERTEN
+        self.calib.conf.connect(lambda conf: self.wf.readFolder(self.treemain.view.imgdir,conf))
+        
+        #self.flightmeta.importimages.connect(self.wf.readFolder)
+        self.treemain.view.imgPathChanged.connect(self.onImagePathChanged)
+        self.treemain.view.imgDirChanged.connect(self.onDirChanged)
+        self.img.loaded.connect(lambda: self.onImageChanged(self.img.ara))
+        self.treemain.view.rootDirChanged.connect(lambda rootdir: self.settings.setValue('PATHS/rootdir', rootdir))
+        
+        if self.useflight:
+            self.geomain.actionFitMap.triggered.connect(lambda: self.geomain.view.fitBounds(paramreduce.load(self.flight.p.child("general").child("bounding").getValues())))
+            self.flight.uavpath.connect(self.geomain.view.setUavPath)
+            self.flight.general.connect(self.img.setOrientation)
+            self.flight.loadfinished.connect(lambda: self.pois.model.loadMeta(self.flight.p))
+            self.flight.poisChanged.connect(lambda: self.pois.model.loadMeta(self.flight.p))
+            self.img.sigOrientation.connect(self.flight.setOrientation)
+            self.flight.pois.connect(self.treemain.reloadPoiFiles)
+        
+    #        self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
+          #  self.flight.pois.connect(self.geomain.view.loadpois)
+        
+        self.img.highlighting.connect(self.treemain.vb.imagename.setStyleSheet)
+        self.img.sigPixel.connect(self.pois.addView)
+        self.img.sigMouseMode.connect(self.focusDockWidget)
+    
+    def actionconnects(self):
         self.actionSD_Karte_einlesen.triggered.connect(lambda: self.wf.readSDCard(self.saveDialog,self.settings))
         self.actionAra_korrigieren.triggered.connect(lambda: self.wf.readFolder(self.treemain.view.current_path()))
     #    self.actionSave_poi_gpx.triggered.connect(self.pois.save_gpx)
@@ -146,52 +185,33 @@ class Main(QMainWindow):
         self.actionCreate_subimages.triggered.connect(lambda: self.wf.createSubimages(self.treemain.view.current_path()))
         self.actionGpx_to_gps.triggered.connect(self.gpx_to_gps)
         self.actionEinstellungen.triggered.connect(self.conf.openPropDialog)
-        self.info.position.connect(self.geomain.view.moveUav)
-        #self.wf.progress.connect(self.AraLoaderProgressBar.setValue)
+    
+    def logconnects(self):
         self.log.connect(self.Console.append)
         self.wf.log.connect(self.Console.append)
-        self.wf.critical.connect(lambda txt : QtGui.QMessageBox.critical(self, "SD-Karte einlesen",txt))
-        self.wf.info.connect(lambda txt : QtGui.QMessageBox.information(self, "SD-Karte einlesen",txt))
-        
-    #    self.pois.log.connect(self.Console.append)
         self.treemain.view.log.connect(self.Console.append)
         self.img.log.connect(self.Console.append)
-                
+    #    self.pois.log.connect(self.Console.append)
         
-        self.escAction.triggered.connect(self.close)
-        
-    #    self.pois.liste.connect(self.img.paintPois) #selektierter Poi
-        self.pois.model.sigPois.connect(self.img.paintPois)
-        self.pois.sigJumpTo.connect(self.treemain.view.setCurrent)
-        self.pois.model.sigPois.connect(self.treemodel.pois)
-        self.pois.model.sigPois.connect(self.treemain.reloadPoiFiles)
-        
-        # aRA UEBERSCHREIBEN MIT EIGENEN wERTEN
-        self.calib.conf.connect(lambda conf: self.wf.readFolder(self.treemain.view.imgdir,conf))
-        
-        #self.flightmeta.importimages.connect(self.wf.readFolder)
-        
-        [self.treemain.view.imgPathChanged.connect(c) for c in [self.img.loadImg,self.setWindowTitle]]
+    def onDirChanged(self,path):
         if self.useflight:
-            self.geomain.actionFitMap.triggered.connect(lambda: self.geomain.view.fitBounds(paramreduce.load(self.flight.p.child("general").child("bounding").getValues())))
-            [self.treemain.view.imgDirChanged.connect(c) for c in [self.flight.load,self.geomain.setCurrentDir]]
-            
-          #  self.treemain.view.imgDirChanged.connect(self.pois.loadComboBox)
-            self.flight.uavpath.connect(self.geomain.view.setUavPath)
-          #  self.flight.pois.connect(self.geomain.view.loadpois)
-            self.flight.general.connect(self.img.setOrientation)
-            self.img.sigOrientation.connect(self.flight.setOrientation)
-    #        self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
+            self.flight.load(path)
+        self.geomain.setCurrentDir(path)
         
+    def onImagePathChanged(self,path):
+        self.img.loadImg(path)
+        self.setWindowTitle(path)
         
-        self.img.loaded.connect(lambda: self.fill_values(self.img.ara))
-        self.treemain.view.rootDirChanged.connect(lambda rootdir: self.settings.setValue('PATHS/rootdir', rootdir))
+    def onImageChanged(self,ara):
+        self.info.load_data(ara.header)
+        self.calib.load_data(ara.header)
+        #self.pois.model.load(ara.header)
+        self.pois.model.setPose(ara.header)
+        self.pois.model.getPois(ara.filename)
+        self.geomain.setCurrentImg(ara.header)
         
-        self.img.highlighting.connect(self.treemain.vb.imagename.setStyleSheet)
-        
-        self.img.sigPixel.connect(self.pois.addView)
-        self.img.sigMouseMode.connect(self.focusDockWidget)
-        
+    #    self.pois.load_data(ara,self.treemain.view.imgname,self.calib)#self.img.araalt,
+      
     def gpx_to_gps(self):
     #    self.pois.save()
     
@@ -317,13 +337,7 @@ class Main(QMainWindow):
         actionName.setShortcut(QtGui.QKeySequence(key))
         self.addAction(actionName)
         
-    def fill_values(self,ara):
-        self.info.load_data(ara.header)
-        self.calib.load_data(ara.header)
-        self.pois.model.getPois(ara.filename)
-        self.geomain.setCurrentImg(ara.header)
-    #    self.pois.load_data(ara,self.treemain.view.imgname,self.calib)#self.img.araalt,
-        
+     
     def isTopDockWidget(self,widget):
         if widget.visibleRegion().isEmpty():
             return False

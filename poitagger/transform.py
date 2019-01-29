@@ -1,5 +1,10 @@
 from __future__ import print_function
 from numpy import sin as s, cos as c, radians, array, around, all
+import logging
+import numpy as np
+from . import utils2
+from . import PATHS
+
 
 #right handed Coordinate Systems
 #natural Euler Angles 
@@ -123,48 +128,121 @@ def ZXYdeg(a,b,g):
 def ZYXdeg(a,b,g):
     return ZYXrad(radians(a),radians(b),radians(g))
     
-def Xrad(a):
-    return array([[1,0,0],[0,c(a),-s(a)],[0,s(a),c(a)]])
-def Yrad(a):
-    return array([[c(a),0,-s(a)],[0,1,0],[s(a),0,c(a)]])
-def Zrad(a):
-    return array([[c(a),-s(a),0],[s(a),c(a),0],[0,0,1]])
-    
-def Xdeg(a):
-    return Xrad(radians(a))
-def Ydeg(a):
-    return Yrad(radians(a))
-def Zdeg(a):
-    return Zrad(radians(a))
+class CoSy(object):
+    UAV = 0
+    CAMERA = 1
+    SBA = 2
+    FALCON8 = 3
+    FALCON8_TRINITY = 4
 
-def aerospace(roll,pitch,yaw):
-    return ZYXdeg(yaw,pitch,roll).T
 
-def toAxisAngle(RotMat):
-    pass
+def homo(mat3d):
+    mat4d = np.vstack((mat3d,[0,0,0]))
+    return np.hstack((mat4d,[[0],[0],[0],[1]]))
     
-def toQuaternions(RotMat):
-    pass
-if __name__=="__main__":
-    
-    print("EXAMPLES:\n")
-    vec = array([[0], [1], [2]])
-    
-    print("rotate the coordinate system around the vec",vec,"with 90deg yaw then 20deg roll:", aerospace(20,0,90).dot(vec)) 
-    
-    #geodetic left handed cosy to a right handed cosy, where the new z points in the direction of the old x, the new x points to the old y and the new y points down to the old -z
-    #we have to rotate and transpose the rotationmatrix to do that correctly.
-    print("from geodetic to camera cosy:",around(-XYZdeg(90,-90,0).T.dot(vec)),"should be: [1,-2,0]^T") 
-    print("from geodetic to camera cosy (other transform):",around(-ZYXdeg(-90,0,90).T.dot(vec)),"should be: [1,-2,0]^T") 
-    
-    print("from left to left cosy:",  around(XYZdeg(90,90,0).T.dot(vec)),"should be: [1,2,0]^T")
-    print("from right to right cosy:",around(XYZdeg(90,90,0).T.dot(vec)),"should be: [1,2,0]^T")
-    print("from right to left cosy:",around(-XYZdeg(90,90,0).T.dot(vec)),"should be: [-1,-2,0]^T")
-    print("from left to right cosy:",around(-XYZdeg(90,90,0).T.dot(vec)),"should be: [-1,-2,0]^T")
-    
-    print("XYZ(90,90,90):",around(XYZdeg(90,90,90).T.dot(vec)),"should be: [2,-1,0]^T")
-    print("Z(90):",around(Zdeg(90).T.dot(vec)),"should be: [1,0,2]^T")
-    print("X90,Y90,Z90:",around(Zdeg(90).dot(Ydeg(90).dot(Xdeg(90))).T.dot(vec)),"should be: [2,-1,0]^T")
-    
-    print("X90,Y90,Z90:",around(Zdeg(90).dot(Ydeg(90).dot(Xdeg(90))).T.dot(vec)),"should be: [2,-1,0]^T")
+def invtrans(X,Y,Z):
+    return np.array([[1,0,0,X],[0,1,0,Y],[0,0,1,Z],[0,0,0,1]])# inverse Matrix
         
+class Transform(object):
+    def __init__(self, cosy = CoSy.FALCON8):
+        self.S = np.eye(4)
+        self.pose(0,0,0,0,0,0)
+        self.boresight(0,0,0,0,0,0)
+        if cosy == CoSy.CAMERA:
+            self.cosymat = np.eye(4)
+        elif cosy == CoSy.FALCON8:
+        #    '''  
+        #    z  left handed geo cosy       
+        #    / \                    
+        #     | _x    transforms to      _z  right handed camera cosy  
+        #     | /|                       /|
+        #     |/___\y                   /______\ x        
+        #          /                   |       /          
+        #                             \|/          
+        #                               y      
+        #    '''
+            self.cosymat = np.array([[0,1,0,0],[0,0,-1,0],[1,0,0,0],[0,0,0,1]])
+            self.gimbal(dx=0.2,dir="ZXY")
+        
+        elif cosy == CoSy.FALCON8_TRINITY:
+            # the difference to FALCON8 is that they use now right sided coordinate system for the UAV Frame
+            self.cosymat = np.array([[0,1,0,0],[0,0,-1,0],[1,0,0,0],[0,0,0,1]])
+            self.gimbal(dx=0.2,dir="ZXY")
+
+        elif cosy == CoSy.UAV:
+        #''' 
+        #    same cosytransform as falcon8
+        #'''
+            self.cosymat = np.array([[0,1,0,0],[0,0,-1,0],[1,0,0,0],[0,0,0,1]])
+        
+        elif cosy == CoSy.SBA:
+            pass
+            # to be done!!!
+            #self.boresight(-90,0,90,0,0,0)
+            
+    def pose(self,roll=0,pitch=0,yaw=0,X=0,Y=0,Z=0,leftcosy=False): 
+        '''
+        roll: Fluglage um die X-Achse (pos. Richtung: linke Handregel, weil Linkssystem) in degree (0-360) im World-KoSy
+        pitch: Fluglage um die Y-Achse (pos. Richtung: linke Handregel, weil Linkssystem) in degree 
+        yaw: Fluglage um die Z-Achse/Kompass (pos. Richtung: im Uhrzeigersinn,weil Linkssystem ) in degree
+        X: UTM-Hochachse, in m
+        Y: UTM-Rechtsachse, in m
+        Z: positive Elevation, in m 
+        '''
+        if not leftcosy:
+            self.R_uav = -homo(ZYXdeg(yaw,pitch,roll).T)
+        else:
+            self.R_uav = homo(ZYXdeg(yaw,pitch,roll).T) # transponierte Matrix, weil das Koordinatensystem gedreht wird, nicht der Vektor (passive Rotation)
+        self.Ri_uav = self.R_uav.T # inverse Matrix
+        self.T_uav = np.array([[1,0,0,-X],[0,1,0,-Y],[0,0,1,-Z],[0,0,0,1]])
+        self.Ti_uav = invtrans(X,Y,Z)
+        
+    def gimbal(self,roll=0,pitch=0,yaw=0,dx=0,dy=0,dz=0,dir="ZYX",sameCoSyAsUav=True):
+        if dir == "ZXY":
+            R = ZXYdeg(yaw,roll,pitch)
+        elif dir == "ZYX" :    
+            R = ZYXdeg(yaw,pitch,roll)
+        elif dir == "XYZ":
+            R = XYZdeg(roll,pitch,yaw)
+        elif dir == "XZY":
+            R = XZYdeg(roll,yaw,pitch)
+        elif dir == "YXZ":
+            R = YXZdeg(pitch,roll,yaw)
+        elif dir == "YZX":
+            R = YZXdeg(pitch,yaw,roll)
+        if not sameCoSyAsUav:
+            self.R_gimbal = -homo(R.T)
+        else:
+            self.R_gimbal = homo(R.T)
+        self.T_gimbal = np.array([[1,0,0,-dx],[0,1,0,-dy],[0,0,1,-dz],[0,0,0,1]])
+        self.Ri_gimbal = self.R_gimbal.T
+        self.Ti_gimbal = invtrans(dx,dy,dz)
+               
+    
+    def boresight(self,yaw=0,pitch=0,roll=0,dx=0,dy=0,dz=0):
+        '''
+        roll: Einbaulage der Kamera (Linkssystem) in degree bezogen auf das UAV-Koordinatensystem
+        pitch: variabler Kamerapitchwinkel (Linkssystem) in degree
+        yaw: Einbaulage der Kamera (Linkssystem) in degree
+        X: Abstand Payloadpitchdrehachse von IMU in Richtung Flugspitze in m
+        Y: Abstand Payloadrolldrehachse von IMU Richtung Rechts in m
+        Z: Abstand Payloadroll- und pitchdrehachse von IMU Richtung Oben  in m
+        Die Abstaende sind keine Abstaende zur jeweiligen Achse sondern sind Abstaende vom Zentrum des UAV.
+        
+        
+        the cam coordinate system is as follows:
+        z points to the scene
+        x points right
+        y points down
+        '''
+        self.R_boresight = homo(ZYXdeg(yaw,pitch,roll).T)
+        self.T_boresight = np.array([[1,0,0,-dx],[0,1,0,-dy],[0,0,1,-dz],[0,0,0,1]])
+        self.Ri_boresight = self.R_boresight.T
+        self.Ti_boresight = invtrans(dx,dy,dz)
+        
+    def transform(self):
+        self.S = self.cosymat.dot(self.R_boresight).dot(self.T_boresight).dot(self.R_gimbal).dot(self.T_gimbal).dot(self.R_uav).dot(self.T_uav)
+        self.Si = self.Ti_uav.dot(self.Ri_uav).dot(self.Ti_gimbal).dot(self.Ri_gimbal).dot(self.Ti_boresight).dot(self.Ri_boresight).dot(self.cosymat.T)
+        
+    def attitudeMat(self):
+        return self.S

@@ -400,6 +400,7 @@ class ImageJpg(Image):
         self.header["camera"]["roll"] = self.extract_xmp("camera:roll") 
         self.header["camera"]["yaw"] = self.extract_xmp("camera:yaw")
         self.header["camera"]["pitch"] = self.extract_xmp("camera:pitch") 
+        self.header["camera"]["euler_order"] = "ZYX"
         self.header["camera"]["model"] = self.extract_exif("Image Model")
         self.header["camera"]["make"] = self.extract_exif("Image Make")
         self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
@@ -489,6 +490,8 @@ class ImageJpg(Image):
         self.header["camera"]["roll"] = float(a.get("drone-dji:gimbalrolldegree",0))
         self.header["camera"]["yaw"] = float(a.get("drone-dji:gimbalyawdegree",0))
         self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",0))
+        self.header["camera"]["euler_order"] = "ZYX"
+        
         self.header["camera"]["model"] = a.get("tiff:model",0)
         self.header["camera"]["make"] = a.get("tiff:make",0)
         self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
@@ -685,13 +688,16 @@ class ImageAra(Image):
         
         self.header["camera"]["roll"] = self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
         self.header["camera"]["yaw"] = self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
-        self.header["camera"]["pitch"] = self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2        
+        self.header["camera"]["pitch"] = self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2    
+        self.header["camera"]["euler_order"] = "ZXY"
+                
         self.header["camera"]["model"] = str(self.rawheader["camera"]["partnum"].strip(b"\x00"))
         self.header["camera"]["make"] = "Intel"
         
         self.header["uav"]["roll"] = self.rawheader["falcon"]["angle_roll"]/10.0**2             
         self.header["uav"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2               
         self.header["uav"]["pitch"] = self.rawheader["falcon"]["angle_pitch"]/10.0**2              
+        self.header["uav"]["euler_order"] = "ZYX"
         
         self.header["gps"]["latitude"] = self.rawheader["falcon"]["gps_lat"]/10.0**7            
         self.header["gps"]["longitude"] = self.rawheader["falcon"]["gps_long"]/10.0**7      
@@ -842,11 +848,13 @@ class ImageTiff(Image):
         self.header["camera"]["roll"] = self.extract_xmp("camera:roll")
         self.header["camera"]["yaw"] = self.extract_xmp("camera:yaw")
         self.header["camera"]["pitch"] = self.extract_xmp("camera:pitch")
+        self.header["camera"]["euler_order"] = "ZYX"
         self.header["camera"]["model"] = self.exif["Model"]
         self.header["camera"]["make"] = self.exif["Make"]
         self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
         self.header["uav"]["yaw"] = self.extract_xmp("flir:mavyaw")
         self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch")
+        self.header["uav"]["euler_order"] = "ZYX"
         self.header["gps"]["latitude"]  = self.convert_latlon(self.exif["GPSTag"]["GPSLatitude"],self.exif["GPSTag"]["GPSLatitudeRef"])
         self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPSTag"]["GPSLongitude"],self.exif["GPSTag"]["GPSLongitudeRef"])
         self.header["gps"]["rel_altitude"] = self.extract_xmp("flir:mavrelativealtitude")
@@ -869,11 +877,13 @@ class ImageTiff(Image):
         self.header["camera"]["roll"] = float(a.get("drone-dji:gimbalrolldegree",0))
         self.header["camera"]["yaw"] = float(a.get("drone-dji:gimbalyawdegree",0))
         self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",0))
+        self.header["camera"]["euler_order"] = "ZXY"
         self.header["camera"]["model"] = a.get("tiff:model",0)
         self.header["camera"]["make"] = a.get("tiff:make",0)
         self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
         self.header["uav"]["yaw"] = float(a.get("drone-dji:flightyawdegree",0))
         self.header["uav"]["pitch"] = float(a.get("drone-dji:flightpitchdegree",0))
+        self.header["uav"]["euler_order"] = "ZYX"
         self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPSTag"]["GPSLatitude"],self.exif["GPSTag"]["GPSLatitudeRef"])
         self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPSTag"]["GPSLongitude"],self.exif["GPSTag"]["GPSLongitudeRef"])
         self.header["gps"]["rel_altitude"]=float(a.get("drone-dji:relativealtitude",0))

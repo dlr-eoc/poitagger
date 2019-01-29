@@ -16,7 +16,7 @@ from . import utils2
 from . import flightjson
 from . import nested
 from . import PATHS
-from . import poimodel
+from . import poimodel2
     
 class PoiView(QMainWindow):
     sigJumpTo = QtCore.pyqtSignal(str)
@@ -25,7 +25,7 @@ class PoiView(QMainWindow):
         uic.loadUi(os.path.join(PATHS["UI"],'pois.ui'),self)
         
         self.t = ParameterTree(showHeader=False)
-        self.model = poimodel.PoiModel()
+        self.model = poimodel2.PoiModel()
         self.horizontalLayout.addWidget(self.t)#self.listw)
         self.cb = QComboBox()
         self.cb.currentTextChanged.connect(self.chooseLayer)
@@ -34,10 +34,10 @@ class PoiView(QMainWindow):
         #self.actionnewLayer.triggered.connect(self.newLayer)
         self.actionshow.triggered.connect(self.jumpTo)
         
-    def setMeta(self,fmpois):
-        self.model.setMeta(fmpois)
+    def setMeta(self,fm):
+        self.model.loadMeta(fm)
         self.toolBar.addWidget(self.cb)
-        self.p = fmpois
+        self.p = fm.child("pois")
         self.loadComboBox()
         self.p.sigTreeStateChanged.connect(self.loadComboBox)
         
@@ -102,8 +102,8 @@ class PoiView(QMainWindow):
         cur = self.t.currentItem()
         if not cur == None and cur.parent() == self.t.topLevelItem(0):  
             try:
-                cur.param.addChild({"name":filename,"value":(x,y),"type":"str", "paramtyp":"view", "readonly":False,"removable":True,"renamable":False,"enabled":False})
-                cur.contextMenu.addAction('ShowImage').triggered.connect(self.jumpTo)
+                cur.param.addChild(self.model.reproject_poi(x,y))
+                #cur.contextMenu.addAction('ShowImage').triggered.connect(self.jumpTo)
                 #cur.param.setOpts(latitude=46.45234)
                 #print("lat",cur.param.opts["latitude"])
                 self.model.getPois(filename)

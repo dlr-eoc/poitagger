@@ -3,14 +3,16 @@ import yamlordereddictloader
 import json
 import os
 import ast
+from ast import literal_eval
 from lxml import etree
 import logging
-from PyQt5 import QtCore,QtGui,uic, QtWidgets
+from PyQt5 import QtCore,QtGui,uic, QtWidgets,QtTest
 from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout,QProgressDialog
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 import datetime
 from collections import OrderedDict,MutableMapping,MutableSequence,defaultdict
+
 import numpy as np
 import time
 
@@ -90,6 +92,7 @@ class FlightWidget(QMainWindow):
         self.horizontalLayout.addWidget(self.t)
         self.progressDialog = QProgressDialog("Task in progress...", "Cancel", 0,100,self)
         self.progressDialog.setWindowModality(QtCore.Qt.WindowModal)
+        self.progressDialog.reset()
         
     def setMeta(self,fm):
         self.flight = fm
@@ -98,14 +101,18 @@ class FlightWidget(QMainWindow):
         self.actionimport.toggled.connect(self.flight.enableImport)
         self.actionsave.triggered.connect(self.flight.save)
         self.actionreload.triggered.connect(self.flight.load)
-        self.flight.sigStart.connect(self.progressBar)
-        self.flight.loadfinished.connect(lambda: self.progressDialog.setValue(100))
-        
+        self.flight.progress.connect(self.progressBar)
+        self.flight.ifm.progress.connect(self.progressBar)
+        self.flight.sigError.connect(self.errorMsg)
     
-    def progressBar(self):
-        self.progressDialog.setValue(0)
-        self.flight.ifm.progress.connect(self.progressDialog.setValue)
-      
+    def errorMsg(self,text):
+        QtGui.QMessageBox.critical(self, "Speichern von poitagger.json fehlgeschlagen!",text)
+        
+    def progressBar(self,val):
+        if val == 0:
+            self.progressDialog.show()
+        self.progressDialog.setValue(val)
+        
     def delete(self):
         mypath = os.path.join(self.flight.path,self.flight.filename)
         if os.path.exists(mypath):
@@ -139,22 +146,26 @@ class FlightWidget(QMainWindow):
            with open("saveState.json", 'w') as outfile:
                 json.dump(self.p.saveState(), outfile) #, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
                 
-    
+    def test(self):
+        print (self.flight.p.child("children").child("general").child("path").value())
+        
 class Flight(QtCore.QObject): #QThread
     import_enabled = False
     pois = QtCore.pyqtSignal(list)
+    poisChanged = QtCore.pyqtSignal()
     uavpath = QtCore.pyqtSignal(list)
     calibration = QtCore.pyqtSignal(dict)
     general = QtCore.pyqtSignal(Parameter)
     changed = QtCore.pyqtSignal()
     loadfinished = QtCore.pyqtSignal()
-    sigStart = QtCore.pyqtSignal()
+    sigError = QtCore.pyqtSignal(str)
+    progress = QtCore.pyqtSignal(int)
     path = None
     def __init__(self, filename= ".poitagger.json"):
         super().__init__()
         self.filename= filename
         self.ifm = ImportFlightMeta()
-        categories= [{"name":"general",'type':"group"},
+        categories= [{"name":"general",'type':"group",'children':[{'name':'images','type':'group','children':[{'name':'width','type':'int'},{'name':'height','type':'int'}]}]},
                     {"name":"calibration",'type':"group"},
                     {"name":"pois",'type':"group"},
                     {"name":"images",'type':"group"},
@@ -164,34 +175,56 @@ class Flight(QtCore.QObject): #QThread
         
         self.p.child("general").sigTreeStateChanged.connect(self.prepareGeneral)
         self.p.child("uavpath").sigValueChanged.connect(self.prepareUavPath)
-       # self.p.child("pois").sigTreeStateChanged.connect(self.preparePois)
-        
+        self.p.child("pois").sigTreeStateChanged.connect(self.__loadPoisList)
+        self.p.child("pois").sigTreeStateChanged.connect(lambda: self.poisChanged.emit())
     def prepareGeneral(self,generalparam):
         if generalparam.children()== [] : return
         self.general.emit(generalparam)
         
-    def preparePois(self,poisparam):
-        #print("FM, POIS JETZT" )
-        if len(poisparam.getValues())==0: return
-        poisdict = nested.Nested(poisparam.getValues(),nested.paramtodict,nested.pre_paramtodict,tupletype=list).data
-        #print(poisdict)
-      #  with open("test.txt","w") as f:
-      #      f.write(str(poisdict["0"]["data"]))
+    # def preparePois(self,poisparam):
+        # #print("FM, POIS JETZT" )
+        # if len(poisparam.getValues())==0: return
+        # poisdict = nested.Nested(poisparam.getValues(),nested.paramtodict,nested.pre_paramtodict,tupletype=list).data
+        # #print(poisdict)
+      # #  with open("test.txt","w") as f:
+      # #      f.write(str(poisdict["0"]["data"]))
+        # pois = []
+        # try:
+            # for i in poisdict["0"]["data"]:
+                # print ("POI",i)
+                # entry = eval(i)
+                # #entry = dict(i)
+                # if "id" in entry:
+                    # pois.append(entry)
+        # except:
+            # logging.warning("flightmeta: append poi failed",exc_info=True)
+        # self.pois.emit(pois)
+        # #p = poisparam.getValues()
+        # #print(len(p),p["0"][1]["data"][1])
+       # # if len(p)>0:
+       # #     print(p["0"])
+    
+    def __loadPoisList(self):
+        layer = self.p.child("pois").children()
         pois = []
         try:
-            for i in poisdict["0"]["data"]:
-                print ("POI",i)
-                entry = eval(i)
-                #entry = dict(i)
-                if "id" in entry:
-                    pois.append(entry)
+            for L in layer:
+                poisdata = L.child("data").children()
+                for poi in poisdata:
+                    for view in poi.children():
+                        val = literal_eval(view.value())
+                        pois.append({"name":poi.name(),"x":val[0],"y":val[1],"layer":L.name(),"filename":view.name(),
+                            "lat":float(view.opts["latitude"]),"lon":float(view.opts["longitude"]),"ele":float(view.opts["elevation"]),
+                            "uav_lat":float(view.opts["uav_lat"]),"uav_lon":float(view.opts["uav_lon"]),"uav_ele":float(view.opts["uav_ele"]),
+                            "cam_yaw":float(view.opts["cam_yaw"]),"cam_pitch":float(view.opts["cam_pitch"]),"cam_roll":float(view.opts["cam_roll"]),
+                            "cam_dx":float(view.opts["cam_dx"]),"cam_dy":float(view.opts["cam_dy"]),"cam_dz":float(view.opts["cam_dz"]),"euler_dir":view.opts["euler_dir"],
+                            "pitch_offset":float(view.opts["pitch_offset"]),"roll_offset":float(view.opts["roll_offset"]),"yaw_offset":float(view.opts["yaw_offset"]),
+                            "found_time":view.opts["found_time"]})
         except:
-            logging.warning("flightmeta: append poi failed",exc_info=True)
+            logging.warning("loadPoisList failed",exc_info=True)
+       # print(pois)
         self.pois.emit(pois)
-        #p = poisparam.getValues()
-        #print(len(p),p["0"][1]["data"][1])
-       # if len(p)>0:
-       #     print(p["0"])
+        
     def prepareUavPath(self,uavpathparam):
         if uavpathparam.value()== None : return
         pathlist = list(uavpathparam.value())
@@ -207,7 +240,7 @@ class Flight(QtCore.QObject): #QThread
     def setFromImport(self,value):
         self.task = "restoreParameter"
         #print(value)
-        self.meta = nested.Nested(value,dictToParam).data
+        self.meta = value
         #print(self.meta)
         # self.meta["children"]["general"]["children"]["orientation"] = {'name': 'orientation', 'type': 'group', 'children': [
             # {'name': 'flip lr', 'type': 'bool'},
@@ -219,31 +252,54 @@ class Flight(QtCore.QObject): #QThread
     
     def start(self): #run
     
-        t0 = time.time()
-        
+        #t0 = time.time()
+               
+        self.progress.emit(0)
+        #print("A")
+        #QtTest.QTest.qWait(300)
+        #print ("jetzt")
         if self.task == "restoreParameter":
-            self.p.restoreState(self.meta)
+            self.p.child("general").restoreState(self.meta["children"]["general"])
+            #self.progress.emit(20)
+         #   print("general")
+            self.p.child("pois").restoreState(self.meta["children"]["pois"])
+            self.progress.emit(40)
+          #  print("pois")
+            self.p.child("uavpath").restoreState(self.meta["children"]["uavpath"])
+            self.progress.emit(60)
+           # print("uavpath")
+            self.p.child("calibration").restoreState(self.meta["children"]["calibration"])
+            #self.p.restoreState(self.meta)
+            self.progress.emit(80)
+            #print("calibration")
+            self.p.child("images").restoreState(self.meta["children"]["images"])
             
-        elif self.task == "loadJson":
-            try:
-                with open(os.path.join(self.path,self.filename), 'r') as stream:
-                    self.p.restoreState(json.load(stream))#,Loader=yamlordereddictloader.Loader))
-            except:
-                logging.error("Flightmeta load", exc_info=True)
+            #progress.emit(50)
+        
+        # elif self.task == "loadJson":
+            # try:
+                # with open(os.path.join(self.path,self.filename), 'r') as stream:
+                    # self.p.restoreState(json.load(stream))#,Loader=yamlordereddictloader.Loader))
+            # except:
+                # logging.error("Flightmeta load", exc_info=True)
         else:
             self.p.child("general").clearChildren()
             self.p.child("pois").clearChildren()
             #self.p.child("images").clearChildren()
             self.p.child("uavpath").clearChildren()
             self.p.child("calibration").clearChildren()
-        t1 = time.time()
-        print("FLIGHT start",t1-t0)
-        
+        #t1 = time.time()
+        #print("FLIGHT start",t1-t0)
+        self.progress.emit(100)
         self.loadfinished.emit()
         
     def load(self,path=None,filename=None):
-        self.sigStart.emit()
+        #self.sigStart.emit()
+        self.progress.emit(0)
+        
    #     print ("LOAD")
+       # self.save()
+            
         if path:
             self.path = path
         if filename:
@@ -253,7 +309,8 @@ class Flight(QtCore.QObject): #QThread
             if self.import_enabled:
                 self.ifm.load(self.path)
             elif os.path.exists(myjson):
-                self._loadJson()
+                #self._loadJson()
+                self.ifm.load(myjson,True)
             else:
     #            print("Empty")
                 self._loadEmpty()
@@ -276,6 +333,13 @@ class Flight(QtCore.QObject): #QThread
             text = "Der Pfad aus .poitagger.json stimmt nicht mit dem Speicherort überein.\n .poitagger.json: {0}, Speicherort: {1}".format(ppath,self.path)
             if not ppath==self.path:
                 logging.warning(text)
+                self.sigError.emit(text)
+            else:
+                self.save_ok()
+        except:
+            logging.error("Flightmeta save", exc_info=True)
+    
+    def save_ok(self):
             fpath = os.path.join(self.path,self.filename)
             if os.name == "nt":
                 import ctypes
@@ -286,8 +350,6 @@ class Flight(QtCore.QObject): #QThread
             else:
                 with open(fpath, 'w') as outfile:
                     json.dump(self.p.saveState(), outfile)#, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
-        except:
-            logging.error("Flightmeta save", exc_info=True)
             
     #def change(self):
     #    print("flight.change()")
@@ -302,12 +364,14 @@ class Flight(QtCore.QObject): #QThread
 class ImportFlightMeta(QtCore.QThread):
     finished = QtCore.pyqtSignal(dict)
     progress = QtCore.pyqtSignal(int)
+    loadJson = False
     def __init__(self):
         QtCore.QObject.__init__(self)
-        self.Meta = {"general":None,"pois":[],"uavpath":[],"images":[], "calibration":None}
+        self.Meta = {"general":None,"pois":[],"uavpath":[],"images":[], "calibration": {"geometric":{},"radiometric":{},"boresight":{}}}
         
-    def load(self,path=None):
+    def load(self,path=None,loadJson=False):
         self.path = path
+        self.loadJson=loadJson
         self.start()
     
       
@@ -318,7 +382,7 @@ class ImportFlightMeta(QtCore.QThread):
         if path == "": return self.ImgHdr
         Dir = sorted(os.listdir(path))
         num = float(len(Dir))
-        print(num)
+       # print(num)
         try:
             for k,file in enumerate(Dir):
                 #print(int((k/num)*60))
@@ -435,7 +499,11 @@ class ImportFlightMeta(QtCore.QThread):
         doc = etree.parse(poisxmlfile)
         result_tree = transform(doc)
         #print (str(result_tree)[23:-3]+"]")
-        pois = json.loads(str(result_tree)[23:-3]+"]")
+        try:
+            pois = json.loads(str(result_tree)[23:-3]+"]")
+        except:
+            logging.error("convert pois.xml to json failed")
+            pois = []
         if pois == None: pois = []
         ts = datetime.datetime.fromtimestamp(os.path.getmtime(self.path)).isoformat()
         P = []
@@ -464,38 +532,47 @@ class ImportFlightMeta(QtCore.QThread):
     
     def run(self):
         #self.progressBar()
-        t0 = time.time()
-        self.pois = {"name":"pois","type":"group", "expanded":True, "children":[]}
-        self. images = []
-        self.calibration = {}
-        #self.progress.emit(10)
-        self.ImgHdr = self._loadImagesHeader()
-        t1 = time.time()
-        print("LoadImages",t1-t0)
-        self.progress.emit(60)
-        self._loadCalibration()
-        t2 = time.time()
-        print("CAL",t2-t1)
-        self.progress.emit(70)
-        self._createUavPath()
-        self.progress.emit(80)
-        t3 = time.time()
-        print("UAVPATH",t3-t2)
-        self.general = self._generalParams()
-        self.progress.emit(90)
-         
-        t4 = time.time()
-        print("generalParams",t4-t3)
-        m = {"general": self.general, "pois":self.pois, "calibration": self.calibration, "images": self.images, "uavpath": self.uavpath}
-        self.Meta.update(m)
-        poispath = os.path.join(self.path, "pois.xml")
-        if os.path.exists(poispath):
-            self.pois = self._importPois(poispath)
-        self.Meta["pois"] = self.pois
-        t5 = time.time()
-        print("POIS",t5-t4)
-        self.progress.emit(100)
-        
+        #t0 = time.time()
+        if self.loadJson:
+         #elif self.task == "loadJson":
+            try:
+                with open(self.path, 'r') as stream:
+                    self.Meta = json.load(stream)#,Loader=yamlordereddictloader.Loader))
+            except:
+                logging.error("Flightmeta load", exc_info=True)
+        else:
+            self.pois = {"name":"pois","type":"group", "expanded":True, "children":[]}
+            self. images = []
+            self.calibration = {}
+            #self.progress.emit(10)
+            self.ImgHdr = self._loadImagesHeader()
+            #t1 = time.time()
+            #print("LoadImages",t1-t0)
+            self.progress.emit(60)
+            self._loadCalibration()
+            #t2 = time.time()
+            #print("CAL",t2-t1)
+            self.progress.emit(70)
+            self._createUavPath()
+            self.progress.emit(80)
+            #t3 = time.time()
+            #print("UAVPATH",t3-t2)
+            self.general = self._generalParams()
+            self.progress.emit(90)
+             
+            #t4 = time.time()
+            #print("generalParams",t4-t3)
+            m = {"general": self.general, "pois":self.pois, "calibration": self.calibration, "images": self.images, "uavpath": self.uavpath}
+            self.Meta.update(m)
+            poispath = os.path.join(self.path, "pois.xml")
+            if os.path.exists(poispath):
+                self.pois = self._importPois(poispath)
+            self.Meta["pois"] = self.pois
+            #t5 = time.time()
+            #print("POIS",t5-t4)
+            self.progress.emit(100)
+            self.Meta = nested.Nested(self.Meta,dictToParam).data    
+            
         self.finished.emit(self.Meta)
         
         
@@ -542,10 +619,10 @@ if __name__ == "__main__":
     vbox.addWidget(but5)
     but5.clicked.connect(win.saveState)
     
-    # but6 = QPushButton()
-    # but6.setText("progressDialog")
-    # vbox.addWidget(but6)
-    # but6.clicked.connect(win.progressBar)
+    but6 = QPushButton()
+    but6.setText("test")
+    vbox.addWidget(but6)
+    but6.clicked.connect(win.test)
     
     ldbut.clicked.connect(lambda: fm.load(str(root.text())))
     win.show()

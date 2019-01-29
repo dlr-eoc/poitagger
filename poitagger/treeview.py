@@ -8,6 +8,7 @@ from . import image
 from . import PATHS
 
 class TreeWidget(QMainWindow):
+    poifiles = []
     def __init__(self,parent = None):
         super(TreeWidget, self).__init__(parent)
         uic.loadUi(os.path.join(PATHS["UI"],'treemain.ui'),self)
@@ -40,6 +41,7 @@ class TreeWidget(QMainWindow):
             
     def reloadPoiFiles(self,poilist):
         self.poifiles = [i["filename"] for i in poilist]
+        self.view.model.pois(self.poifiles)
         self.setFilter()
         
     def setFilter(self):

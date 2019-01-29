@@ -33,7 +33,7 @@ class TreeModel(QFileSystemModel):
                 return self.rootPath()
         
     def pois(self,poilist):
-        self.poifiles = [i["filename"] for i in poilist]
+        self.poifiles = poilist
         self.layoutChanged.emit()
         
     def data(self, index, role):

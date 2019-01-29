@@ -264,8 +264,8 @@ class Camera(object):
         rp = self.reproject(poi_cam)
         campos = self.position()
         raydir = rp - campos
-        #print "campos",campos[0:3]
-        #print "raydir",raydir[0:3]
+        print ("campos",campos)
+        print ("raydir",raydir)
         poi = self.ray_intersect_plane(campos[0:3],raydir[0:3],np.array([0,0,1,ele]))
         return poi
             
@@ -431,57 +431,58 @@ class Camera(object):
 if __name__ == "__main__":
 
 
-    from visual import *
-    from rotation import euler,quaternions
+   # from visual import *
+   # from rotation import euler,quaternions
     import numpy as np
 
+    np.set_printoptions(suppress=True)
+    test = 3
+    #ax = arrow(pos=(0,0,0),axis=(0,0,-1),color=(1,0,0))
+    #ay = arrow(pos=(0,0,0),axis=(1,0,0),color=(0,1,0))
+    #az = arrow(pos=(0,0,0),axis=(0,1,0),color=(0,0,1))
 
-    ax = arrow(pos=(0,0,0),axis=(0,0,-1),color=(1,0,0))
-    ay = arrow(pos=(0,0,0),axis=(1,0,0),color=(0,1,0))
-    az = arrow(pos=(0,0,0),axis=(0,1,0),color=(0,0,1))
 
+    #for i in range(-5,5):
+    #    for j in range(-5,5):
+    #        sphere(pos=(i,0,j), radius=0.02,color=(0,0,1))
+    #        sphere(pos=(0,i,j), radius=0.02,color=(0,1,0))
+    #    sphere(pos=(i,0,0), radius=0.05)
+    #    sphere(pos=(0,i,0), radius=0.05)
+    #    sphere(pos=(0,0,i), radius=0.05)
 
-    for i in range(-5,5):
-        for j in range(-5,5):
-            sphere(pos=(i,0,j), radius=0.02,color=(0,0,1))
-            sphere(pos=(0,i,j), radius=0.02,color=(0,1,0))
-        sphere(pos=(i,0,0), radius=0.05)
-        sphere(pos=(0,i,0), radius=0.05)
-        sphere(pos=(0,0,i), radius=0.05)
-
-    def pt(pos):
-        sphere(pos=(pos[1],pos[2],-pos[0]), radius=0.1)
-        cylinder(pos=(0,0,0),  axis=(0,0,-pos[0]), radius=0.02,color=(1,0,0))
-        cylinder(pos=(0,0,-pos[0]),  axis=(pos[1],0,0), radius=0.02,color=(0,1,0))
-        cylinder(pos=(pos[1],0,-pos[0]),  axis=(0,pos[2],0), radius=0.02,color=(0,0,1))
-        X3 = np.array(pos).reshape((3,1))
-        return np.vstack((X3,1))
+    #def pt(pos):
+    #    sphere(pos=(pos[1],pos[2],-pos[0]), radius=0.1)
+    #    cylinder(pos=(0,0,0),  axis=(0,0,-pos[0]), radius=0.02,color=(1,0,0))
+    #    cylinder(pos=(0,0,-pos[0]),  axis=(pos[1],0,0), radius=0.02,color=(0,1,0))
+    #    cylinder(pos=(pos[1],0,-pos[0]),  axis=(0,pos[2],0), radius=0.02,color=(0,0,1))
+    #    X3 = np.array(pos).reshape((3,1))
+    #    return np.vstack((X3,1))
         
-    def camcosy(pos, xxx_todo_changeme):
-        (roll,pitch,yaw) = xxx_todo_changeme
-        left = np.array([[0,0,-1],[1,0,0],[0,1,0]])
-        #right = np.array([[1,0,0],[0,-1,0],[0,0,-1]])
-        R = euler.ZYXdeg(yaw,pitch,roll).T.dot(left)
-        Rc = np.array([[0,1,0],[0,0,-1],[1,0,0]]).dot(R)
-        #ux = arrow(pos=(pos[1],pos[2],-pos[0]),axis=R[0],color=(1,0,0))
-        #uy = arrow(pos=(pos[1],pos[2],-pos[0]),axis=R[1],color=(0,1,0))
-        #uz = arrow(pos=(pos[1],pos[2],-pos[0]),axis=R[2],color=(0,0,1))
-        cx = arrow(pos=(pos[1],pos[2],-pos[0]),axis=0.5*Rc[0],color=(1,0,0))
-        cy = arrow(pos=(pos[1],pos[2],-pos[0]),axis=0.5*Rc[1],color=(0,1,0))
-        cz = arrow(pos=(pos[1],pos[2],-pos[0]),axis=0.5*Rc[2],color=(0,0,1))
+    #def camcosy(pos, xxx_todo_changeme):
+    #    (roll,pitch,yaw) = xxx_todo_changeme
+    #    left = np.array([[0,0,-1],[1,0,0],[0,1,0]])
+    #    #right = np.array([[1,0,0],[0,-1,0],[0,0,-1]])
+    #    R = euler.ZYXdeg(yaw,pitch,roll).T.dot(left)
+    #    Rc = np.array([[0,1,0],[0,0,-1],[1,0,0]]).dot(R)
+    #    #ux = arrow(pos=(pos[1],pos[2],-pos[0]),axis=R[0],color=(1,0,0))
+    #    #uy = arrow(pos=(pos[1],pos[2],-pos[0]),axis=R[1],color=(0,1,0))
+    #    #uz = arrow(pos=(pos[1],pos[2],-pos[0]),axis=R[2],color=(0,0,1))
+    #    cx = arrow(pos=(pos[1],pos[2],-pos[0]),axis=0.5*Rc[0],color=(1,0,0))
+    #    cy = arrow(pos=(pos[1],pos[2],-pos[0]),axis=0.5*Rc[1],color=(0,1,0))
+    #    cz = arrow(pos=(pos[1],pos[2],-pos[0]),axis=0.5*Rc[2],color=(0,0,1))
 
         
-    Xw = pt((1,0.5,0))
+    #Xw = pt((1,0.5,0))
 
-    Xw2 = pt((-2,-3,0))
+    #Xw2 = pt((-2,-3,0))
     
     
     #Xw = np.array([1,0.5,0]).reshape((3,1))#World Point (X:Hochachse,Y:Rechtsachse,Z:Elevation nach oben)
     #Xw = np.vstack((Xw,1))#make it homogenious 
-    print("Xw",Xw)    
+    #print("Xw",Xw)    
     #Xw2 = np.array([-2,-3,0]).reshape((3,1))#World Point (X:Hochachse,Y:Rechtsachse,Z:Elevation nach oben)
     #Xw2 = np.vstack((Xw2,1))#make it homogenious 
-    print("Xw2",Xw2)    
+    #print("Xw2",Xw2)    
     #cam = Camera(CoSy.UAV)#Camera schaut standardmaessig nach Norden und befindet sich im Ursprung
    # cam.pose(90,90,0,0,0,5)
    # cam.boresight(0,0,0,0,0,0)
@@ -498,40 +499,41 @@ if __name__ == "__main__":
     #print "distmodel",cam.distortionmodel
     #print "Xc",cam.project(Xw)
 
-    print("\nNOCAM-Example")
-    cam = Camera(CoSy.UAV)#Camera schaut standardmaessig nach Norden und befindet sich im Ursprung
-    #camcosy((1,2,5),(0,90,0))    
-    cam.pose(0,90,0,1,2,5)
-    cam.boresight(0,0,0,0,0,0) # (z''/yaw,x''/pitch,y''/roll,X,Y,Z) rechtsseitiger drehsinn, aber bezogen auf kamerakoordinaten
-    cam.gimbal()
-    cam.transform()
-   # print "=======Transforms======"
-    #print "cosymat",cam.cosymat
-    #print "R_bs",  cam.R_boresight
-    #print "T_bs",  cam.T_boresight
-    #print "R_gi",  cam.R_gimbal
-    #print "T_gi",  cam.T_gimbal
-    #print "R_uav", cam.R_uav
-    #print "T_uav", cam.T_uav
-    #print "Ri_uav", cam.Ri_uav
-    #print "Ti_uav", cam.Ti_uav
-    #print "S", cam.S
-    #print "Si", cam.Si
-    print("===Cam_position===")
-    print(cam.position())
-    Xc = cam.project(Xw)
-    print("Xc", Xc)
-    Xcr = cam.reproject(Xc)
-    print("Xcr", Xcr)
-    print(Xc[0][0],Xc[1][0])
-    #P = cam.poi(Xc[0][0],Xc[1][0],0)
-    #print "Poi",P
+    # print("\nNOCAM-Example")
+    # cam = Camera(CoSy.UAV)#Camera schaut standardmaessig nach Norden und befindet sich im Ursprung
+    # #camcosy((1,2,5),(0,90,0))    
+    # cam.pose(0,90,0,1,2,5)
+    # cam.boresight(0,0,0,0,0,0) # (z''/yaw,x''/pitch,y''/roll,X,Y,Z) rechtsseitiger drehsinn, aber bezogen auf kamerakoordinaten
+    # cam.gimbal()
+    # cam.transform()
+   # # print "=======Transforms======"
+    # #print "cosymat",cam.cosymat
+    # #print "R_bs",  cam.R_boresight
+    # #print "T_bs",  cam.T_boresight
+    # #print "R_gi",  cam.R_gimbal
+    # #print "T_gi",  cam.T_gimbal
+    # #print "R_uav", cam.R_uav
+    # #print "T_uav", cam.T_uav
+    # #print "Ri_uav", cam.Ri_uav
+    # #print "Ti_uav", cam.Ti_uav
+    # #print "S", cam.S
+    # #print "Si", cam.Si
+    # Xw = np.array([[1],[0.5],[0],[1]])
+    # print("===Cam_position===")
+    # print(cam.position())
+    # Xc = cam.project( Xw )
+    # print("Xc", Xc)
+    # Xcr = cam.reproject(Xc)
+    # print("Xcr", Xcr)
+    # print(Xc[0][0],Xc[1][0])
+    # #P = cam.poi(Xc[0][0],Xc[1][0],0)
+    # #print "Poi",P
     
     #cylinder(pos=(2,5,-1),  axis=(10*Xcr[0],10*Xcr[2],10*Xcr[1]), radius=0.02,color=(1,0,0))
         
     
-    Xc2 = cam.project(Xw2)
-    print("Xc2", Xc2)
+   # Xc2 = cam.project(Xw2)
+   # print("Xc2", Xc2)
     
     #print "ALT:"
     #cam.boresight_alt(0,0,0,0,0,0) # (z''/yaw,x''/pitch,y''/roll,X,Y,Z) rechtsseitiger drehsinn, aber bezogen auf kamerakoordinaten
@@ -545,22 +547,70 @@ if __name__ == "__main__":
    # Xrepro = cam.reproject(Xc,5)
    # print "Xrepro",Xrepro
     
-    print("\nPINHOLE-Example")
-    cam = Camera()
-    camcosy((1,2,5),(0,90,0))    
-    cam.pose(0,90,0,1,2,5)
-    cam.boresight(4,10,3,1,0,0)
-    cam.intrinsics(640,512,1160,320,256)
-    cam.gimbal()
-    cam.transform()
-    Xc = cam.project(Xw)
-    print("Xc",Xc)
-    Xrepro = cam.reproject(Xc,5)#,cam.fx)
-    print("Xrepro", Xrepro)
-    P = cam.poi(Xc[0][0],Xc[1][0],0)
-    print("Poi",P)
+    # print("\nPINHOLE-Example")
+    # cam = Camera()
+    # cam.pose(0,90,0,1,2,5)
+    # cam.boresight(4,10,3,1,0,0)
+    # cam.intrinsics(640,512,1160,320,256)
+    # cam.gimbal()
+    # cam.transform()
+    # Xc = cam.project(Xw)
+    # print("Xc",Xc)
+    # Xrepro = cam.reproject(Xc,5)#,cam.fx)
+    # print("Xrepro", Xrepro)
+    # P = cam.poi(Xc[0][0],Xc[1][0],0)
+    # print("Poi",P)
+    
    
-    # print "\nLUT-Example"
+    if test==2:
+    
+        print("\nPINHOLE-Example2")
+        cam = Camera()
+        cam.pose(0,90,0,50000,6400,50)
+        #cam.boresight(4,10,3,1,0,0)
+        cam.intrinsics(640,512,1500,320,256)
+        cam.gimbal()
+        cam.transform()
+        #Xc = cam.project(Xw)
+        Xc = np.array([[0],[256]])
+        print("Xc",Xc)
+        Xrepro = cam.reproject(Xc)#,cam.fx)
+       # print("Xrepro", Xrepro)
+        P = cam.poi(Xc[0][0],Xc[1][0],0)
+        print("Poi",P)
+        print("rel",P-cam.position()[0:3])
+        np.set_printoptions(suppress=True)
+        print("S",cam.S)
+        
+    import utm
+    
+    UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(48.1405597,11.016507)
+        
+  #  backreproject(x) {'name': 'xxx_3', 'x': '513.0', 'y': '267.0', 'layer': '0', 'filename': '04051446_0076.ARA', 'lat': 48.
+#140543, 'lon': 11.016634, 'ele': 0.0, 'uav_lat': 48.1405597, 'uav_lon': 11.016507, 'uav_ele': 48.57, 'cam_yaw': 0.54, 'c
+#am_pitch': -90.0, 'cam_roll': 0.0, 'cam_dx': 0.2, 'cam_dy': 0.0, 'cam_dz': 0.0, 'euler_dir': 'ZXY', 'pitch_offset': 1.5,
+# 'roll_offset': 0.0, 'yaw_offset': 1.0, 'found_time': '2017-04-05T14:43:52'}
+    if test==3:
+        print("\nPINHOLE-Example3")
+        cam = Camera()
+        cam.pose(0.23,0,0.54,UTM_X,UTM_Y,48.57)
+        #pose(self,roll=0,pitch=0,yaw=0,X=0,Y=0,Z=0): 
+        cam.boresight(1.0,1.5,0,0,0,0)
+        #boresight(yaw=0,pitch=0,roll=0,dx=0,dy=0,dz=0)
+        cam.intrinsics(640,512,1115,320,256)
+        cam.gimbal(roll=0.0,pitch=90.0,yaw=0.0,dx=0.2)
+        cam.transform()
+        Xc = np.array([[513],[267]])
+        print("Xc",Xc)
+        P = cam.poi(Xc[0][0],Xc[1][0],0)
+        print("Poi",P)
+        print("rel",P-cam.position()[0:3])
+       # print("S",cam.S)
+        pUTM_Y,pUTM_X,pZoneNumber,pZoneLetter = utm.from_latlon(48.140543,11.016634)
+        pl = cam.project(np.array([[pUTM_X],[pUTM_Y],[0],[1]]))
+        print("frompoilist",pl)
+    
+   # print "\nLUT-Example"
     # cam = Camera()
     # cam.pose(0,90,0,0,0,5)
     # cam.boresight(0,0,0,0,0,0)
