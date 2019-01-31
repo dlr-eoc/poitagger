@@ -169,7 +169,7 @@ class Main(QMainWindow):
             self.flight.pois.connect(self.treemain.reloadPoiFiles)
         
     #        self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
-          #  self.flight.pois.connect(self.geomain.view.loadpois)
+            self.flight.pois.connect(self.geomain.view.loadpois)
         
         self.img.highlighting.connect(self.treemain.vb.imagename.setStyleSheet)
         self.img.sigPixel.connect(self.pois.addView)

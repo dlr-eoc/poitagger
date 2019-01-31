@@ -497,6 +497,7 @@ class ImageJpg(Image):
         self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
         self.header["uav"]["yaw"] = float(a.get("drone-dji:flightyawdegree",0))
         self.header["uav"]["pitch"] = float(a.get("drone-dji:flightpitchdegree",0))
+        self.header["uav"]["euler_order"] = "ZXY"
         self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
         self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
         self.header["gps"]["rel_altitude"]=float(a.get("drone-dji:relativealtitude",0))
@@ -687,7 +688,8 @@ class ImageAra(Image):
         self.header["image"]["bitdepth"] = self.rawheader["bitmap"]["bitperpixel"]      
         
         self.header["camera"]["roll"] = self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
-        self.header["camera"]["yaw"] = self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
+        self.header["camera"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2   
+                                    #self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
         self.header["camera"]["pitch"] = self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2    
         self.header["camera"]["euler_order"] = "ZXY"
                 
@@ -767,6 +769,7 @@ class ImageAra(Image):
         self.header["calibration"]["boresight"]["cam_pitch_offset"] = self.rawheader["dlr"]["cam_pitch_offset"]/10.0**3    
         self.header["calibration"]["boresight"]["cam_roll_offset"] = self.rawheader["dlr"]["cam_roll_offset"]/10.0**3    
         self.header["calibration"]["boresight"]["cam_yaw_offset"] = self.rawheader["dlr"]["cam_yaw_offset"]/10.0**3    
+        self.header["calibration"]["boresight"]["cam_euler_order"] = "ZYX" 
         self.header["calibration"]["boresight"]["timestamp"] = self.rawheader["dlr"]["boresight_calib_timestamp"] 
         self.header["calibration"]["radiometric"]["B"] = self.rawheader["dlr"]["radiometric_B"]/10.0**2     
         self.header["calibration"]["radiometric"]["R"] = self.rawheader["dlr"]["radiometric_R"]/10.0**3     

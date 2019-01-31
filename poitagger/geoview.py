@@ -161,7 +161,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         
     def loadpois(self,pois):
         if not self.jsloaded: return 
-        print("geoview: loadPois",pois)
+        #print("geoview: loadPois",pois)
         arr = []
         if pois==[] or pois == None:
             self.page.runJavaScript('map.getSource("pois").setData({{"type": "FeatureCollection","features": {} }})'.format(arr))
@@ -169,7 +169,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         try:
             featureorig = {"type": "Feature","geometry": {"type": "Point","coordinates": []}, "properties": { "title": "", "icon": "zoo"}}
             for i in pois:
-                lat, lon = i["latitude"], i["longitude"]
+                lat, lon = i["lat"], i["lon"]
                 name = i["name"]
                 feature = copy.deepcopy(featureorig)
                 feature["geometry"]["coordinates"] = [lon, lat]

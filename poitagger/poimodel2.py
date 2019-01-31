@@ -47,7 +47,7 @@ class PoiModel(QtCore.QObject):
         self.Ext = camproject.Extrinsics()
         self.ExtR = camproject.Extrinsics()
         self.dem = None
-        self.roll_offset, self.pitch_offset, self.yaw_offset = 0,0,0
+        self.boresight_roll, self.boresight_pitch, self.boresight_yaw,self.boresight_order = 0,0,0,"ZYX"
         self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy = 0,0,1000,0,0
 
     def onImage(self,point):
@@ -68,14 +68,26 @@ class PoiModel(QtCore.QObject):
         #logging.warning("SET POSE " + imgheader["file"]["name"])
         self.imgheader = imgheader
         try:
-            self.Ext.setPose(yaw=imgheader["uav"]["yaw"],X=round(imgheader["gps"].get("UTM_X",0),3),Y=round(imgheader["gps"].get("UTM_Y",0),3),Z=imgheader["gps"].get("rel_altitude",0),order=imgheader["uav"]["euler_order"])
-            self.Ext.setGimbal(roll=imgheader["camera"]["roll"],pitch= - imgheader["camera"]["pitch"],yaw=imgheader["camera"]["yaw"],order=imgheader["camera"]["euler_order"])
-            self.Ext.setUAVBoresight(dx=0.2)
+            uavyaw = imgheader["uav"]["yaw"]
+            uavX = round(imgheader["gps"].get("UTM_X",0),3)
+            uavY = round(imgheader["gps"].get("UTM_Y",0),3)
+            uavZ = imgheader["gps"].get("rel_altitude",0)
+            uavorder = imgheader["uav"]["euler_order"]
+            roll = imgheader["camera"]["roll"]
+            
+            pitch= imgheader["camera"]["pitch"]
+            
+            yaw = imgheader["camera"]["yaw"]
+            gimbalorder = imgheader["camera"]["euler_order"]
+            
+            self.Ext.setPose(X=uavX,Y=uavY,Z=uavZ,order=uavorder)
+            self.Ext.setGimbal(roll=roll,pitch=pitch,yaw=yaw,order=gimbalorder)
+            #self.Ext.setUAVBoresight(dx=0.2)
         except:
             logging.error("pois load data failed",exc_info=True)
         self.setAttitude()
-        #print(self.Ext.getParams()["pose"])
-        #print(self.ExtR.getParams()["pose"])
+       # print(self.Ext.getParams())
+       # print(self.ExtR.getParams()["pose"])
         
     def loadMeta(self,meta):
         self.im_width = par(meta, ["general","images","width"],0) #meta.child("general").child("images").child("width").value() #["general"]["images"]["width"]
@@ -92,9 +104,10 @@ class PoiModel(QtCore.QObject):
         self.im_cy = 256
         self.im_fx = 1115
         
-        self.pitch_offset = par(meta, ["calibration","boresight","cam_pitch_offset"],0) #meta.child("calibration").child("boresight").child("cam_pitch_offset").value()#["calibration"]["boresight"]["cam_pitch_offset"]
-        self.roll_offset = par(meta, ["calibration","boresight","cam_roll_offset"],0) #meta.child("calibration").child("boresight").child("cam_roll_offset").value()#["calibration"]["boresight"]["cam_roll_offset"]
-        self.yaw_offset = par(meta, ["calibration","boresight","cam_yaw_offset"],0) #meta.child("calibration").child("boresight").child("cam_yaw_offset").value()#["calibration"]["boresight"]["cam_yaw_offset"]
+        self.boresight_pitch = par(meta, ["calibration","boresight","cam_pitch"],0) #meta.child("calibration").child("boresight").child("cam_pitch_offset").value()#["calibration"]["boresight"]["cam_pitch_offset"]
+        self.boresight_roll = par(meta, ["calibration","boresight","cam_roll"],0) #meta.child("calibration").child("boresight").child("cam_roll_offset").value()#["calibration"]["boresight"]["cam_roll_offset"]
+        self.boresight_yaw = par(meta, ["calibration","boresight","cam_yaw"],0) #meta.child("calibration").child("boresight").child("cam_yaw_offset").value()#["calibration"]["boresight"]["cam_yaw_offset"]
+        self.boresight_order = par(meta, ["calibration","boresight","cam_euler_order"],"ZYX") #meta.child("calibration").child("boresight").child("cam_yaw_offset").value()#["calibration"]["boresight"]["cam_yaw_offset"]
         self.pois = []
         try:
             for L in meta.child("pois").children():
@@ -108,19 +121,27 @@ class PoiModel(QtCore.QObject):
                                 "lat":float(view.opts.get("latitude",0)),
                                 "lon":float(view.opts.get("longitude",0)), 
                                 "ele":float(view.opts.get("elevation",0)),
-                                "uav_lat":float(view.opts["uav_lat"]), "uav_lon":float(view.opts["uav_lon"]),
-                                "uav_ele":float(view.opts["uav_ele"]), "cam_yaw":float(view.opts["cam_yaw"]),
-                                "cam_pitch":float(view.opts["cam_pitch"]), "cam_roll":float(view.opts["cam_roll"]),
-                                "cam_dx":float(view.opts["cam_dx"]), "cam_dy":float(view.opts["cam_dy"]),
-                                "cam_dz":float(view.opts["cam_dz"]), "euler_dir":view.opts["euler_dir"],
-                                "pitch_offset":float(view.opts["pitch_offset"]), "roll_offset":float(view.opts["roll_offset"]),
-                                "yaw_offset":float(view.opts["yaw_offset"]), "found_time":view.opts["found_time"]})
+                                "uav_lat":float(view.opts["uav_lat"]), 
+                                "uav_lon":float(view.opts["uav_lon"]),
+                                "uav_ele":float(view.opts["uav_ele"]), 
+                                "cam_yaw":float(view.opts["cam_yaw"]),
+                                "cam_pitch":float(view.opts["cam_pitch"]), 
+                                "cam_roll":float(view.opts["cam_roll"]),
+                                "cam_euler_order":view.opts["cam_euler_order"],
+                                "boresight_pitch":float(view.opts["boresight_pitch"]), 
+                                "borsight_roll":float(view.opts["boresight_roll"]),
+                                "boresight_yaw":float(view.opts["boresight_yaw"]), 
+                                "boresight_euler_order":view.opts["boresight_euler_order"],
+                                "found_time":view.opts["found_time"]})
                         except:
-                            self.pois.append({"name":poi.name(),"x":val[0],"y":val[1],"layer":L.name(),"filename":view.name()}) 
+                            self.pois.append({"name":poi.name(),
+                                "x":val[0],"y":val[1],
+                                "layer":L.name(),
+                                "filename":view.name()}) 
         except:
             logging.error("load Calib failed",exc_info=True)
             
-        self.Ext.setCameraBoresight(droll=self.roll_offset, dpitch= - self.pitch_offset, dyaw=self.yaw_offset)
+        self.Ext.setCameraBoresight(droll=self.boresight_roll, dpitch= self.boresight_pitch, dyaw=self.boresight_yaw, order=self.boresight_order)
         self.setIntrinsics(self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
        # print("loadMeta",self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
         
@@ -149,10 +170,14 @@ class PoiModel(QtCore.QObject):
     
     def prepareReproject(self,poi):
         UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(poi["uav_lat"],poi["uav_lon"])
-        self.ExtR.setPose(0,0,poi["cam_yaw"],round(UTM_X,3),round(UTM_Y,3),poi["uav_ele"]) #yaw=0.54,X=UTM_X,Y=UTM_Y,Z=48.57)
-        self.ExtR.setUAVBoresight(dx=poi["cam_dx"],dy=poi["cam_dy"],dz=poi["cam_dz"])#dx=0.20)
-        self.ExtR.setCameraBoresight(dyaw=self.yaw_offset, dpitch= - self.pitch_offset, droll=self.roll_offset) #dpitch=-1.5,dyaw=1.0
-        self.ExtR.setGimbal(roll=poi["cam_roll"],pitch= - poi["cam_pitch"],yaw=0,order=poi["euler_dir"])#pitch=-90,roll=-0.23,yaw=0,order="ZXY")
+        self.ExtR.setPose(0,0,0,round(UTM_X,3),round(UTM_Y,3),poi["uav_ele"]) #yaw=0.54,X=UTM_X,Y=UTM_Y,Z=48.57)
+        #self.ExtR.setUAVBoresight(dx=poi["cam_dx"],dy=poi["cam_dy"],dz=poi["cam_dz"])#dx=0.20)
+        self.ExtR.setCameraBoresight(dyaw= self.boresight_yaw, 
+            dpitch= self.boresight_pitch, 
+            droll= self.boresight_roll,
+            order= self.boresight_order) #dpitch=-1.5,dyaw=1.0
+        self.ExtR.setGimbal(roll=poi["cam_roll"],pitch= poi["cam_pitch"],
+            yaw=poi["cam_yaw"],order=poi["cam_euler_order"])#pitch=-90,roll=-0.23,yaw=0,order="ZXY")
         return self.ExtR.transform()
     
     def setIntrinsics(self,width,height,fx,cx,cy,ar=1.0,skew=0.0):
@@ -186,17 +211,23 @@ class PoiModel(QtCore.QObject):
     
     def reproject_poi(self,x,y):
         pos = self.reproject(np.array([x,y]))
-        lat, lon = utm.to_latlon(pos[1],pos[0],self.imgheader["gps"].get("UTM_ZoneNumber",0),self.imgheader["gps"].get("UTM_ZoneLetter",None))
+        lat, lon = utm.to_latlon(pos[1],pos[0],self.imgheader["gps"].get("UTM_ZoneNumber",0),
+                        self.imgheader["gps"].get("UTM_ZoneLetter",None))
         found_time = datetime.datetime.now().isoformat()
         return {"name":self.imgheader["file"]["name"],"value":(x,y),"type":"str", "paramtyp":"view", 
             "latitude":lat, "longitude":lon,"elevation":pos[2], 
-            "uav_lat":float(self.imgheader["gps"]["latitude"]), "uav_lon":float(self.imgheader["gps"]["longitude"]),
-            "uav_ele":float(self.imgheader["gps"]["rel_altitude"]), "cam_yaw":float(self.imgheader["uav"]["yaw"]),
-            "cam_pitch":float(self.imgheader["camera"]["pitch"]), "cam_roll":float(self.imgheader["camera"]["roll"]),
-            "cam_dx":0.2, "cam_dy":0.0,
-            "cam_dz":0.0, "euler_dir":self.imgheader["camera"]["euler_order"],
-            "pitch_offset":self.pitch_offset, "roll_offset":self.roll_offset,
-            "yaw_offset":self.yaw_offset, "found_time":found_time,
+            "uav_lat":float(self.imgheader["gps"]["latitude"]), 
+            "uav_lon":float(self.imgheader["gps"]["longitude"]),
+            "uav_ele":float(self.imgheader["gps"]["rel_altitude"]), 
+            "cam_yaw":float(self.imgheader["camera"]["yaw"]),
+            "cam_pitch":float(self.imgheader["camera"]["pitch"]), 
+            "cam_roll":float(self.imgheader["camera"]["roll"]),
+            "cam_euler_order":self.imgheader["camera"]["euler_order"],
+            "boresight_pitch":self.boresight_pitch, 
+            "boresight_roll":self.boresight_roll,
+            "boresight_yaw":self.boresight_yaw, 
+            "boresight_euler_order":self.boresight_order, 
+            "found_time":found_time,
             "readonly":False,"removable":True,"renamable":False,"enabled":False}
         
     def reproject(self,x):

@@ -217,8 +217,10 @@ class Flight(QtCore.QObject): #QThread
                             "lat":float(view.opts["latitude"]),"lon":float(view.opts["longitude"]),"ele":float(view.opts["elevation"]),
                             "uav_lat":float(view.opts["uav_lat"]),"uav_lon":float(view.opts["uav_lon"]),"uav_ele":float(view.opts["uav_ele"]),
                             "cam_yaw":float(view.opts["cam_yaw"]),"cam_pitch":float(view.opts["cam_pitch"]),"cam_roll":float(view.opts["cam_roll"]),
-                            "cam_dx":float(view.opts["cam_dx"]),"cam_dy":float(view.opts["cam_dy"]),"cam_dz":float(view.opts["cam_dz"]),"euler_dir":view.opts["euler_dir"],
-                            "pitch_offset":float(view.opts["pitch_offset"]),"roll_offset":float(view.opts["roll_offset"]),"yaw_offset":float(view.opts["yaw_offset"]),
+                            "cam_euler_order":view.opts["cam_euler_order"],
+                            "boresight_pitch":float(view.opts["boresight_pitch"]),"boresight_roll":float(view.opts["boresight_roll"]),
+                            "boresight_yaw":float(view.opts["boresight_yaw"]),
+                            "borsight_euler_order":view.opts["boresight_euler_order"],
                             "found_time":view.opts["found_time"]})
         except:
             logging.warning("loadPoisList failed",exc_info=True)
@@ -521,9 +523,11 @@ class ImportFlightMeta(QtCore.QThread):
                         "readonly":True, "paramtyp":"view", "removeable":True, "type":"str","renameable":False, 
                         "latitude":i["latitude"],"longitude":i["longitude"],"elevation":i["elevation"],
                         "uav_lat":i["uav_latitude"],"uav_lon":i["uav_longitude"],"uav_ele":i["uav_elevation"],
-                        "cam_yaw":i["uav_yaw"],"cam_pitch":i["cam_pitch"],"cam_roll":0,
-                        "cam_dx":0.2,"cam_dy":0,"cam_dz":0,"euler_dir":"ZXY",
-                        "pitch_offset":i["pitch_offset"],"roll_offset":i["roll_offset"],"yaw_offset":i["yaw_offset"],
+                        "cam_yaw":i["uav_yaw"],"cam_pitch":-float(i["cam_pitch"]),"cam_roll":0,
+                        #"cam_dx":0.2,"cam_dy":0,"cam_dz":0,
+                        "cam_euler_order":"ZXY",
+                        "boresight_pitch":-float(i["pitch_offset"]),"boresight_roll":i["roll_offset"],"boresight_yaw":i["yaw_offset"],
+                        "boresight_euler_order":"ZYX",
                         "found_time":i["found_time"] }]})
         out = {"name":"pois","type":"group", "expanded":True, "children":[{"name":"0","type":"group","children": [{"name":"timestamp","type":"str","readonly":True,
                 "value":ts},{"name":"description","type":"str","readonly":False,"value":"initial dataset"},
