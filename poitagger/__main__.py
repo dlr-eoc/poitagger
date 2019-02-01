@@ -167,7 +167,8 @@ class Main(QMainWindow):
             self.flight.poisChanged.connect(lambda: self.pois.model.loadMeta(self.flight.p))
             self.img.sigOrientation.connect(self.flight.setOrientation)
             self.flight.pois.connect(self.treemain.reloadPoiFiles)
-        
+            self.flight.sigEmpty.connect(self.geomain.view.clear)
+            
     #        self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
             self.flight.pois.connect(self.geomain.view.loadpois)
         

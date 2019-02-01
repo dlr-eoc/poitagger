@@ -591,7 +591,7 @@ class ImageAra(Image):
         if imgpath is not None:
             self.load(imgpath,onlyheader=onlyheader)
         
-    def load(self,imgpath,headersize = 512 ,resolution = (640,512),bitsPerPixel = np.uint16,onlyheader=False):
+    def load(self,imgpath,headersize = 512 ,resolution = (640,512),bitsPerPixel = np.uint16,onlyheader=False,old=True):
         self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
          "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
                     "thumbnail":{},     }
@@ -601,7 +601,7 @@ class ImageAra(Image):
         try:
             with open(imgpath, 'rb') as fileobj:
                 self.read_header(fileobj,headersize)
-                self.get_meta()
+                self.get_meta(old)
                 if not onlyheader:
                     self.read_body(fileobj,BITDEPTH[self.header["image"]["bitdepth"]],
                         self.header["image"]["width"],self.header["image"]["height"])
@@ -678,7 +678,7 @@ class ImageAra(Image):
         except:
             logging.error("read header failed", exc_info=True)
             
-    def get_meta(self):
+    def get_meta(self,old=True):
         self.exif = self.rawheader
         self.xmp = ""
         
@@ -687,10 +687,16 @@ class ImageAra(Image):
         self.header["image"]["height"] = self.rawheader["bitmap"]["height"]       
         self.header["image"]["bitdepth"] = self.rawheader["bitmap"]["bitperpixel"]      
         
-        self.header["camera"]["roll"] = self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
-        self.header["camera"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2   
-                                    #self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
-        self.header["camera"]["pitch"] = self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2    
+        if old:
+            self.header["camera"]["roll"] = - self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
+            self.header["camera"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2   
+                                        #self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
+            self.header["camera"]["pitch"] = - self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2    
+        else:
+            self.header["camera"]["roll"] = self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
+            self.header["camera"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2   
+                                        #self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
+            self.header["camera"]["pitch"] = self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2    
         self.header["camera"]["euler_order"] = "ZXY"
                 
         self.header["camera"]["model"] = str(self.rawheader["camera"]["partnum"].strip(b"\x00"))
@@ -766,9 +772,9 @@ class ImageAra(Image):
         self.header["calibration"]["changed_flags"] = self.rawheader["dlr"]["changed_flags"]     
         self.header["calibration"]["error_flags"] = self.rawheader["dlr"]["error_flags"]         
         self.header["calibration"]["flags"] = self.rawheader["dlr"]["flags"]  
-        self.header["calibration"]["boresight"]["cam_pitch_offset"] = self.rawheader["dlr"]["cam_pitch_offset"]/10.0**3    
-        self.header["calibration"]["boresight"]["cam_roll_offset"] = self.rawheader["dlr"]["cam_roll_offset"]/10.0**3    
-        self.header["calibration"]["boresight"]["cam_yaw_offset"] = self.rawheader["dlr"]["cam_yaw_offset"]/10.0**3    
+        self.header["calibration"]["boresight"]["cam_pitch"] = self.rawheader["dlr"]["cam_pitch_offset"]/10.0**3    
+        self.header["calibration"]["boresight"]["cam_roll"] = self.rawheader["dlr"]["cam_roll_offset"]/10.0**3    
+        self.header["calibration"]["boresight"]["cam_yaw"] = self.rawheader["dlr"]["cam_yaw_offset"]/10.0**3    
         self.header["calibration"]["boresight"]["cam_euler_order"] = "ZYX" 
         self.header["calibration"]["boresight"]["timestamp"] = self.rawheader["dlr"]["boresight_calib_timestamp"] 
         self.header["calibration"]["radiometric"]["B"] = self.rawheader["dlr"]["radiometric_B"]/10.0**2     

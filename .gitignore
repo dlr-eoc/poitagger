@@ -4031,3 +4031,17 @@ build/lib/poitagger/poimodel.py
 build/lib/poitagger/poiview.py
 build/lib/poitagger/poimodel.py
 build/lib/poitagger/poiview.py
+poitagger/test/language/lang/de_de.qm
+poitagger/test/language/lang/de_de.ts
+poitagger/test/language/lang/en_us.qm
+poitagger/test/language/lang/en_us.ts
+poitagger/test/language/lang/es_es.qm
+poitagger/test/language/lang/es_es.ts
+poitagger/test/language/lang/tr_tr.qm
+poitagger/test/language/lang/tr_tr.ts
+poitagger/test/language/language.py
+poitagger/test/language/language.qrc
+poitagger/test/language/mainwindow.ui
+poitagger/test/language/Makefile
+poitagger/test/language/resources.py
+poitagger/test/language/ui_mainwindow.py

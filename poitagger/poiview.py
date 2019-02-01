@@ -92,8 +92,10 @@ class PoiView(QMainWindow):
         self.t.setCurrentItem(currentItem)
         self.t.editItem(currentItem,0)
         
-    def jumpTo(self):
+    def jumpTo(self): #jump in the treeview to the image that is currently selected
+        logging.warning("image jumpTo")
         cur = self.t.currentItem()
+        logging.warning(cur.param.opts)
         if cur== None: return
         if cur.param.opts.get("paramtyp")=="view":
             self.sigJumpTo.emit(cur.param.name())

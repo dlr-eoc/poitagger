@@ -153,11 +153,14 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
     def setMarker(self,lat,lng):
         #print("geoview: setMarker")
         self.page.runJavaScript('var marker = new mapboxgl.Marker().setLngLat([{}, {}]).addTo(map);'.format(lng,lat))
+        
     def clear(self):
+        geojson = {"type": "Feature", "geometry": {"type": "LineString","coordinates": []}}
+        self.page.runJavaScript('map.getSource("uavpath").setData({});'.format(geojson))
         #print("geoview: clear")
-        self.page.runJavaScript('map.removeLayer("uavpath");map.removeSource("uavpath");') #console.log(map.getSource("uav"))
-        self.page.runJavaScript('map.removeLayer("pois");map.removeSource("pois");') #console.log(map.getSource("uav"))
-        self.page.runJavaScript('marker.remove();')
+        #self.page.runJavaScript('map.removeLayer("uavpath");map.removeSource("uavpath");') #console.log(map.getSource("uav"))
+        #self.page.runJavaScript('map.removeLayer("pois");map.removeSource("pois");') #console.log(map.getSource("uav"))
+        #self.page.runJavaScript('marker.remove();')
         
     def loadpois(self,pois):
         if not self.jsloaded: return 
@@ -207,7 +210,8 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
     def setUavPath(self,uavpath):
         if not self.jsloaded: return 
         P = np.array(uavpath)
-        if len(P)==0: return
+        if len(P)==0: 
+            return
         try:
             bound = [[P.T[0].min(),P.T[1].min()],[P.T[0].max(),P.T[1].max()]]
             self.fitBounds(bound)
