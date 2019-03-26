@@ -16,16 +16,19 @@ from . import utils2
 from . import flightjson
 from . import nested
 from . import PATHS
-from . import poimodel
+from . import poimodel2
+from . import upload
+
     
 class PoiView(QMainWindow):
     sigJumpTo = QtCore.pyqtSignal(str)
     def __init__(self,parent = None):
         super(PoiView, self).__init__(parent)
         uic.loadUi(os.path.join(PATHS["UI"],'pois.ui'),self)
+        self.dialog = upload.UploadDialog("Upload")
         
         self.t = ParameterTree(showHeader=False)
-        self.model = poimodel.PoiModel()
+        self.model = poimodel2.PoiModel()
         self.horizontalLayout.addWidget(self.t)#self.listw)
         self.cb = QComboBox()
         self.cb.currentTextChanged.connect(self.chooseLayer)
@@ -33,9 +36,10 @@ class PoiView(QMainWindow):
         self.actiondelLayer.triggered.connect(self.delLayer)
         #self.actionnewLayer.triggered.connect(self.newLayer)
         self.actionshow.triggered.connect(self.jumpTo)
+        self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.model.pois))
         
     def setMeta(self,fm):
-        self.model.setMeta(fm)
+        self.model.loadMeta(fm)
         self.toolBar.addWidget(self.cb)
         self.p = fm.child("pois")
         self.loadComboBox()
@@ -92,8 +96,10 @@ class PoiView(QMainWindow):
         self.t.setCurrentItem(currentItem)
         self.t.editItem(currentItem,0)
         
-    def jumpTo(self):
+    def jumpTo(self): #jump in the treeview to the image that is currently selected
+        logging.warning("image jumpTo")
         cur = self.t.currentItem()
+        logging.warning(cur.param.opts)
         if cur== None: return
         if cur.param.opts.get("paramtyp")=="view":
             self.sigJumpTo.emit(cur.param.name())
@@ -102,8 +108,8 @@ class PoiView(QMainWindow):
         cur = self.t.currentItem()
         if not cur == None and cur.parent() == self.t.topLevelItem(0):  
             try:
-                cur.param.addChild({"name":filename,"value":(x,y),"type":"str", "paramtyp":"view", "readonly":False,"removable":True,"renamable":False,"enabled":False})
-                cur.contextMenu.addAction('ShowImage').triggered.connect(self.jumpTo)
+                cur.param.addChild(self.model.reproject_poi(x,y))
+                #cur.contextMenu.addAction('ShowImage').triggered.connect(self.jumpTo)
                 #cur.param.setOpts(latitude=46.45234)
                 #print("lat",cur.param.opts["latitude"])
                 self.model.getPois(filename)

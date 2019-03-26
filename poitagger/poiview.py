@@ -10,6 +10,7 @@ import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
 import datetime
 from collections import OrderedDict,MutableMapping,MutableSequence
+from ast import literal_eval
 
 from . import image
 from . import utils2
@@ -17,12 +18,15 @@ from . import flightjson
 from . import nested
 from . import PATHS
 from . import poimodel2
+from . import upload
+
     
 class PoiView(QMainWindow):
     sigJumpTo = QtCore.pyqtSignal(str)
     def __init__(self,parent = None):
         super(PoiView, self).__init__(parent)
         uic.loadUi(os.path.join(PATHS["UI"],'pois.ui'),self)
+        self.dialog = upload.UploadDialog("Upload")
         
         self.t = ParameterTree(showHeader=False)
         self.model = poimodel2.PoiModel()
@@ -33,6 +37,7 @@ class PoiView(QMainWindow):
         self.actiondelLayer.triggered.connect(self.delLayer)
         #self.actionnewLayer.triggered.connect(self.newLayer)
         self.actionshow.triggered.connect(self.jumpTo)
+        self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.model.pois))
         
     def setMeta(self,fm):
         self.model.loadMeta(fm)
@@ -92,6 +97,41 @@ class PoiView(QMainWindow):
         self.t.setCurrentItem(currentItem)
         self.t.editItem(currentItem,0)
         
+    def getPoisAsGpx(self):
+        pois = []
+        try:
+            for L in self.p.children():
+                for poi in L.child("data").children():
+                    for view in poi.children():
+                        val = literal_eval(view.value())
+                       # print ("VAL",val,view.opts)
+                        try:
+                            pois.append({"name":poi.name(),"x":val[0],"y":val[1],"layer":L.name(),
+                                "filename":view.name(), 
+                                "lat":float(view.opts.get("latitude",0)),
+                                "lon":float(view.opts.get("longitude",0)), 
+                                "ele":float(view.opts.get("elevation",0)),
+                                "uav_lat":float(view.opts["uav_lat"]), 
+                                "uav_lon":float(view.opts["uav_lon"]),
+                                "uav_ele":float(view.opts["uav_ele"]), 
+                                "cam_yaw":float(view.opts["cam_yaw"]),
+                                "cam_pitch":float(view.opts["cam_pitch"]), 
+                                "cam_roll":float(view.opts["cam_roll"]),
+                                "cam_euler_order":view.opts["cam_euler_order"],
+                                "boresight_pitch":float(view.opts["boresight_pitch"]), 
+                                "borsight_roll":float(view.opts["boresight_roll"]),
+                                "boresight_yaw":float(view.opts["boresight_yaw"]), 
+                                "boresight_euler_order":view.opts["boresight_euler_order"],
+                                "found_time":view.opts["found_time"]})
+                        except:
+                            pois.append({"name":poi.name(),
+                                "x":val[0],"y":val[1],
+                                "layer":L.name(),
+                                "filename":view.name()}) 
+        except:
+            logging.error("getPoisAsGpx failed",exc_info=True)
+        return pois    
+            
     def jumpTo(self): #jump in the treeview to the image that is currently selected
         logging.warning("image jumpTo")
         cur = self.t.currentItem()

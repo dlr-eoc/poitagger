@@ -39,6 +39,7 @@
    <addaction name="actionNeuerMarker"/>
    <addaction name="actionReproMarker"/>
    <addaction name="actionshow"/>
+   <addaction name="actionUpload"/>
    <addaction name="separator"/>
    <addaction name="actiondelLayer"/>
   </widget>

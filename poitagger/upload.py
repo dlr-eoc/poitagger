@@ -32,13 +32,45 @@ class UploadDialog(QtGui.QDialog):
     
     
     def uploadPois(self):
+      #                 0   1       2       3 4    5    6       7   8           9           10      11      12
+      #self.header = ["ID","File","Name","x","y","lat","lon","ele","uav_lat","uav_lon","uav_ele","uav_yaw","cam_pitch"]
+      #13                       14              15              16                                              17  
+      #self.pitch_offset,self.roll_offset,self.yaw_offset, raw.header.gps_date+"T"+raw.header.gps_time, int(raw.header.start_hor_accur*1000) ]
+      
+      
+       # self.pois.append({"name":poi.name(),"x":val[0],"y":val[1],"layer":L.name(),
+                                # "filename":view.name(), 
+                                # "lat":float(view.opts.get("latitude",0)),
+                                # "lon":float(view.opts.get("longitude",0)), 
+                                # "ele":float(view.opts.get("elevation",0)),
+                                # "uav_lat":float(view.opts["uav_lat"]), 
+                                # "uav_lon":float(view.opts["uav_lon"]),
+                                # "uav_ele":float(view.opts["uav_ele"]), 
+                                # "cam_yaw":float(view.opts["cam_yaw"]),
+                                # "cam_pitch":float(view.opts["cam_pitch"]), 
+                                # "cam_roll":float(view.opts["cam_roll"]),
+                                # "cam_euler_order":view.opts["cam_euler_order"],
+                                # "boresight_pitch":float(view.opts["boresight_pitch"]), 
+                                # "borsight_roll":float(view.opts["boresight_roll"]),
+                                # "boresight_yaw":float(view.opts["boresight_yaw"]), 
+                                # "boresight_euler_order":view.opts["boresight_euler_order"],
+                                # "found_time":view.opts["found_time"]})
+      
+      
+      
         Myjson = {"key":"aowlsdf32350adfwerl4svKER231Edas","pois":[]}#,"debug":"True"
-        for i in self.poilist:
-            Myjson["pois"].append({"POI_PTFK":1, "POI_Reliability":50, "POI_ImageSrc":i[1], "POI_Comment":"",
-                    "POI_FFK":self.flightid,"POI_PFBFK":1,"POI_Found_Timestamp":i[16].replace("T"," "),
-                    "POI_Found_at_Flight_Height":i[10],
-                    "POI_Point":"ST_GeomFromText('POINT({} {})',4326)".format(i[6],i[5]),
-                    "POI_Label":i[0],"POI_Name":i[2],"POI_GPS_Accuracy":i[17]})
+        for k,i in enumerate(self.poilist):
+            Myjson["pois"].append({"POI_PTFK":1, "POI_Reliability":50, "POI_ImageSrc":i["filename"], "POI_Comment":"",
+                    "POI_FFK":self.flightid,"POI_PFBFK":1,"POI_Found_Timestamp":i["found_time"].replace("T"," "),
+                    "POI_Found_at_Flight_Height":i["uav_ele"],
+                    "POI_Point":"ST_GeomFromText('POINT({} {})',4326)".format(i["lon"],i["lat"]),
+                    "POI_Label":k,"POI_Name":i["name"],"POI_GPS_Accuracy":0})
+        # for i in self.poilist:
+            # Myjson["pois"].append({"POI_PTFK":1, "POI_Reliability":50, "POI_ImageSrc":i[1], "POI_Comment":"",
+                    # "POI_FFK":self.flightid,"POI_PFBFK":1,"POI_Found_Timestamp":i[16].replace("T"," "),
+                    # "POI_Found_at_Flight_Height":i[10],
+                    # "POI_Point":"ST_GeomFromText('POINT({} {})',4326)".format(i[6],i[5]),
+                    # "POI_Label":i[0],"POI_Name":i[2],"POI_GPS_Accuracy":i[17]})
             
         url = "http://wildretter.caf.dlr.de/poitaggerbridge/jsonread.php"
         headers = {'Content-type': 'application/json'}

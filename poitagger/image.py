@@ -111,7 +111,6 @@ b"\xff\x01":"TEM"  ,
 b"\xff\xfe":"COM"  } # Comment
 
            
-           
 FFF = [[0x02,"Raw Thermal Image Width", "H"],
         [0x04,"Raw Thermal Image Height", "H"],
         [0x20,"Emissivity", "f"],
@@ -161,6 +160,44 @@ FFF = [[0x02,"Raw Thermal Image Width", "H"],
         [0x45c , 'FocusDistance', "f"],
         [0x464 , 'FrameRate',   'H']]
 
+FLIRFILEHEAD =  [[0x00,"Fileformat ID", "4s"],
+        [0x04,"File origin", "16s"],
+        [0x14,"File format version", "L"],
+        [0x18,'Pointer to indexes',"L"],
+        [0x1c,'Number of indexes',"L"],
+        [0x20,'Next free index ID',"L"],
+        [0x24,'Swap pattern', "H"],
+        [0x26,'Spare', "7H"],
+        [0x34,'reserved', "2L"],
+        [0x3c,'Checksum', "L"]]
+
+FLIRFILEINDEX = [[0x00,"MainType", "H"],
+        [0x02,"SubType", "H"],
+        [0x04,"Version", "L"],
+        [0x08,'IndexID',"L"],
+        [0x0c,'DataPtr',"L"],
+        [0x10,'DataSize',"L"],
+        [0x14,'Parent', "L"],
+        [0x18,'ObjectNr', "L"],
+        [0x1c,'Checksum', "L"]]
+
+GEOMETRIC_INFO = [[0x00,"pixelSize", "H"],
+        [0x02,"imageWidth", "H"],
+        [0x04,"imageHeight", "H"],
+        [0x06,'upperLeftX',"H"],
+        [0x08,'upperLeftY',"H"],
+        [0x0a,'firstValidX',"H"],
+        [0x0c,'lastValidX', "H"],
+        [0x0e,'firstValidY',"H"],
+        [0x10,'lastValidY', "H"],
+        [0x12,'detectorDeep',"H"],
+        [0x14,'detectorID', "H"],
+        [0x16,'upSampling', "H"],
+        [0x18,'frameCtr', "H"],
+        [0x1a,'minMeasRadius', "H"],
+        [0x1c,'stripeFields', "c"],
+        [0x1d,'reserved', "c"],
+        [0x1e,'reserved1', "H"]]
 
     
 class Image(object):
@@ -257,18 +294,13 @@ class ImageJpg(Image):
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
         d, self.exif, self.xmp = self.get_meta(imgpath)
-        segments = self.find_segments(d)
-        self.width,self.height,self.channels = self.get_size(segments,d)
-
-        flirchunk = self.extract_flir(d) #,jfifmeta
-        if flirchunk is not None:
-            print ("whc",self.width,self.height,self.channels )
-            self.rwidth = int(str(self.exif.get("Raw Thermal Image Width",640)))
-            self.rheight = int(str(self.exif.get("Raw Thermal Image Height",512 )))
-            if onlyheader:
-                self.fff = self.flir_header(flirchunk,self.rwidth,self.rheight)
-            else:
-                self.flir_data(flirchunk,self.rwidth,self.rheight)
+        self.segments = self.find_segments(d)
+        self.width,self.height,self.channels = self.get_size(self.segments,d)
+        
+        self.rwidth = int(str(self.exif.get("Raw Thermal Image Width",640)))
+        self.rheight = int(str(self.exif.get("Raw Thermal Image Height",512 )))
+        
+        self.extract_flir(d,onlyheader)
         
         if str(self.exif.get("Image Make","")) == "DJI":
             self.fill_header_dji()
@@ -307,14 +339,17 @@ class ImageJpg(Image):
         return segments
       
     def get_size(self,segments,data):
+        Width, Height, Channels = [],[],[]
         try:
-            sof = [i for i in segments if i["id"]=="SOF0" and i["top"]==True ][0]
-            p = sof["pos"]
-            precision = data[p+4]
-            height = struct.unpack(">H", data[p+5:p+7])[0]
-            width = struct.unpack(">H", data[p+7:p+9])[0]
-            channels = data[p+9]
-            return (width,height,channels)
+            sof = [i for i in segments if i["id"]=="SOF0" and i["top"]==True ] #[0]
+            for s in sof:
+                p = s["pos"]
+                precision = data[p+4]
+                Height.append(struct.unpack(">H", data[p+5:p+7])[0])
+                Width.append(struct.unpack(">H", data[p+7:p+9])[0])
+                Channels.append(data[p+9])
+            idx = Width.index(max(Width))
+            return (Width[idx],Height[idx],Channels[idx])
         except:
             return (0,0,1)
             
@@ -339,50 +374,61 @@ class ImageJpg(Image):
         return d, exif, xmp
 
     
-    def extract_flir(self,bytearr):
-        flirdata = []
-        start = 0
-        arr = bytearr.split(b"\xff\xe1")
-        for i in arr:
-            if len(i)<6: continue
-            length = 256 * i[0] + i[1]
-            if i[2:6] ==b"FLIR":
-                if i[10:13] == b"FFF":
-                    if i[14:18]==b"ATAU": #DJI XT2
-                        start = 170
-                    else: #VUE PRO
-                        start = 554
-                else:
-                    start = 10
-            else:
-                continue
-            if start<length:
-                flirdata.append(i[start:length])
-        return b"".join(flirdata)#,jfifmeta
+    def extract_flir(self,bytearr,onlyheader):
+        fffchunk = self.combine_flir_segments(bytearr)
+        ffh = {}
+        if str(self.exif.get("Image Make","")) == "DJI":
+            endian = "<"
+        elif str(self.exif.get("Image Make","")) == "FLIR":
+            endian = ">"
+        else: 
+            endian = ">"
+        if len(fffchunk)<64:
+            return
+                
+        for i in FLIRFILEHEAD:
+            val = struct.Struct(endian+i[2]).unpack_from(fffchunk[0:64],i[0])
+            if "s" in i[2]:
+                val = val[0].strip(b"\x00")
+            name = i[1]
+            ffh[name]=val[0]
         
-        
-    def flir_data(self,rawdata,width,height):    
-        fff = {}
-        try:
-            img = np.frombuffer(rawdata, dtype="<u2",count=width*height) 
-            img = np.reshape(img,(height,width))
-            fffmeta = rawdata[width*height*2:]
-            for i in FFF:
-                val = struct.Struct("<"+i[2]).unpack_from(fffmeta,i[0])
+        indexes = ffh["Number of indexes"]
+        FFI = []
+        for idx in range(0,indexes):
+            ffi = {}
+            for i in FLIRFILEINDEX:
+                val = struct.Struct(endian+i[2]).unpack_from(fffchunk[64+idx*32:96+idx*32],i[0])
                 if "s" in i[2]:
                     val = val[0].strip(b"\x00")
                 name = i[1]
-                fff[name]=val
-            self.rawbody = img
-            self.fff = fff   
-            return True            
-        except:
-            self.fff = {}
-            return False
+                ffi[name]=val[0]
+            if ffi["MainType"]== 1:
+                rawstart= ffi['DataPtr']
+                rawend = rawstart + ffi['DataSize']
+            if ffi["MainType"]== 32:
+                basicstart= ffi['DataPtr']
+                basicend = basicstart + ffi['DataSize']
+            FFI.append(ffi)
+        
+        self.fff = self.flir_header(fffchunk[basicstart:basicend])
+        if not onlyheader:
+            self.rawbody = self.get_raw(fffchunk[rawstart:rawend])
+        
+    def get_raw(self,bytearr):
+        geom = {}
+        for i in GEOMETRIC_INFO:
+            val = struct.Struct("<"+i[2]).unpack_from(bytearr,i[0])
+            if "s" in i[2]:
+                val = val[0].strip(b"\x00")
+            name = i[1]
+            geom[name]=val[0]
+        img = np.frombuffer(bytearr[32:], dtype="<u"+str(geom['pixelSize']),count=geom['imageWidth']*geom['imageHeight']) 
+        img = np.reshape(img,(geom['imageHeight'],geom['imageWidth']))
+        return img
     
-    def flir_header(self,rawdata,width,height):    
+    def flir_header(self,fffmeta):    
         fff = {}
-        fffmeta = rawdata[width*height*2:]
         for i in FFF:
             val = struct.Struct("<"+i[2]).unpack_from(fffmeta,i[0])
             if "s" in i[2]:
@@ -390,7 +436,20 @@ class ImageJpg(Image):
             name = i[1]
             fff[name]=val
         return fff    
+    
+    def combine_flir_segments(self,bytearr):
+        flirdata = []
+        start = 10
+        arr = bytearr.split(b"\xff\xe1")
+        for i in arr:
+            if len(i)<6: continue
+            if not i[2:6] == b"FLIR": continue    
+            length = 256 * i[0] + i[1]
+            if start<length:
+                flirdata.append(i[start:length])
+        return b"".join(flirdata)
         
+     
     def fill_header_flir(self):
         self.header["file"]["name"] = self.filename
         self.header["image"]["width"] = self.width #self.extract_exif("Raw Thermal Image Width")
@@ -398,14 +457,16 @@ class ImageJpg(Image):
         self.header["image"]["bitdepth"] = 8      
         
         self.header["camera"]["roll"] = self.extract_xmp("camera:roll") 
-        self.header["camera"]["yaw"] = self.extract_xmp("camera:yaw")
+        #self.header["camera"]["yaw"] = self.extract_xmp("camera:yaw")
         self.header["camera"]["pitch"] = self.extract_xmp("camera:pitch") 
         self.header["camera"]["euler_order"] = "ZYX"
         self.header["camera"]["model"] = self.extract_exif("Image Model")
         self.header["camera"]["make"] = self.extract_exif("Image Make")
         self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
         self.header["uav"]["yaw"] = self.extract_xmp("flir:mavyaw") 
+        self.header["camera"]["yaw"] = self.extract_xmp("flir:mavyaw") + self.extract_xmp("camera:yaw")
         self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch") 
+        self.header["uav"]["euler_order"] = "ZYX"
         
         self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
         self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
@@ -519,10 +580,16 @@ class ImageJpg(Image):
         self.header["file"]["format"]=a.get("dc:format",0)
         self.header["file"]["version"]=a.get("crs:version",0)
         
-        self.header["calibration"]["geometric"]["fx"]=float(a.get("drone-dji:calibratedfocallength",0))
-        self.header["calibration"]["geometric"]["cx"]=float(a.get("drone-dji:calibratedopticalcenterx",0))
-        self.header["calibration"]["geometric"]["cy"]=float(a.get("drone-dji:calibratedopticalcentery",0))
-        
+        try:
+            self.header["calibration"]["geometric"]["fx"]=float(a.get("drone-dji:calibratedfocallength"))
+            self.header["calibration"]["geometric"]["cx"]=float(a.get("drone-dji:calibratedopticalcenterx"))
+            self.header["calibration"]["geometric"]["cy"]=float(a.get("drone-dji:calibratedopticalcentery"))
+        except:
+            print (self.extract_exif("EXIF FocalLengthIn35mmFilm"))
+            self.header["calibration"]["geometric"]["fx"] = self.extract_exif("EXIF FocalLength")
+            self.header["calibration"]["geometric"]["cx"] = self.width/2.0
+            self.header["calibration"]["geometric"]["cy"] = self.height/2.0
+            
         self.header["image"]["make"] = self.extract_exif("Image Make")
         self.header["image"]["xresolution"] = self.extract_exif("Image XResolution")
         self.header["image"]["yresolution"] = self.extract_exif("Image YResolution")
@@ -552,21 +619,22 @@ class ImageJpg(Image):
         self.header["exif"]["SubSecTimeOriginal"] = self.extract_exif("EXIF SubSecTimeOriginal")
         self.header["exif"]["FocalPlaneResolutionUnit"] = self.extract_exif("EXIF FocalPlaneResolutionUnit")
         
-        
-        self.header["calibration"]["radiometric"]["R"] = float(self.fff.get("PlanckR1",(0,))[0])
-        self.header["calibration"]["radiometric"]["F"] = float(self.fff.get("PlanckF",(1,))[0])
-        self.header["calibration"]["radiometric"]["B"] = float(self.fff.get("PlanckB",(0,))[0])
-        self.header["calibration"]["radiometric"]["R2"] = float(self.fff.get("PlanckR2",(0,))[0])
-        self.header["calibration"]["radiometric"]["timestamp"] = 0
-        self.header["calibration"]["radiometric"]["IRWindowTemperature"] = float(self.fff.get("IRWindowTemperature",(0,))[0])
-        self.header["calibration"]["radiometric"]["IRWindowTransmission"] = float(self.fff.get("IRWindowTransmission",(1,))[0])
-        self.header["calibration"]["radiometric"]["Emissivity"] = float(self.fff.get("Emissivity",(1,))[0])
-        self.header["calibration"]["radiometric"]["ObjectDistance"] = float(self.fff.get("ObjectDistance",(80,))[0])
-        self.header["calibration"]["radiometric"]["ReflectedApparentTemperature"] = float(self.fff.get("ReflectedApparentTemperature",(0,))[0])
-        self.header["calibration"]["radiometric"]["AtmosphericTemperature"] = float(self.fff.get("AtmosphericTemperature",(0,))[0])
-        self.header["calibration"]["radiometric"]["RelativeHumidity"] = float(self.fff.get("RelativeHumidity",(0.5,))[0])
-        self.header["calibration"]["radiometric"]["coretemp"] = float(self.fff.get("Coretemp",(0,))[0])
-
+        try:
+            self.header["calibration"]["radiometric"]["R"] = float(self.fff.get("PlanckR1",(0,))[0])
+            self.header["calibration"]["radiometric"]["F"] = float(self.fff.get("PlanckF",(1,))[0])
+            self.header["calibration"]["radiometric"]["B"] = float(self.fff.get("PlanckB",(0,))[0])
+            self.header["calibration"]["radiometric"]["R2"] = float(self.fff.get("PlanckR2",(0,))[0])
+            self.header["calibration"]["radiometric"]["timestamp"] = 0
+            self.header["calibration"]["radiometric"]["IRWindowTemperature"] = float(self.fff.get("IRWindowTemperature",(0,))[0])
+            self.header["calibration"]["radiometric"]["IRWindowTransmission"] = float(self.fff.get("IRWindowTransmission",(1,))[0])
+            self.header["calibration"]["radiometric"]["Emissivity"] = float(self.fff.get("Emissivity",(1,))[0])
+            self.header["calibration"]["radiometric"]["ObjectDistance"] = float(self.fff.get("ObjectDistance",(80,))[0])
+            self.header["calibration"]["radiometric"]["ReflectedApparentTemperature"] = float(self.fff.get("ReflectedApparentTemperature",(0,))[0])
+            self.header["calibration"]["radiometric"]["AtmosphericTemperature"] = float(self.fff.get("AtmosphericTemperature",(0,))[0])
+            self.header["calibration"]["radiometric"]["RelativeHumidity"] = float(self.fff.get("RelativeHumidity",(0.5,))[0])
+            self.header["calibration"]["radiometric"]["coretemp"] = float(self.fff.get("Coretemp",(0,))[0])
+        except:
+            pass #no thermal infrared
         
 
 def UTCFromGps(gpsWeek, SOW, leapSecs=16,gpxstyle=False): 

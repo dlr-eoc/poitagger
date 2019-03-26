@@ -215,7 +215,7 @@ class Main(QMainWindow):
       
     def gpx_to_gps(self):
     #    self.pois.save()
-    
+        pois = self.pois.getPoisAsGpx()
         if self.useflight:
             self.flight.save()
         
@@ -224,8 +224,8 @@ class Main(QMainWindow):
             os.remove("pois.gpx")
         self.gpxgen = gpx.GpxGenerator("pois.gpx")
         try:
-    #        for i in self.pois.poilist:
-    #            self.gpxgen.add_wpt(str(i[5]),str(i[6]),str(i[7]),self.img.ara.header["gps"]["dateTtime"],str(i[2]),"poi")
+            for i in pois:
+                self.gpxgen.add_wpt(str(i["lat"]),str(i["lon"]),str(i["ele"]),i["found_time"],str(i["name"]),"poi")
             self.gpxgen.save(poisfilename,False)
         except:
             logging.error("GPS_TO_GPS save failed",exc_info=True)
@@ -240,6 +240,7 @@ class Main(QMainWindow):
     def exportgpx(self,gpxfile):#, conf):
         if str(self.settings.value('GPS-DEVICE/exportType')) == "serial":# conf.garminserial_rB.isChecked():
             cmd = 'gpsbabel -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + gpxfile + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
+            print(cmd)
             ret = os.system(cmd)
             if ret == 0: 
                 QtGui.QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden ueber das Garmin-Serial/USB-Protokoll uebertragen"); 
@@ -259,7 +260,8 @@ class Main(QMainWindow):
             else:
                 QtGui.QMessageBox.critical(self, "Info0","kein Detektionsmodus gewaehlt! (unter Einstellungen/GPS-Device)"); 
             
-            if not drive==False:
+            if not drive==False and not drive==None:
+                print(drive,str(self.settings.value('GPS-DEVICE/gpxfolder')))
                 outdir = os.path.join(drive,str(self.settings.value('GPS-DEVICE/gpxfolder')))    #conf.folder_LE.text()
             
                 if os.path.isdir(outdir):

@@ -356,7 +356,10 @@ class Img(QtGui.QWidget):
         self.p.child('Image').child("dn min").setValue(min)
         self.p.child('Image').child("dn max").setValue(max)
         
-        self.temp.tempminmax(self.ara)
+        pt_min,pt_max = self.temp.tempminmax(self.ara)
+        self.p.child('Image').child("temp min").setValue(pt_min)
+        self.p.child('Image').child("temp max").setValue(pt_max)
+        
         self.histlut.setImageItem(self.image)
         self.vbox.clear()
         self.vbox.addItem(self.image)
@@ -417,14 +420,19 @@ class Img(QtGui.QWidget):
             x,y = int(pt.x()),int(pt.y())
             if not  0 <= x < self.imwidth: return 
             if not  0 <= y < self.imheight: return 
-            dn = self.ara.rawbody[y, x]
+            try:
+                dn = self.ara.rawbody[y, x]
+            except:
+                dn = self.ara.image[y, x]
+                logging.warning("no rawdata!")
             if self.poiAction.isChecked():
     #            eli = QtGui.QGraphicsEllipseItem(int(pt.x())-SIZE/2.0,int(pt.y())-SIZE/2.0,SIZE,SIZE)
     #            eli.setPen(QtGui.QPen(QtGui.QColor("#ff0000")))
     #            self.vbox.addItem(eli)
                 self.sigPixel.emit(self.imgname,x,y)
             elif self.tempAction.isChecked():
-                self.temp.fill_pixtemp(x,y,dn)
+                print(self.temp.calc_pixtemp(dn))
+                #self.temp.fill_pixtemp(x,y,dn)
         except:
             logging.error("imageview pixelClicked failed", exc_info=True)
             

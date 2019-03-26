@@ -15,6 +15,7 @@ from . import PATHS
 class Temp(QtGui.QWidget):
     
     log = QtCore.pyqtSignal(str)
+    #minmax = QtCore.pyqtSignal(float,float)
     
     
     def __init__(self):
@@ -28,6 +29,7 @@ class Temp(QtGui.QWidget):
     
 ################# Temp-UI
     def tempminmax(self,ara):
+        #print("Temp minmax")
         try:
             self.ara = ara
             min = np.min(ara.rawbody)
@@ -38,15 +40,19 @@ class Temp(QtGui.QWidget):
             self.pixtemp_dn_max.setValue(max)
             self.pixtemp_temp_min.setValue(pt_min)
             self.pixtemp_temp_max.setValue(pt_max)
+         #   self.minmax.emit(pt_min,pt_max)
+         #   print("pt_min",pt_min,pt_max)
+            return pt_min,pt_max
         except:
             logging.warning("temp.py: temperature extraction failed")
+        return 0,0
         
     def calc_pixtemp(self,dn):
         try:
             B = self.ara.header["calibration"]["radiometric"].get("B",1)
             R = self.ara.header["calibration"]["radiometric"].get("R",1)
             F = self.ara.header["calibration"]["radiometric"].get("F",1)
-            pt = B/math.log(R/dn + F) - 273.0 - 23.0 + self.ara.header["camera"].get("coretemp",0)
+            pt = B/math.log(R/dn + F) - 273.0  + self.ara.header["camera"].get("coretemp",0) #- 23.0
             
         except:
             pt = 0

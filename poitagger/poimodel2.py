@@ -124,6 +124,7 @@ class PoiModel(QtCore.QObject):
                                 "uav_lat":float(view.opts["uav_lat"]), 
                                 "uav_lon":float(view.opts["uav_lon"]),
                                 "uav_ele":float(view.opts["uav_ele"]), 
+                                #"uav_yaw":float(view.opts["uav_yaw"]),
                                 "cam_yaw":float(view.opts["cam_yaw"]),
                                 "cam_pitch":float(view.opts["cam_pitch"]), 
                                 "cam_roll":float(view.opts["cam_roll"]),
@@ -156,6 +157,7 @@ class PoiModel(QtCore.QObject):
                 try:
                     attitude = self.prepareReproject(i)    
                     j = self.backreproject(i, attitude)
+                 #   print(j)
                     if not j.all() == None:
                         rep = i.copy()
                         rep["x"]= j.ravel()[0]
@@ -165,10 +167,14 @@ class PoiModel(QtCore.QObject):
                 except:
                     logging.warning("getPois Reproject failed",exc_info=True)
         Pois.extend(Reprojected)
+       # print("REPROJECTED:")
+       # print (Reprojected)
         self.sigPois.emit(Pois)
         
+            
     
     def prepareReproject(self,poi):
+    #    print("ExtR:")
         UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(poi["uav_lat"],poi["uav_lon"])
         self.ExtR.setPose(0,0,0,round(UTM_X,3),round(UTM_Y,3),poi["uav_ele"]) #yaw=0.54,X=UTM_X,Y=UTM_Y,Z=48.57)
         #self.ExtR.setUAVBoresight(dx=poi["cam_dx"],dy=poi["cam_dy"],dz=poi["cam_dz"])#dx=0.20)
@@ -176,8 +182,26 @@ class PoiModel(QtCore.QObject):
             dpitch= self.boresight_pitch, 
             droll= self.boresight_roll,
             order= self.boresight_order) #dpitch=-1.5,dyaw=1.0
-        self.ExtR.setGimbal(roll=poi["cam_roll"],pitch= poi["cam_pitch"],
-            yaw=poi["cam_yaw"],order=poi["cam_euler_order"])#pitch=-90,roll=-0.23,yaw=0,order="ZXY")
+        self.ExtR.setGimbal(roll=poi["cam_roll"],pitch= poi["cam_pitch"],yaw=poi["cam_yaw"],order=poi["cam_euler_order"])#pitch=-90,roll=-0.23,yaw=0,order="ZXY")
+        #self.ExtR.setGimbal(pitch=-90,roll=0,yaw=0,order="ZXY")
+        #print ("RBoresight:",self.ExtR.R_cam_boresight)
+        #print ("TBoresight:",self.ExtR.T_cam_boresight)
+        #print("RGimbal",self.ExtR.R_gimbal)
+        #print("uavboresight",self.ExtR.R_uav_boresight)
+        #print("uavboresight",self.ExtR.T_uav_boresight)
+        #print("uav",self.ExtR.T_uav)#T_uav
+        
+        # print("cosyUAV2Cam",self.ExtR.cosyUAVToCamera,
+        # "rcambire",self.ExtR.R_cam_boresight,
+        # "tcambore",self.ExtR.T_cam_boresight,
+        # "rgim",self.ExtR.R_gimbal,
+        # "r_uav_bore",self.ExtR.R_uav_boresight,
+        # "Tuavbore",self.ExtR.T_uav_boresight,
+        # "R_uav",self.ExtR.R_uav,
+        # "cosyW2UAV",self.ExtR.cosyWorldToUAV.T,
+        # "T_uav",self.ExtR.T_uav)
+        
+        
         return self.ExtR.transform()
     
     def setIntrinsics(self,width,height,fx,cx,cy,ar=1.0,skew=0.0):
@@ -189,7 +213,7 @@ class PoiModel(QtCore.QObject):
         
     def raymarching(self,pos,vec,ele=0):
         if not self.dem:
-            poi = self.ray_intersect_plane(pos[0:3],vec[0:3],np.array([0,0,1,ele]),False)
+            poi = self.ray_intersect_plane(pos[0:3],vec[0:3],np.array([0,0,1,ele]),True)
         return poi #3D Vector
     
     def ray_intersect_plane(self,raypos, raydir, plane, front_only=True):
@@ -237,13 +261,25 @@ class PoiModel(QtCore.QObject):
         pos = self.raymarching(campos, rd.reshape(4,1))
         return pos
     
+   # def frontofcamera(self,pt,camplane):
+   #     print ("frontofcam",pt.ravel(),camplane.ravel())
+   #     rd_n = np.dot(pt.ravel()[:3], camplane.ravel()[:3])
+   #     print ("infrontofcam", rd_n)
+   #     if rd_n>0: return True
+   #     else: return False
+        
     def backreproject(self,x,attitudeMat):
+      #  print(x,attitudeMat)
         self.CamR.attitudeMat(attitudeMat)
         pixel = np.array([int(float(x["x"])),int(float(x["y"]))]) #.reshape(1,2)
         repro = self.CamR.reproject(pixel)
         campos = self.CamR.position()
         rd = repro.T - campos.ravel()
         pos = self.raymarching(campos,rd).reshape(1,3)
+      #  if not self.frontofcamera(pos,self.Cam.reproject(np.array([[320,256]]))):
+      #      print("BACKSIDE!")
+      #      return np.array([[None,None]])
+        
         x_br = self.Cam.project(pos)
         if self.onImage(x_br.ravel()):
             return x_br
