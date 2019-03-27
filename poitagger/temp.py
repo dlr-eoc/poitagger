@@ -49,9 +49,12 @@ class Temp(QtGui.QWidget):
         
     def calc_pixtemp(self,dn):
         try:
-            B = self.ara.header["calibration"]["radiometric"].get("B",1)
-            R = self.ara.header["calibration"]["radiometric"].get("R",1)
-            F = self.ara.header["calibration"]["radiometric"].get("F",1)
+
+            if os.path.splitext(self.ara.header["file"].get("name",""))[1].lower()==".ara" and self.ara.header["file"]["dlr_protokoll"]["erkennung"]==b"DLR":
+                B = self.ara.header["calibration"]["radiometric"].get("B",1)
+                R = self.ara.header["calibration"]["radiometric"].get("R",1)
+                F = self.ara.header["calibration"]["radiometric"].get("F",1)
+
             pt = B/math.log(R/dn + F) - 273.0  + self.ara.header["camera"].get("coretemp",0) #- 23.0
             
         except:

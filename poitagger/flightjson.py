@@ -464,6 +464,8 @@ class ImportFlightMeta(QtCore.QThread):
         Radi = defaultdict(list)
         Bore = defaultdict(list)
         for i in self.ImgHdr:
+            if os.path.splitext(i["file"].get("name",""))[1].lower()==".ara" and i["file"]["dlr_protokoll"]["erkennung"]!=b"DLR":
+                continue
             for k,v in i["calibration"]["geometric"].items(): Geom[k].append(v)
             for k,v in i["calibration"]["radiometric"].items(): Radi[k].append(v)
             for k,v in i["calibration"]["boresight"].items(): 
@@ -474,7 +476,7 @@ class ImportFlightMeta(QtCore.QThread):
         for k,v in Geom.items(): 
             if v.count(v[0])==len(v): geom[k] = v[0]
             else: 
-                print("GEOM",k,v[0],np.bincount(v).argmax())
+                #print("GEOM",k,v[0],np.bincount(v).argmax())
                 geom[k] = np.bincount(v).argmax() #achtung rundet ab!
         for k,v in Radi.items(): 
             if v.count(v[0])==len(v): radi[k] = v[0]
@@ -482,7 +484,14 @@ class ImportFlightMeta(QtCore.QThread):
         for k,v in Bore.items(): 
             if v.count(v[0])==len(v): bore[k] = v[0]
             else: bore[k] = np.bincount(v).argmax() #achtung rundet ab!
-        print (len(bore),bore)
+        if len(bore)==0:
+            bore = {"cam_pitch":0,"cam_roll":0,"cam_yaw":0,"cam_euler_order":"ZXY"}
+        if len(geom)==0:
+            width = self.ImgHdr[0]["image"]["width"]
+            height = self.ImgHdr[0]["image"]["height"]
+            geom = {"fx":1115,"fy":1115,"cx":width/2,"cy":height/2,"skew":0,"k1":0,"k2":0,"k3":0,"p1":0,"p2":0,"pixelshift":0,"timestamp":0}
+        if len(radi)==0:
+            radi = {"B":333,"R":12996.665,"F":1,"coretemp":30,"timestamp":0}
             
         self.calibration = {"geometric":geom,"radiometric":radi,"boresight":bore}
         
