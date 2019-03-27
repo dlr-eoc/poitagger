@@ -68,17 +68,17 @@ class PoiModel(QtCore.QObject):
         #logging.warning("SET POSE " + imgheader["file"]["name"])
         self.imgheader = imgheader
         try:
-            uavyaw = imgheader["uav"]["yaw"]
+            uavyaw = imgheader["uav"].get("yaw",0)
             uavX = round(imgheader["gps"].get("UTM_X",0),3)
             uavY = round(imgheader["gps"].get("UTM_Y",0),3)
             uavZ = imgheader["gps"].get("rel_altitude",0)
-            uavorder = imgheader["uav"]["euler_order"]
-            roll = imgheader["camera"]["roll"]
+            uavorder = imgheader["uav"].get("euler_order","ZYX")
+            roll = imgheader["camera"].get("roll",0)
             
-            pitch= imgheader["camera"]["pitch"]
+            pitch= imgheader["camera"].get("pitch",0)
             
-            yaw = imgheader["camera"]["yaw"]
-            gimbalorder = imgheader["camera"]["euler_order"]
+            yaw = imgheader["camera"].get("yaw",0)
+            gimbalorder = imgheader["camera"].get("euler_order","ZXY")
             
             self.Ext.setPose(X=uavX,Y=uavY,Z=uavZ,order=uavorder)
             self.Ext.setGimbal(roll=roll,pitch=pitch,yaw=yaw,order=gimbalorder)

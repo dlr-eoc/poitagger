@@ -63,8 +63,8 @@ class Calib(QtGui.QMainWindow):
             
             self.dlr_geom_fx.setValue(ara["calibration"]["geometric"].get("fx",0))
             self.dlr_geom_fy.setValue(ara["calibration"]["geometric"].get("fy",0))
-            self.dlr_geom_cx.setValue(ara["calibration"]["geometric"].get("cx",ara["image"]["width"]/2))
-            self.dlr_geom_cy.setValue(ara["calibration"]["geometric"].get("cy",ara["image"]["height"]/2))
+            self.dlr_geom_cx.setValue(ara["calibration"]["geometric"].get("cx",ara["image"].get("width",0)/2))
+            self.dlr_geom_cy.setValue(ara["calibration"]["geometric"].get("cy",ara["image"].get("height",0)/2))
             self.dlr_geom_skew.setValue(ara["calibration"]["geometric"].get("skew",0))
             self.dlr_geom_k1.setValue(ara["calibration"]["geometric"].get("k1",0))
             self.dlr_geom_k2.setValue(ara["calibration"]["geometric"].get("k2",0))

@@ -31,6 +31,7 @@ from . import gpx
 from . import utils2
 from . import flightjson
 from . import PATHS
+from . import __version__
 # Widgets
 from . import save_as
 from . import workflow
@@ -192,6 +193,8 @@ class Main(QMainWindow):
         self.wf.log.connect(self.Console.append)
         self.treemain.view.log.connect(self.Console.append)
         self.img.log.connect(self.Console.append)
+        self.info.log.connect(self.Console.append)
+        self.img.temp.log.connect(self.Console.append)
     #    self.pois.log.connect(self.Console.append)
         
     def onDirChanged(self,path):
@@ -201,7 +204,7 @@ class Main(QMainWindow):
         
     def onImagePathChanged(self,path):
         self.img.loadImg(path)
-        self.setWindowTitle(path)
+        self.setWindowTitle("Poitagger " + str(__version__) + " " + path)
         
     def onImageChanged(self,ara):
         self.info.load_data(ara.header)
@@ -371,7 +374,7 @@ def screenAt(*pos):
 
 def main():
     global app
-    arg = docopt(__doc__, version='poitagger 0.1')
+    arg = docopt(__doc__, version=__version__)
     app = QtGui.QApplication(sys.argv)
     
     if os.name == "nt":
@@ -399,6 +402,7 @@ def main():
     
     
     window.setWindowIcon(app_icon)
+    window.setWindowTitle("Poitagger " + str(__version__))
     window.show()
     sys.exit(app.exec_())
 

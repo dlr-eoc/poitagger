@@ -20,7 +20,7 @@ class PropertyDialog(QtGui.QDialog):
         self.tabWidget.addTab(self.poisproperties,"Pois")
         self.tabWidget.addTab(self.gpsproperties,"GPS-Device")
         self.tabWidget.addTab(self.imageproperties,"Image")
-        self.tabWidget.addTab(self.geoviewproperties,"Geoview")
+        self.tabWidget.addTab(self.geoviewproperties,"Map")
         self.ConfWidgetList = [self.poisproperties,self.gpsproperties,self.imageproperties,self.geoviewproperties]
         
         self.connections()

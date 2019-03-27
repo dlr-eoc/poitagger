@@ -41,7 +41,11 @@ class Info(QtGui.QWidget):
         self.t.setParameters(self.importer.p, showTop=False)
         self.importer.finished.connect(self.reloaded)
        
-    def load_data(self,ara): 
+    def load_data(self,ara):
+        '''
+        this public method loads the image-header which is a dictionary.
+        '''    
+       # print (ara)
         self.savedScrollPosition = self.t.verticalScrollBar().value()
         self.importer.load(ara)
         self.importer.start()
@@ -54,7 +58,8 @@ class Info(QtGui.QWidget):
             lon = self.importer.p.child("gps").child("longitude").value()
             self.position.emit(float(lat),float(lon))
         except:
-            logging.warning("info.py: reloaded failed")
+            self.log.emit("localization failed! This image has no geo data")#,exc_info=True)
+            
 
 class ImportInfo(QtCore.QThread):
     finished = QtCore.pyqtSignal()

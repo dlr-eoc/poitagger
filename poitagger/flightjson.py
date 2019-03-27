@@ -473,13 +473,16 @@ class ImportFlightMeta(QtCore.QThread):
         
         for k,v in Geom.items(): 
             if v.count(v[0])==len(v): geom[k] = v[0]
-            else: geom[k] = np.bincount(v).argmax() #achtung rundet ab!
+            else: 
+                print("GEOM",k,v[0],np.bincount(v).argmax())
+                geom[k] = np.bincount(v).argmax() #achtung rundet ab!
         for k,v in Radi.items(): 
             if v.count(v[0])==len(v): radi[k] = v[0]
             else: radi[k] = np.bincount(v).argmax() #achtung rundet ab!
         for k,v in Bore.items(): 
             if v.count(v[0])==len(v): bore[k] = v[0]
             else: bore[k] = np.bincount(v).argmax() #achtung rundet ab!
+        print (len(bore),bore)
             
         self.calibration = {"geometric":geom,"radiometric":radi,"boresight":bore}
         

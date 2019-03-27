@@ -44,7 +44,7 @@ class Temp(QtGui.QWidget):
          #   print("pt_min",pt_min,pt_max)
             return pt_min,pt_max
         except:
-            logging.warning("temp.py: temperature extraction failed")
+            self.log.emit("temperature extraction failed!")
         return 0,0
         
     def calc_pixtemp(self,dn):

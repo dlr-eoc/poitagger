@@ -323,7 +323,7 @@ class Img(QtGui.QWidget):
         if not os.path.isfile(curimg): return
         
         self.ara = image.Image.factory(curimg)
-        self.log.emit(str(self.ara.exif))
+        #self.log.emit(str(self.ara.exif))
         if hasattr(self.ara, 'rawbody'):
             img = self.ara.rawbody 
         else:

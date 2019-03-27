@@ -4294,3 +4294,7 @@ dist/poitagger-0.2.4-py3-none-any.whl
 build/lib/poitagger/poiview.py
 dist/poitagger-0.2.4-py3-none-any.whl
 build/lib/poitagger/poiview.py
+dist/launcher3-64/Lib/site-packages/camproject/extrinsics.py
+dist/launcher3-64/Lib/site-packages/camproject/utils.py
+dist/launcher3-64/poitagger_.exe
+libmtp-8.dll
