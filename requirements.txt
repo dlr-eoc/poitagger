@@ -1,5 +1,6 @@
 docopt
-PyQt5>=5.6
+PyQt5>=5.10
+PyQtWebEngine
 numpy>=1.15
 lxml>=4.2.5
 https://github.com/pyqtgraph/pyqtgraph/archive/develop.zip
@@ -15,6 +16,7 @@ simplejson>=3.16.0
 exifread>=2.1
 Pillow>=5.3
 camproject
+yamlordereddictloader
 #opencv-python>=3.4.4    
 #scipy>=1.1.0
 #scikit-image>=0.14
