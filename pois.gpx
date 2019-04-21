@@ -4,55 +4,10 @@
     <session>None</session>
     <path>C:\Users\isra_ma\Documents\GitHub\poitagger</path>
   </fwr>
-  <wpt lat="48.14001906678307" lon="10.998755578216977">
-    <name>auto</name>
+  <wpt lat="47.515675808476665" lon="8.963906942623778">
+    <name>Point0</name>
     <cmt></cmt>
-    <time>2019-03-19T11:19:50.589703</time>
-    <ele>0.0</ele>
-    <type>poi</type>
-    <desc></desc>
-    <src></src>
-  </wpt>
-  <wpt lat="48.1400277629758" lon="10.998719114802826">
-    <name>auto</name>
-    <cmt></cmt>
-    <time>2019-03-19T11:20:59.610703</time>
-    <ele>0.0</ele>
-    <type>poi</type>
-    <desc></desc>
-    <src></src>
-  </wpt>
-  <wpt lat="48.14006512937275" lon="10.998691773892409">
-    <name>ich</name>
-    <cmt></cmt>
-    <time>2019-03-19T11:23:35.769703</time>
-    <ele>0.0</ele>
-    <type>poi</type>
-    <desc></desc>
-    <src></src>
-  </wpt>
-  <wpt lat="48.139914820158616" lon="10.998784263099814">
-    <name>autoseite</name>
-    <cmt></cmt>
-    <time>2019-03-19T11:24:23.009703</time>
-    <ele>0.0</ele>
-    <type>poi</type>
-    <desc></desc>
-    <src></src>
-  </wpt>
-  <wpt lat="48.13990203515966" lon="10.998692045683011">
-    <name>autohinten</name>
-    <cmt></cmt>
-    <time>2019-03-19T11:24:55.139703</time>
-    <ele>0.0</ele>
-    <type>poi</type>
-    <desc></desc>
-    <src></src>
-  </wpt>
-  <wpt lat="48.1399776491841" lon="10.998888936317547">
-    <name>fleck</name>
-    <cmt></cmt>
-    <time>2019-03-19T11:28:34.028703</time>
+    <time>2019-04-18T15:59:27.107000</time>
     <ele>0.0</ele>
     <type>poi</type>
     <desc></desc>

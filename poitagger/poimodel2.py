@@ -92,17 +92,17 @@ class PoiModel(QtCore.QObject):
     def loadMeta(self,meta):
         self.im_width = par(meta, ["general","images","width"],0) #meta.child("general").child("images").child("width").value() #["general"]["images"]["width"]
         self.im_height = par(meta, ["general","images","height"],0) #meta.child("general").child("images").child("height").value()#["general"]["images"]["height"]
-        self.im_cx = par(meta, ["calibration","geometric","cx"],0) #meta.child("calibration").child("geometric").child("cx").value()#["calibration"]["geometric"]["cx"]
-        self.im_cy = par(meta, ["calibration","geometric","cy"],0) #meta.child("calibration").child("geometric").child("cy").value()#["calibration"]["geometric"]["cy"]
-        self.im_fx = par(meta, ["calibration","geometric","fx"],0) #meta.child("calibration").child("geometric").child("fx").value()#["calibration"]["geometric"]["fx"]
+        self.im_cx = par(meta, ["calibration","geometric","cx"],2) #meta.child("calibration").child("geometric").child("cx").value()#["calibration"]["geometric"]["cx"]
+        self.im_cy = par(meta, ["calibration","geometric","cy"],2) #meta.child("calibration").child("geometric").child("cy").value()#["calibration"]["geometric"]["cy"]
+        self.im_fx = par(meta, ["calibration","geometric","fx"],999) #meta.child("calibration").child("geometric").child("fx").value()#["calibration"]["geometric"]["fx"]
         
         ###########################
         # there was a fixed Value in camera2 !!!!
         ###########################
         
-        self.im_cx = 320
-        self.im_cy = 256
-        self.im_fx = 1115
+        #self.im_cx = 320
+        #self.im_cy = 256
+        #self.im_fx = 1115
         
         self.boresight_pitch = par(meta, ["calibration","boresight","cam_pitch"],0) #meta.child("calibration").child("boresight").child("cam_pitch_offset").value()#["calibration"]["boresight"]["cam_pitch_offset"]
         self.boresight_roll = par(meta, ["calibration","boresight","cam_roll"],0) #meta.child("calibration").child("boresight").child("cam_roll_offset").value()#["calibration"]["boresight"]["cam_roll_offset"]
@@ -144,7 +144,7 @@ class PoiModel(QtCore.QObject):
             
         self.Ext.setCameraBoresight(droll=self.boresight_roll, dpitch= self.boresight_pitch, dyaw=self.boresight_yaw, order=self.boresight_order)
         self.setIntrinsics(self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
-       # print("loadMeta",self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
+        print("loadMeta",self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
         
     def getPois(self,filename):
         Pois = []

@@ -201,8 +201,8 @@ GEOMETRIC_INFO = [[0x00,"pixelSize", "H"],
 
     
 class Image(object):
-    header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
-         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
+    header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
+         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},
                     "thumbnail":{},     }
     exif = None
     xmp = None
@@ -283,13 +283,14 @@ class Image(object):
 
 
 class ImageJpg(Image):
+    bitdepth = None
     def __init__(self,imgpath=None,bitsPerPixel=np.uint16,onlyheader=False):
         if imgpath is not None:
             self.load(imgpath,onlyheader=onlyheader)
         
     def load(self,imgpath,onlyheader=False):
-        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
-         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
+        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
+         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},
                     "thumbnail":{},     }
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
@@ -297,8 +298,8 @@ class ImageJpg(Image):
         self.segments = self.find_segments(d)
         self.width,self.height,self.channels = self.get_size(self.segments,d)
         
-        self.rwidth = int(str(self.exif.get("Raw Thermal Image Width",640)))
-        self.rheight = int(str(self.exif.get("Raw Thermal Image Height",512 )))
+        self.rwidth = int(str(self.exif.get("Raw Thermal Image Width",None)))
+        self.rheight = int(str(self.exif.get("Raw Thermal Image Height",None )))
         
         self.extract_flir(d,onlyheader)
         
@@ -414,7 +415,9 @@ class ImageJpg(Image):
         self.fff = self.flir_header(fffchunk[basicstart:basicend])
         if not onlyheader:
             self.rawbody = self.get_raw(fffchunk[rawstart:rawend])
-        
+        else:
+            self.bitdepth = struct.Struct("<H").unpack_from(fffchunk[rawstart:rawstart+2],0)
+            print("BITDEPTH",self.bitdepth)
     def get_raw(self,bytearr):
         geom = {}
         for i in GEOMETRIC_INFO:
@@ -425,6 +428,7 @@ class ImageJpg(Image):
             geom[name]=val[0]
         img = np.frombuffer(bytearr[32:], dtype="<u"+str(geom['pixelSize']),count=geom['imageWidth']*geom['imageHeight']) 
         img = np.reshape(img,(geom['imageHeight'],geom['imageWidth']))
+        self.bitdepth = geom["pixelsize"]
         return img
     
     def flir_header(self,fffmeta):    
@@ -452,9 +456,9 @@ class ImageJpg(Image):
      
     def fill_header_flir(self):
         self.header["file"]["name"] = self.filename
-        self.header["image"]["width"] = self.width #self.extract_exif("Raw Thermal Image Width")
-        self.header["image"]["height"] = self.height #self.extract_exif("Raw Thermal Image Height")
-        self.header["image"]["bitdepth"] = 8      
+        self.header["image"]["width"] = self.rwidth if self.rwidth else self.width #self.extract_exif("Raw Thermal Image Width")
+        self.header["image"]["height"] = self.rheight if self.rheight else self.height #self.extract_exif("Raw Thermal Image Height")
+        self.header["image"]["bitdepth"] = self.bitdepth      
         
         self.header["camera"]["roll"] = self.extract_xmp("camera:roll") 
         #self.header["camera"]["yaw"] = self.extract_xmp("camera:yaw")
@@ -519,10 +523,6 @@ class ImageJpg(Image):
         
         self.header["image"]["colorspace"] = self.extract_exif("EXIF ColorSpace")
         self.header["image"]["componentsconfiguration"] = self.extract_exif("EXIF ComponentsConfiguration")
-        
-        self.header["rawimage"]["height"] = self.rheight
-        self.header["rawimage"]["width"] = self.rwidth 
-        self.header["rawimage"]["bitdepth"] = 16      
                 
         self.header["uav"]["rollrate"] = self.extract_xmp("flir:mavrollrate") 
         self.header["uav"]["yawrate"] = self.extract_xmp("flir:mavyawrate") 
@@ -544,15 +544,14 @@ class ImageJpg(Image):
         a = self.xmp.find("rdf:description")
         if a == None: return
         self.header["file"]["name"] = self.filename
-        self.header["image"]["width"] = self.width #extract_exif("EXIF ExifImageWidth")
-        self.header["image"]["height"] = self.height
-        self.header["image"]["bitdepth"] = 8     
+        self.header["image"]["width"] = self.rwidth if self.rwidth else self.width #extract_exif("EXIF ExifImageWidth")
+        self.header["image"]["height"] = self.rheight if self.rheight else self.height
+        self.header["image"]["bitdepth"] = self.bitdepth     
         
         self.header["camera"]["roll"] = float(a.get("drone-dji:gimbalrolldegree",0))
         self.header["camera"]["yaw"] = float(a.get("drone-dji:gimbalyawdegree",0))
         self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",0))
         self.header["camera"]["euler_order"] = "ZYX"
-        
         self.header["camera"]["model"] = a.get("tiff:model",0)
         self.header["camera"]["make"] = a.get("tiff:make",0)
         self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
@@ -574,6 +573,8 @@ class ImageJpg(Image):
         
         self.header["gps"]["gpsmapdatum"] = self.extract_exif("GPS GPSMapDatum")
         
+        self.header["camera"]["focallength"] = float(a.get("drone-dji:calibratedfocallength"))
+        
         self.header["file"]["about"]=a.get("rdf:about",0)
         self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
         self.header["file"]["createdate"]=a.get("xmp:createdate",0)
@@ -581,14 +582,15 @@ class ImageJpg(Image):
         self.header["file"]["version"]=a.get("crs:version",0)
         
         try:
-            self.header["calibration"]["geometric"]["fx"]=float(a.get("drone-dji:calibratedfocallength"))
+            #self.header["calibration"]["geometric"]["fx"]=float(a.get("drone-dji:calibratedfocallength"))
             self.header["calibration"]["geometric"]["cx"]=float(a.get("drone-dji:calibratedopticalcenterx"))
             self.header["calibration"]["geometric"]["cy"]=float(a.get("drone-dji:calibratedopticalcentery"))
         except:
+            print("no calibration in exif header")
             print (self.extract_exif("EXIF FocalLengthIn35mmFilm"))
-            self.header["calibration"]["geometric"]["fx"] = self.extract_exif("EXIF FocalLength")
-            self.header["calibration"]["geometric"]["cx"] = self.width/2.0
-            self.header["calibration"]["geometric"]["cy"] = self.height/2.0
+            #self.header["calibration"]["geometric"]["fx"] = self.extract_exif("EXIF FocalLength")
+            #self.header["calibration"]["geometric"]["cx"] = self.width/2.0
+            #self.header["calibration"]["geometric"]["cy"] = self.height/2.0
             
         self.header["image"]["make"] = self.extract_exif("Image Make")
         self.header["image"]["xresolution"] = self.extract_exif("Image XResolution")
@@ -600,10 +602,6 @@ class ImageJpg(Image):
         self.header["image"]["copyright"] = self.extract_exif("Image Copyright")
         self.header["image"]["exifoffset"] = self.extract_exif("Image ExifOffset")
         self.header["image"]["gpsinfo"] = self.extract_exif("Image GPSInfo")
-        
-        self.header["rawimage"]["height"] = self.rheight
-        self.header["rawimage"]["width"] = self.rwidth 
-        self.header["rawimage"]["bitdepth"] = 16      
         
         self.header["thumbnail"]["compression"] = self.extract_exif("Thumbnail Compression")
         self.header["thumbnail"]["xresolution"] = self.extract_exif("Thumbnail XResolution")
@@ -660,8 +658,8 @@ class ImageAra(Image):
             self.load(imgpath,onlyheader=onlyheader)
         
     def load(self,imgpath,headersize = 512 ,resolution = (640,512),bitsPerPixel = np.uint16,onlyheader=False,old=True):
-        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
-         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
+        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
+         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},
                     "thumbnail":{},     }
     
         self.imgpath = imgpath
@@ -878,8 +876,8 @@ class ImageTiff(Image):
             self.load(imgpath,onlyheader=onlyheader)
         
     def load(self,imgpath,onlyheader=False):
-        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},"rawimage":{},
-         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},"rawimage":{},
+        self.header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
+         "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},
                     "thumbnail":{},     }
         self.exif = {}
         self.imgpath = imgpath
@@ -993,10 +991,6 @@ class ImageTiff(Image):
         self.header["image"]["copyright"] = self.extract_exif("Image Copyright")
         self.header["image"]["exifoffset"] = self.extract_exif("Image ExifOffset")
         self.header["image"]["gpsinfo"] = self.extract_exif("Image GPSInfo")
-        
-        self.header["rawimage"]["height"] = self.extract_exif("ImageLength")
-        self.header["rawimage"]["width"] = self.extract_exif("ImageWidth")
-        self.header["rawimage"]["bitdepth"] = self.extract_exif("BitsPerSample")          
         
         self.header["thumbnail"]["compression"] = self.extract_exif("Thumbnail Compression")
         self.header["thumbnail"]["xresolution"] = self.extract_exif("Thumbnail XResolution")

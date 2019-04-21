@@ -223,18 +223,19 @@ class Main(QMainWindow):
             self.flight.save()
         
         poisfilename = "pois.gpx" #os.path.join(self.dir.imgdir,"pois.gpx")
-        if os.path.exists("pois.gpx"):
-            os.remove("pois.gpx")
-        self.gpxgen = gpx.GpxGenerator("pois.gpx")
+        if os.path.exists(PATHS["POIS"]):
+            os.remove(PATHS["POIS"])
+        self.gpxgen = gpx.GpxGenerator(PATHS["POIS"])
         try:
             for i in pois:
                 self.gpxgen.add_wpt(str(i["lat"]),str(i["lon"]),str(i["ele"]),i["found_time"],str(i["name"]),"poi")
-            self.gpxgen.save(poisfilename,False)
+            self.gpxgen.save(PATHS["POIS"],False)
         except:
             logging.error("GPS_TO_GPS save failed",exc_info=True)
             #traceback.print_exc()#"save gpx failed"
         
-        self.exportgpx(poisfilename)#,self.conf)
+        self.exportgpx(PATHS["POIS"])#,self.conf)
+        #poisfilename = PATHS["POIS"]
         #cmd = 'gpsbabel -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + poisfilename + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
         #print cmd
         #os.system(cmd)

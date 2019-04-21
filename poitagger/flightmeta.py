@@ -328,11 +328,7 @@ class ImportFlightMeta(QtCore.QThread):
         orientation = 7
         try:
             for i in self.ImgHdr:
-                if i["rawimage"].get("width") != None:
-                    Width.append(i["rawimage"].get("width"))
-                    Height.append(i["rawimage"].get("height"))
-                    Bitdepth.append(i["rawimage"].get("bitdepth"))
-                elif i["image"].get("width") != None:
+                if i["image"].get("width") != None:
                     Width.append(i["image"].get("width"))
                     Height.append(i["image"].get("height"))
                     Bitdepth.append(i["image"].get("bitdepth"))

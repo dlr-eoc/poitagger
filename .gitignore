@@ -4298,3 +4298,7 @@ dist/launcher3-64/Lib/site-packages/camproject/extrinsics.py
 dist/launcher3-64/Lib/site-packages/camproject/utils.py
 dist/launcher3-64/poitagger_.exe
 libmtp-8.dll
+asda
+default.json
+test.json
+poitagger/test/dialog.py

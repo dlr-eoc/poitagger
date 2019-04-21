@@ -71,7 +71,6 @@ class ImportInfo(QtCore.QThread):
                     {"name":"file",'type':"group"},
                     {"name":"gps",'type':"group"},
                     {"name":"exif",'type':"group"},
-                    {"name":"rawimage",'type':"group"},
                     {"name":"thumbnail",'type':"group"},
                     {"name":"calibration",'type':"group"},]
         self.p = Parameter.create(name='params', type='group',children=categories)

@@ -49,6 +49,8 @@
    <addaction name="actionsave"/>
    <addaction name="actionimport"/>
    <addaction name="actionreload"/>
+   <addaction name="actionsave_template"/>
+   <addaction name="actionopen"/>
   </widget>
   <action name="actiondelete">
    <property name="icon">
@@ -90,6 +92,20 @@
    </property>
    <property name="text">
     <string>reload</string>
+   </property>
+  </action>
+  <action name="actionsave_template">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/drone-save.png</normaloff>icons/drone-save.png</iconset>
+   </property>
+   <property name="text">
+    <string>save_template</string>
+   </property>
+  </action>
+  <action name="actionopen">
+   <property name="text">
+    <string>open</string>
    </property>
   </action>
  </widget>

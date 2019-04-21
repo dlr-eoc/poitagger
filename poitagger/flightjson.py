@@ -7,8 +7,9 @@ from ast import literal_eval
 from lxml import etree
 import logging
 from PyQt5 import QtCore,QtGui,uic, QtWidgets,QtTest
-from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout,QProgressDialog
+from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QDialog, QInputDialog, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout,QProgressDialog
 import pyqtgraph as pg
+import pyqtgraph.parametertree.parameterTypes as pTypes  
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 import datetime
 from collections import OrderedDict,MutableMapping,MutableSequence,defaultdict
@@ -81,7 +82,98 @@ def pre_paramStateReduce(k,v,**kwargs):
                 myval[key] = val
         return myval
     return v
+    
+class FlightChoose(QDialog):
+    def __init__(self,path=None,parent=None):
+        super(FlightChoose, self).__init__(parent)
+        uic.loadUi(os.path.join(PATHS["UI"],'flight_choose.ui'),self)
+        self.buttonBox.accepted.connect(self.openconfig)
+        #self.combobox
+        self.path = path
+        self.show()
         
+    def openconfig(self):
+        self.confdialog = FlightConfig(self.path)
+      
+class CameraParameter(pTypes.GroupParameter):
+    def __init__(self, img, **opts):
+        opts['type'] = 'bool'
+        opts['value'] = True
+        pTypes.GroupParameter.__init__(self, **opts)
+        
+        self.addChild({'name': 'Bildeigenschaften', 'type': 'group', 'children': [
+        {'name': 'Breite', 'type': 'int', 'value': img.header["image"]["width"]},
+        {'name': 'Höhe', 'type': 'int', 'value': img.header["image"]["height"]},
+        {'name': 'Farbtiefe', 'type': 'int', 'value': img.header["image"]["bitdepth"], 'suffix':'bit'},
+        {'name': 'Orientierung', 'type': 'int', 'value': 0}
+        ]})
+        self.addChild({'name': 'spacer','type':'int','value':0})
+        self.addChild({'name': 'Kamera', 'type': 'group', 'children': [
+            {'name': 'Chip-Breite', 'type': 'float', 'value': img.header["image"].get("width")*img.header["camera"].get("pixelsize",17.0)*1e-3, 'suffix':'mm'},
+            {'name': 'Chip-Höhe', 'type': 'float', 'value': img.header["image"].get("height")*img.header["camera"].get("pixelsize",17.0)*1e-3, 'suffix':'mm'},
+            {'name': 'Pixelabstand', 'type': 'float', 'value': img.header["camera"].get("pixelsize",17.0), 'suffix':'µm'},
+            {'name': 'Brennweite', 'type': 'float', 'value': img.header["camera"].get("focallength",13.3), 'suffix':'mm'}
+            ]})
+        self.addChild({'name': 'spacer2','type':'int','value':0})
+        self.width = self.child('Kamera').param('Chip-Breite')
+        self.height = self.child('Kamera').param('Chip-Höhe')
+        self.pixelsize = self.child('Kamera').param('Pixelabstand')
+        self.focallength = self.child('Kamera').param('Brennweite')
+        self.addChild({'name': 'Kalibrierung', 'type': 'group', 'children': [
+        {'name': 'Geometrisch', 'type': 'group', 'children': [
+            {'name': 'fx', 'type': 'float', 'value': img.header["calibration"]["geometric"].get("fx",self.focallength.value()/self.pixelsize.value()), 'decimals': 5, 'suffix':'px'},
+            {'name': 'cx', 'type': 'float', 'value': img.header["calibration"]["geometric"].get("cx",self.width.value()/2.0), 'decimals': 5, 'suffix':'px'},
+            {'name': 'cy', 'type': 'float', 'value': img.header["calibration"]["geometric"].get("cy",self.height.value()/2.0), 'decimals': 5, 'suffix':'px'},
+        ]},
+       # {'name': 'Radiometrisch', 'type': 'group', 'children': [
+       #     {'name': 'B', 'type': 'float', 'value': 333, 'decimals': 5  },
+       #     {'name': 'R', 'type': 'float', 'value': 12998, 'decimals': 5 },
+       #     {'name': 'F', 'type': 'float', 'value': 1},
+       # ]},
+        {'name': 'Boresight', 'type': 'group', 'children': [
+            {'name': 'cam_pitch', 'type': 'float', 'value': 0, 'suffix':'°'},
+            {'name': 'cam_roll', 'type': 'float', 'value': 0, 'suffix':'°'},
+            {'name': 'cam_yaw', 'type': 'float', 'value': 0, 'suffix':'°'},
+            {'name': 'cam_euler_order', 'type': 'str', 'value': "ZYX"},
+        ]}
+        ]})
+        self.fx = self.child('Kalibrierung').child('Geometrisch').param('fx')
+        self.cx = self.child('Kalibrierung').child('Geometrisch').param('cx')
+        self.cy = self.child('Kalibrierung').child('Geometrisch').param('cy')
+        
+        self.pixelsize.sigValueChanged.connect(self.pChanged)
+        self.focallength.sigValueChanged.connect(self.fChanged)
+        
+    def pChanged(self):
+        self.fx.setValue(self.focallength.value()/self.pixelsize.value()/1e-3)#blockSignal=self.fxChanged
+        
+    def fChanged(self):
+        self.fx.setValue(self.focallength.value()/self.pixelsize.value()/1e-3)#, blockSignal=self.fxChanged)
+    
+class FlightConfig(QDialog):
+    def __init__(self,path=None,parent=None):
+        super().__init__(parent)
+        uic.loadUi(os.path.join(PATHS["UI"],'flight_config.ui'),self)
+        self.t = ParameterTree(showHeader=False)
+        self.path = path
+        self._loadImgHeader()
+        
+    def _loadImgHeader(self):    
+        Dir = sorted(os.listdir(self.path))
+        try:
+            for file in Dir:
+                if os.path.splitext(file)[1].lower() not in image.SUPPORTED_EXTENSIONS: continue
+                self.img = image.Image.factory(os.path.join(self.path,file),onlyheader=True)    
+                break
+        except:
+            logging.error("FC _loadImgHeader failed", exc_info = True)
+           
+        self.p = Parameter.create(name='params', type='group',children=CameraParameter(self.img, name='Bla'))
+        self.t.setParameters(self.p, showTop=False)
+        self.verticalLayout_2.takeAt(0)
+        self.verticalLayout_2.addWidget(self.t)
+        
+        self.show()
     
 class FlightWidget(QMainWindow):
     def __init__(self,parent = None):
@@ -101,16 +193,33 @@ class FlightWidget(QMainWindow):
         self.actionimport.toggled.connect(self.flight.enableImport)
         self.actionsave.triggered.connect(self.flight.save)
         self.actionreload.triggered.connect(self.flight.load)
+        self.actionsave_template.triggered.connect(self.saveTemplate)#openDialog)
+        self.actionopen.triggered.connect(self.openDialog)
         self.flight.progress.connect(self.progressBar)
         self.flight.ifm.progress.connect(self.progressBar)
         self.flight.sigError.connect(self.errorMsg)
         self.flight.sigEmpty.connect(self.createMsg)
-        
     
+    def saveTemplate(self):
+        filepath, proceed = QInputDialog.getText(self,"Konfiguration speichern","Filename:",QLineEdit.Normal, "default.json")
+        if proceed:
+            if not filepath.lower().endswith(".json"):
+                filepath +=".json"
+            self.flight.saveTemplate(os.path.join(PATHS["USER_CALIB"],filepath))
+            
+    def openDialog(self):
+        self.chooseDialog = FlightChoose(self.flight.path)
+        self.chooseDialog.setWindowModality(QtCore.Qt.WindowModal)
+        
+        
     def errorMsg(self,text):
         QtGui.QMessageBox.critical(self, "Speichern von poitagger.json fehlgeschlagen!",text)
         
     def createMsg(self):
+       # choose = FlightChoose()
+       # choose.setModal(False)   
+       # choose.show()
+       # reply=False
         reply = QtGui.QMessageBox.question(self, "Flightmeta-Datei anlegen?","Dieser Ordner enthält noch keine Flightmeta-Datei (.poitagger.json). Zur Georeferenzierung ist dies nötig.",)
         if reply == QtGui.QMessageBox.Yes:
             self.flight.loadAndSave()
@@ -251,6 +360,20 @@ class Flight(QtCore.QObject): #QThread
     def setOrientation(self,val):
         self.p.child("general").child("images").child("orientation").setValue(val)
         
+    def saveTemplate(self,filename):
+        a = self.p.child("general").child("images").saveState()
+        b = self.p.child("calibration").saveState()
+        with open(filename, 'w') as outfile:
+            json.dump({"general":a,"calibration":b}, outfile)
+        #images
+        #orientation
+        #geom: fx,cx,cy,k1,k2,k3,p1,p2,pixelsize_x,ar
+        #boresight: 
+        #configuration-description:
+        #date:
+        #cameraname:
+        #filename:
+        
     def enableImport(self,toggle):
         self.import_enabled = toggle
     
@@ -275,6 +398,10 @@ class Flight(QtCore.QObject): #QThread
             self.progress.emit(40)
             self.p.child("uavpath").restoreState(self.meta["children"]["uavpath"])
             self.progress.emit(60)
+            #print("########FROM TEST.JSON#########")
+            #with open("test.json", 'r') as stream:
+            #    cal = json.load(stream)#,Loader=yamlordereddictloader.Loader))
+            #self.p.child("calibration").restoreState(cal["calibration"])
             self.p.child("calibration").restoreState(self.meta["children"]["calibration"])
             self.progress.emit(80)
             self.p.child("images").restoreState(self.meta["children"]["images"])
@@ -430,15 +557,11 @@ class ImportFlightMeta(QtCore.QThread):
         orientation = 0
         try:
             for i in self.ImgHdr:
-                if i["rawimage"].get("width") != None:
-                    Width.append(i["rawimage"].get("width"))
-                    Height.append(i["rawimage"].get("height"))
-                    Bitdepth.append(i["rawimage"].get("bitdepth"))
-                elif i["image"].get("width") != None:
+                if i["image"].get("width") != None:
                     Width.append(i["image"].get("width"))
                     Height.append(i["image"].get("height"))
                     Bitdepth.append(i["image"].get("bitdepth"))
-            
+                
             if Width.count(Width[0])==len(Width): width = Width[0]
             else: width = np.bincount(Width).argmax() #achtung rundet ab!
             if Height.count(Height[0])==len(Height): height = Height[0]
