@@ -298,8 +298,8 @@ class ImageJpg(Image):
         self.segments = self.find_segments(d)
         self.width,self.height,self.channels = self.get_size(self.segments,d)
         
-        self.rwidth = int(str(self.exif.get("Raw Thermal Image Width",None)))
-        self.rheight = int(str(self.exif.get("Raw Thermal Image Height",None )))
+        self.rwidth = int(str(self.exif.get("Raw Thermal Image Width",0)))
+        self.rheight = int(str(self.exif.get("Raw Thermal Image Height",0 )))
         
         self.extract_flir(d,onlyheader)
         
@@ -428,7 +428,7 @@ class ImageJpg(Image):
             geom[name]=val[0]
         img = np.frombuffer(bytearr[32:], dtype="<u"+str(geom['pixelSize']),count=geom['imageWidth']*geom['imageHeight']) 
         img = np.reshape(img,(geom['imageHeight'],geom['imageWidth']))
-        self.bitdepth = geom["pixelsize"]
+        self.bitdepth = geom["pixelSize"]
         return img
     
     def flir_header(self,fffmeta):    
