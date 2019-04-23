@@ -49,8 +49,8 @@ class Temp(QtGui.QWidget):
         
     def calc_pixtemp(self,dn):
         try:
-
-            if os.path.splitext(self.ara.header["file"].get("name",""))[1].lower()==".ara" and self.ara.header["file"]["dlr_protokoll"]["erkennung"]==b"DLR":
+            fileext = os.path.splitext(self.ara.header["file"].get("name",""))[1].lower()
+            if not fileext == ".ara" or fileext==".ara" and self.ara.header["file"]["dlr_protokoll"]["erkennung"]==b"DLR":
                 B = self.ara.header["calibration"]["radiometric"].get("B",1)
                 R = self.ara.header["calibration"]["radiometric"].get("R",1)
                 F = self.ara.header["calibration"]["radiometric"].get("F",1)
@@ -59,7 +59,7 @@ class Temp(QtGui.QWidget):
             
         except:
             pt = 0
-            logging.error("calc_pixtemp didn't work. there might be no calibration data in the image header.",exc_info=False)
+            logging.error("calc_pixtemp didn't work. there might be no calibration data in the image header.",exc_info=True)
         return pt
         
     def fill_pixtemp(self,x,y,dn):

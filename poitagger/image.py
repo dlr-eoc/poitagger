@@ -583,8 +583,8 @@ class ImageJpg(Image):
         
         try:
             #self.header["calibration"]["geometric"]["fx"]=float(a.get("drone-dji:calibratedfocallength"))
-            self.header["calibration"]["geometric"]["cx"]=float(a.get("drone-dji:calibratedopticalcenterx"))
-            self.header["calibration"]["geometric"]["cy"]=float(a.get("drone-dji:calibratedopticalcentery"))
+            self.header["calibration"]["geometric"]["cx"]=float(a.get("drone-dji:calibratedopticalcenterx",self.header["image"]["width"]/2.0))
+            self.header["calibration"]["geometric"]["cy"]=float(a.get("drone-dji:calibratedopticalcentery",self.header["image"]["height"]/2.0))
         except:
             print("no calibration in exif header")
             print (self.extract_exif("EXIF FocalLengthIn35mmFilm"))
@@ -664,6 +664,7 @@ class ImageAra(Image):
     
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
+        
         try:
             with open(imgpath, 'rb') as fileobj:
                 self.read_header(fileobj,headersize)

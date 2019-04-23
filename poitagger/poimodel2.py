@@ -144,7 +144,7 @@ class PoiModel(QtCore.QObject):
             
         self.Ext.setCameraBoresight(droll=self.boresight_roll, dpitch= self.boresight_pitch, dyaw=self.boresight_yaw, order=self.boresight_order)
         self.setIntrinsics(self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
-        print("loadMeta",self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
+        #print("loadMeta",self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
         
     def getPois(self,filename):
         Pois = []
@@ -176,8 +176,10 @@ class PoiModel(QtCore.QObject):
     def prepareReproject(self,poi):
     #    print("ExtR:")
         UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(poi["uav_lat"],poi["uav_lon"])
-        self.ExtR.setPose(0,0,0,round(UTM_X,3),round(UTM_Y,3),poi["uav_ele"]) #yaw=0.54,X=UTM_X,Y=UTM_Y,Z=48.57)
+        #print("UTM",round(UTM_X,3),round(UTM_Y,3),poi["uav_ele"])
+        self.ExtR.setPose(round(UTM_X,3),round(UTM_Y,3),poi["uav_ele"]) #yaw=0.54,X=UTM_X,Y=UTM_Y,Z=48.57)
         #self.ExtR.setUAVBoresight(dx=poi["cam_dx"],dy=poi["cam_dy"],dz=poi["cam_dz"])#dx=0.20)
+        #print("T_UAV", self.ExtR.T_uav)
         self.ExtR.setCameraBoresight(dyaw= self.boresight_yaw, 
             dpitch= self.boresight_pitch, 
             droll= self.boresight_roll,
@@ -191,15 +193,15 @@ class PoiModel(QtCore.QObject):
         #print("uavboresight",self.ExtR.T_uav_boresight)
         #print("uav",self.ExtR.T_uav)#T_uav
         
-        # print("cosyUAV2Cam",self.ExtR.cosyUAVToCamera,
-        # "rcambire",self.ExtR.R_cam_boresight,
-        # "tcambore",self.ExtR.T_cam_boresight,
-        # "rgim",self.ExtR.R_gimbal,
-        # "r_uav_bore",self.ExtR.R_uav_boresight,
-        # "Tuavbore",self.ExtR.T_uav_boresight,
-        # "R_uav",self.ExtR.R_uav,
-        # "cosyW2UAV",self.ExtR.cosyWorldToUAV.T,
-        # "T_uav",self.ExtR.T_uav)
+       # print("cosyUAV2Cam",self.ExtR.cosyUAVToCamera,
+       #  "rcambire",self.ExtR.R_cam_boresight,
+       #  "tcambore",self.ExtR.T_cam_boresight,
+       #  "rgim",self.ExtR.R_gimbal,
+       #  "r_uav_bore",self.ExtR.R_uav_boresight,
+       #  "Tuavbore",self.ExtR.T_uav_boresight,
+       #  "R_uav",self.ExtR.R_uav,
+       #  "cosyW2UAV",self.ExtR.cosyWorldToUAV.T,
+       #  "T_uav",self.ExtR.T_uav)
         
         
         return self.ExtR.transform()
@@ -269,7 +271,7 @@ class PoiModel(QtCore.QObject):
    #     else: return False
         
     def backreproject(self,x,attitudeMat):
-      #  print(x,attitudeMat)
+       # print(x,attitudeMat)
         self.CamR.attitudeMat(attitudeMat)
         pixel = np.array([int(float(x["x"])),int(float(x["y"]))]) #.reshape(1,2)
         repro = self.CamR.reproject(pixel)
@@ -281,6 +283,7 @@ class PoiModel(QtCore.QObject):
       #      return np.array([[None,None]])
         
         x_br = self.Cam.project(pos)
+       # print("BACK",x_br)
         if self.onImage(x_br.ravel()):
             return x_br
         else:
