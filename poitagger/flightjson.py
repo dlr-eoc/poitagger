@@ -112,6 +112,7 @@ class CameraParameter(pTypes.GroupParameter):
         self.addChild({'name': 'calibration', 'type': 'group', 'children': [
         {'name': 'geometric', 'type': 'group', 'children': [
             {'name': 'fx', 'type': 'float', 'value': img.header["calibration"]["geometric"].get("fx",self.focallength.value()/self.pixelsize.value()), 'decimals': 5, 'suffix':'px'},
+            {'name': 'fy', 'type': 'float', 'value': img.header["calibration"]["geometric"].get("fy",self.focallength.value()/self.pixelsize.value()), 'decimals': 5, 'suffix':'px'},
             {'name': 'cx', 'type': 'float', 'value': img.header["calibration"]["geometric"].get("cx",self.imwidth.value()/2.0), 'decimals': 5, 'suffix':'px'},
             {'name': 'cy', 'type': 'float', 'value': img.header["calibration"]["geometric"].get("cy",self.imheight.value()/2.0), 'decimals': 5, 'suffix':'px'},
         ]},
@@ -188,7 +189,7 @@ class FlightConfig(QDialog):
         self.path = flightpath
         
     def create(self,calibfile=None):
-        if calibfile is not None:
+        if calibfile is None:
             img = self._loadImgHeader()
             self.p = Parameter.create(name='params', type='group',children=CameraParameter(img, name='Bla'))
         else:

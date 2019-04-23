@@ -573,7 +573,7 @@ class ImageJpg(Image):
         
         self.header["gps"]["gpsmapdatum"] = self.extract_exif("GPS GPSMapDatum")
         
-        self.header["camera"]["focallength"] = float(a.get("drone-dji:calibratedfocallength"))
+        self.header["camera"]["focallength"] = float(a.get("drone-dji:calibratedfocallength",0))
         
         self.header["file"]["about"]=a.get("rdf:about",0)
         self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
