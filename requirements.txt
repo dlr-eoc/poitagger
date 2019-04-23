@@ -1,5 +1,5 @@
 docopt
-PyQt5==5.9.2
+PyQt5>=5.11
 PyQtWebEngine
 numpy>=1.15
 lxml>=4.2.5
