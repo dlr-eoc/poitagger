@@ -269,7 +269,7 @@ class PoiModel(QtCore.QObject):
    #     else: return False
         
     def backreproject(self,x,attitudeMat):
-      #  print(x,attitudeMat)
+        print(x)
         self.CamR.attitudeMat(attitudeMat)
         pixel = np.array([int(float(x["x"])),int(float(x["y"]))]) #.reshape(1,2)
         repro = self.CamR.reproject(pixel)
@@ -281,6 +281,7 @@ class PoiModel(QtCore.QObject):
       #      return np.array([[None,None]])
         
         x_br = self.Cam.project(pos)
+        print("BACK",x_br)
         if self.onImage(x_br.ravel()):
             return x_br
         else:
