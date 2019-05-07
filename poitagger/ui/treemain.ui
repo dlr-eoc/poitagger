@@ -69,7 +69,7 @@
      <normaloff>icons/filter.png</normaloff>icons/filter.png</iconset>
    </property>
    <property name="text">
-    <string>test</string>
+    <string>filter images</string>
    </property>
   </action>
  </widget>
