@@ -73,7 +73,7 @@ class Main(QMainWindow):
         if self.useflight:
             self.flight = flightjson.Flight(".poitagger.json")
         self.info = info.Info()
-        self.calib = calib.Calib()
+       # self.calib = calib.Calib()
        # self.dem = dem.Dem()
         self.wf = workflow.Araloader()
         
@@ -110,7 +110,7 @@ class Main(QMainWindow):
         
         self.Console = QTextEdit(self.ConsoleDockWidget)
         
-        self.setDockWidget(self.CalibDockWidget,        'GUI/CalibDock',        self.calib)
+     #   self.setDockWidget(self.CalibDockWidget,        'GUI/CalibDock',        self.calib)
         #self.setDockWidget(self.DEMDockWidget,          'GUI/DEMDock',          self.dem)
         self.setDockWidget(self.ConsoleDockWidget,      'GUI/ConsoleDock',      self.Console)
         self.setDockWidget(self.PoisDockWidget,         'GUI/PoisDock',         self.pois)
@@ -120,7 +120,7 @@ class Main(QMainWindow):
         self.setDockWidget(self.FMInfoDockWidget,       'GUI/FMInfoDock',       self.flightmain) #fminfo
         self.setDockWidget(self.VerzeichnisDockWidget,  'GUI/VerzeichnisDock',  self.treemain)#.tree
         
-        upperwidgets = [self.GeoViewDockWidget,self.CalibDockWidget]#, self.ViewControlDockWidget, self.DEMDockWidget]
+        upperwidgets = [self.GeoViewDockWidget]#,self.CalibDockWidget]#, self.ViewControlDockWidget, self.DEMDockWidget]
         lowerwidgets = [self.ConsoleDockWidget, self.PoisDockWidget, self.FMInfoDockWidget]# self.DebugDockWidget,
         [self.tabifyDockWidget( self.PixeltempDockWidget, w) for w in upperwidgets]
         [self.tabifyDockWidget( self.InfoDockWidget,w) for w in lowerwidgets]
@@ -152,7 +152,7 @@ class Main(QMainWindow):
       #  self.pois.model.sigPois.connect(self.treemodel.pois)
         
         # aRA UEBERSCHREIBEN MIT EIGENEN wERTEN
-        self.calib.conf.connect(lambda conf: self.wf.readFolder(self.treemain.view.imgdir,conf))
+       # self.calib.conf.connect(lambda conf: self.wf.readFolder(self.treemain.view.imgdir,conf))
         
         #self.flightmeta.importimages.connect(self.wf.readFolder)
         self.treemain.view.imgPathChanged.connect(self.onImagePathChanged)
@@ -208,7 +208,7 @@ class Main(QMainWindow):
         
     def onImageChanged(self,ara):
         self.info.load_data(ara.header)
-        self.calib.load_data(ara.header)
+      #  self.calib.load_data(ara.header)
         #self.pois.model.load(ara.header)
         self.pois.model.setPose(ara.header)
         self.pois.model.getPois(ara.filename)
@@ -297,18 +297,18 @@ class Main(QMainWindow):
         [w.setVisible(s.value(v+"Visible")=="true") for w,v in self.dockwidgets]
         size = QtCore.QSize(s.value('GUI/size'))
         pos = QtCore.QPoint(s.value('GUI/pos'))
-        screen = app.primaryScreen()  
-        if self.resetwindow:
-            self.resize(800,600)
-            self.move(0,0)
-        else:
-            curscreen = screenAt(pos)
-            if not curscreen:
-                pos = QtCore.QPoint(0,0)
-                curscreen = screenAt(pos)
-            size = size.boundedTo(curscreen.virtualSize())
-            self.resize(size)
-            self.move(pos)
+        # screen = app.primaryScreen()  
+        # if self.resetwindow:
+            # self.resize(800,600)
+            # self.move(0,0)
+        # else:
+            # curscreen = screenAt(pos)
+            # if not curscreen:
+                # pos = QtCore.QPoint(0,0)
+                # curscreen = screenAt(pos)
+            # size = size.boundedTo(curscreen.virtualSize())
+            # self.resize(size)
+            # self.move(pos)
         
         
         self.img.infoUI.CVfliphorCheckBox.setChecked(s.value('VIEW/fliphor')=="true")
@@ -330,7 +330,7 @@ class Main(QMainWindow):
         
         s.setValue('VIEW/fliphor',self.img.infoUI.CVfliphorCheckBox.isChecked())
         s.setValue('VIEW/flipver',self.img.infoUI.CVflipverCheckBox.isChecked())
-        
+        s.setValue("SDCARD/device",self.saveDialog.sourceLE.text())
     #    self.pois.writeSettings()
         
         

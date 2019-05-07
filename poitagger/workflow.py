@@ -4,7 +4,7 @@ from . import meta as mt
 
 import time
 import datetime
-
+import logging
 
 import pyqtgraph as pg  
 from pyqtgraph.Qt import QtCore,QtGui,uic
@@ -29,23 +29,31 @@ class Araloader(QtCore.QThread):
     progress = QtCore.pyqtSignal(int)
     outdirlist = []    
     eigeneConf = False
+    
+    # def __init__(self):
+        # super().__init__()
+        # self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
+        # self.settings.setFallbacksEnabled(False) 
         
     def readSDCard(self,dialog,settings):
         sdcardname = "IR_"
         remove = dialog.SDCard_leeren.checkState()
         flying = dialog.nurFlugBilder.checkState()
-        founddir = None
+        #founddir = "d:/test"
        # founddir = utils2.getSDCardPath(sdcardname)
-        if founddir:
-            self.log.emit("Karte eingesteckt in Laufwerk:" + founddir)
-        else:
-            self.log.emit("Keine gueltige Karte gefunden")
-            self.critical.emit("Keine gueltige Karte gefunden, die mit \"%s\" anfaengt!"%sdcardname)
-            return
+       # if founddir:
+       #     self.log.emit("Karte eingesteckt in Laufwerk:" + founddir)
+       # else:
+       #     self.log.emit("Keine gueltige Karte gefunden")
+       #     self.critical.emit("Keine gueltige Karte gefunden, die mit \"%s\" anfaengt!"%sdcardname)
+       #     return
         self.type = "SDCard"
+        founddir=str(dialog.sourceLE.text())
         outdir = self.prepare(settings,founddir,remove_images=remove,only_flying=flying)  
-        dialog.st(outdir,"")
+        
+        dialog.st(settings.value("SDCARD/device"),outdir,"")
         ok = dialog.exec_()
+        
         if ok == True:
             self.outdir=str(dialog.pathBox.text())
             self.name = str(dialog.nameBox.text())
@@ -90,6 +98,7 @@ class Araloader(QtCore.QThread):
         self.owner_id = self.settings.value("SYSTEM/owner_id","X")
         outdir = self.settings.value("PATHS/rootdir", os.path.join(self.indir,"outdir"))
         self.outdir = str(outdir)
+        print(outdir)
         return outdir
         
     def run(self):
@@ -199,7 +208,13 @@ class Araloader(QtCore.QThread):
       #  self.metagen.save()
         print(self.outdirlist)
      #   self.meta.emit(self.metagen)
-        
+    
+    def readnonAsctecSDCard(self):
+        for root, dirs, files in sorted(os.walk(self.indir)):
+            for file in files:
+                if os.path.splitext(file)[1].lower() not in image.SUPPORTED_EXTENSIONS: continue
+                print(file)
+                #shutil.copy(os.path.join(root,file),self.outdir)
     def SDCardRead(self):
         self.flugnr = time.time()
         self.s_latlon = {"flugnr" : None, "lat": None, "lon": None, "ele": None }
@@ -207,7 +222,13 @@ class Araloader(QtCore.QThread):
         lastraw = None
         prog = 0.0
         self.outdirlist = []
-        foldersamount = len([name for name in os.listdir(self.indir) if name[:4]=="FLIR"])
+        print("IN",self.indir)
+        try:
+            foldersamount = len([name for name in os.listdir(self.indir) if name[:4]=="FLIR"])
+            print ("FOLDERS",foldersamount)
+        except:
+            self.readnonAsctecSDCard()
+            return
         print("start",self.indir)
        # self.metagen = flightmeta.Flight(self.indir)
         
@@ -262,7 +283,13 @@ class Araloader(QtCore.QThread):
             self.info.emit("Das Einlesen der SD-Karte war erfolgreich!") 
             
         except IndexError:
-            self.critical.emit("SD-Karte einlesen fehlgeschlagen: SD-Karte scheint leer zu sein")
+            try:
+                shutil.copytree(self.indir,self.outdir)
+            except:
+                self.critical.emit("SD-Karte einlesen fehlgeschlagen: SD-Karte scheint leer zu sein")
+          
+                logging.error("SD einlesen error",exc_info=True)
+         
             
         except:
             (type, value, traceback) = sys.exc_info()

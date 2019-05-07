@@ -755,10 +755,10 @@ class ImageAra(Image):
         self.header["image"]["bitdepth"] = self.rawheader["bitmap"]["bitperpixel"]      
         
         if old:
-            self.header["camera"]["roll"] = - self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
+            self.header["camera"]["roll"] = self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
             self.header["camera"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2   
                                         #self.rawheader["falcon"]["cam_angle_yaw"]/10.0**2
-            self.header["camera"]["pitch"] = - self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2    
+            self.header["camera"]["pitch"] = self.rawheader["falcon"]["cam_angle_pitch"]/10.0**2    
         else:
             self.header["camera"]["roll"] = self.rawheader["falcon"]["cam_angle_roll"]/10.0**2          
             self.header["camera"]["yaw"] = self.rawheader["falcon"]["angle_yaw"]/10.0**2   

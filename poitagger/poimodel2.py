@@ -79,7 +79,8 @@ class PoiModel(QtCore.QObject):
             
             yaw = imgheader["camera"].get("yaw",0)
             gimbalorder = imgheader["camera"].get("euler_order","ZXY")
-            
+            self.UTM_Y,self.UTM_X,self.ZoneNumber,self.ZoneLetter = utm.from_latlon(self.imgheader["gps"]["latitude"],self.imgheader["gps"]["longitude"])
+        
             self.Ext.setPose(X=uavX,Y=uavY,Z=uavZ,order=uavorder)
             self.Ext.setGimbal(roll=roll,pitch=pitch,yaw=yaw,order=gimbalorder)
             #self.Ext.setUAVBoresight(dx=0.2)
@@ -237,8 +238,7 @@ class PoiModel(QtCore.QObject):
     
     def reproject_poi(self,x,y):
         pos = self.reproject(np.array([x,y]))
-        lat, lon = utm.to_latlon(pos[1],pos[0],self.imgheader["gps"].get("UTM_ZoneNumber",0),
-                        self.imgheader["gps"].get("UTM_ZoneLetter",None))
+        lat, lon = utm.to_latlon(pos[1],pos[0],self.ZoneNumber,self.ZoneLetter)
         found_time = datetime.datetime.now().isoformat()
         return {"name":self.imgheader["file"]["name"],"value":(x,y),"type":"str", "paramtyp":"view", 
             "latitude":lat, "longitude":lon,"elevation":pos[2], 

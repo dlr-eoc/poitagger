@@ -52,6 +52,13 @@ from . import utils2
 from . import temp
 SIZE = 30 # This is just the distance for the Labeling of the Pois
 
+try:
+    from . import premium
+    is_premium = True
+except:
+    is_premium = False
+    pass
+    
 class ORIENTATION(object):
     FLIP_LR = 0x01
     FLIP_UP = 0x02
@@ -163,9 +170,15 @@ class Img(QtGui.QWidget):
             ]
     
             
+        if is_premium:
+            params.append({'name': 'Premium', 'type': 'group', 'children': [
+                {'name': 'homogenize', 'type': 'bool'},]})
             
         self.p = Parameter.create(name='params', type='group',children=params)
         self.t.setParameters(self.p, showTop=False)
+        #if is_premium:
+           # self.p.child('Premium').child("homogenize").sigActivated.connect(self.set_homogenize)
+        
         self.p.child("fullscreen").sigActivated.connect(lambda: self.vbox.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight),padding=0.0))
         self.conf = conf
         #self.settings = settings
@@ -178,6 +191,9 @@ class Img(QtGui.QWidget):
         self.curimg = startimage
         self.connections()
       #  self.proc.reload.emit()
+      
+   # def set_homogenize(self,check):
+    #    self.homo = check
         
     def connections(self):
         self.vbox.sigStateChanged.connect(self.rewriteInfo)
@@ -349,6 +365,9 @@ class Img(QtGui.QWidget):
         painter.end()
         preprocessed = self.flip(img)
         #print("IMAGESHAPE:",preprocessed.shape,img.shape)
+        if is_premium and self.p.child('Premium').child('homogenize').value() :
+            preprocessed = (premium.homogenize(preprocessed))
+        
         self.image = pg.ImageItem(preprocessed)
         
         min = np.min(img)

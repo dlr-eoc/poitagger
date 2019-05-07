@@ -4302,3 +4302,4 @@ asda
 default.json
 test.json
 poitagger/test/dialog.py
+poitagger/premium.py

@@ -7,21 +7,21 @@
     <x>0</x>
     <y>0</y>
     <width>503</width>
-    <height>133</height>
+    <height>181</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
   <layout class="QFormLayout" name="formLayout">
-   <item row="0" column="0">
+   <item row="1" column="0">
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Stammverzeichnis:</string>
+      <string>Ziel-Stammverzeichnis:</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
+   <item row="1" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="pathBox">
@@ -54,14 +54,14 @@
      </item>
     </layout>
    </item>
-   <item row="1" column="0">
+   <item row="2" column="0">
     <widget class="QLabel" name="label_2">
      <property name="text">
       <string>Flugbezeichnung:</string>
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
+   <item row="2" column="1">
     <widget class="QLineEdit" name="nameBox">
      <property name="minimumSize">
       <size>
@@ -71,7 +71,7 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
+   <item row="4" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -81,7 +81,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item row="3" column="0">
     <widget class="QCheckBox" name="nurFlugBilder">
      <property name="text">
       <string>nur Flugbilder speichern</string>
@@ -91,7 +91,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="1">
+   <item row="3" column="1">
     <widget class="QCheckBox" name="SDCard_leeren">
      <property name="text">
       <string>SD-Karte leeren nach Download</string>
@@ -100,6 +100,27 @@
       <bool>true</bool>
      </property>
     </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>SD-Karte (Laufwerk):</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLineEdit" name="sourceLE"/>
+     </item>
+     <item>
+      <widget class="QToolButton" name="sourceTB">
+       <property name="text">
+        <string>Durchsuchen...</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
