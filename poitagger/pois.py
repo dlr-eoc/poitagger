@@ -242,7 +242,7 @@ class Pois(QtGui.QMainWindow):
             found_time.text = str(entry[16])
         
    
-    def load(self,pois,indir): #pois is elementlist from "flightmeta.xml"
+    def load(self,pois,indir): #pois is elementlist from ".poitagger.json"
         self.poisxml = pois
         self.indir = indir
         self.poilist = []

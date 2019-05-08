@@ -11,7 +11,7 @@ class TreeModel(QFileSystemModel):
     def __init__(self, parent = None):
         super(TreeModel, self).__init__(parent)
         self.loadpixmaps()
-        self.metafilename = "flightmeta.yml"
+        self.metafilename = ".poitagger.json"
         self.poifiles = []
         
     def loadpixmaps(self):

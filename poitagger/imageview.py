@@ -207,6 +207,8 @@ class Img(QtGui.QWidget):
         self.p.child('orientation').child('flip lr').sigTreeStateChanged.connect(lambda: self.loadImg(self.curimg))
         self.p.child('orientation').child('flip up').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
         self.p.child('orientation').child('flip diag').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
+        if is_premium:
+            self.p.child('Premium').child('homogenize').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
         
         self.w.scene().sigMouseMoved.connect(self.mouseMoved)
         self.w.scene().sigMouseClicked.connect(self.pixelClicked)

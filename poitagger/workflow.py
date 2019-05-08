@@ -10,8 +10,6 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore,QtGui,uic
 import os
 import sys
-#import flightmeta
-#import cv2
 import PIL
 import shutil
 
@@ -24,7 +22,6 @@ class Araloader(QtCore.QThread):
     log = QtCore.pyqtSignal(str)
     critical = QtCore.pyqtSignal(str)
     info = QtCore.pyqtSignal(str)
-    #meta = QtCore.pyqtSignal(flightmeta.FlightMeta)
     
     progress = QtCore.pyqtSignal(int)
     outdirlist = []    
@@ -180,7 +177,6 @@ class Araloader(QtCore.QThread):
         lastraw = None
         prog = 0.0
         self.log.emit("start folder read")
-        #self.metagen = flightmeta.FlightMeta(self.indir)
         for root, dirs, files in sorted(os.walk(self.indir)):
             (updir,dirbase) = os.path.split(root)
             imgamount = len(files)
@@ -198,17 +194,14 @@ class Araloader(QtCore.QThread):
                     self.correct_start_latlon(raw)
                     if lastraw is not None:
                         self.compare_with_last(raw,lastraw)
-                #    self.metagen.add_wpt(str(raw.header.lat),str(raw.header.lon),str(raw.header.ele),raw.header.gps_date+"T"+raw.header.gps_time,name,"uavpos")
                     lastraw = raw
                     self.log.emit(self.infile)
                     raw.saveraw(self.infile)
                 except:
                     traceback.print_exc()
                 self.progress.emit(int(prog/imgamount*100))
-      #  self.metagen.save()
         print(self.outdirlist)
-     #   self.meta.emit(self.metagen)
-    
+     
     def readnonAsctecSDCard(self):
         for root, dirs, files in sorted(os.walk(self.indir)):
             for file in files:
@@ -230,7 +223,6 @@ class Araloader(QtCore.QThread):
             self.readnonAsctecSDCard()
             return
         print("start",self.indir)
-       # self.metagen = flightmeta.Flight(self.indir)
         
         self.empty = True
         
@@ -263,7 +255,6 @@ class Araloader(QtCore.QThread):
                     lastraw = raw
                     outfilepath = self.prepare_path(name,lastfile)
                     if not (raw.header.start_lat,raw.header.start_lon) == (0,0):
-                    #    self.metagen.add_wpt(str(raw.header.lat),str(raw.header.lon),str(raw.header.ele),raw.header.gps_date+"T"+raw.header.gps_time,name,"uavpos")
                         self.empty = False
                     raw.saveraw(outfilepath)
                     if self.remove_images:
@@ -346,10 +337,6 @@ class Araloader(QtCore.QThread):
                     os.rename(self.outdirlist[-1], pathnew)
                     break
             traceback.print_exc()
-        
-   #     self.metagen.rename_path(outdir)
-   #     self.metagen.save()   
-   #     self.metagen = flightmeta.FlightMeta(self.indir)
         
             
     def is_not_flying(self):

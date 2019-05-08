@@ -1,5 +1,5 @@
-import yaml
-import yamlordereddictloader
+#import yaml
+#import yamlordereddictloader
 import os
 import ast
 from lxml import etree
@@ -162,9 +162,9 @@ class PoiView(QMainWindow):
             c.remove()
 
  
-    def saveState(self):
-        with open("saveState.yml", 'w') as outfile:
-            yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
+   # def saveState(self):
+     #   with open("saveState.yml", 'w') as outfile:
+     #       yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
         
         
         
@@ -208,10 +208,10 @@ if __name__ == "__main__":
     but4.clicked.connect(poi.delParameter)
     
     
-    but5 = QPushButton()
-    but5.setText("saveState")
-    vbox.addWidget(but5)
-    but5.clicked.connect(poi.saveState)
+   # but5 = QPushButton()
+   # but5.setText("saveState")
+   # vbox.addWidget(but5)
+   # but5.clicked.connect(poi.saveState)
     
     #root.editingFinished.connect(lambda: fm.load(str(root.text())))
     poi.show()

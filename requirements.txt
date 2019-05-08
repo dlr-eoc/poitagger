@@ -9,14 +9,14 @@ utm>=0.4.2
 pytz>=2018.7
 bs4>=0.0.1
 python-dateutil>=2.7.5
-pyyaml>=3.13
+#pyyaml>=3.13
 requests>=2.0.0
 requests_cache>=0.4.13
 simplejson>=3.16.0
 exifread>=2.1
 Pillow>=5.3
 camproject
-yamlordereddictloader
+#yamlordereddictloader
 #opencv-python>=3.4.4    
 #scipy>=1.1.0
 #scikit-image>=0.14

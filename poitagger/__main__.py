@@ -154,7 +154,6 @@ class Main(QMainWindow):
         # aRA UEBERSCHREIBEN MIT EIGENEN wERTEN
        # self.calib.conf.connect(lambda conf: self.wf.readFolder(self.treemain.view.imgdir,conf))
         
-        #self.flightmeta.importimages.connect(self.wf.readFolder)
         self.treemain.view.imgPathChanged.connect(self.onImagePathChanged)
         self.treemain.view.imgDirChanged.connect(self.onDirChanged)
         self.img.loaded.connect(lambda: self.onImageChanged(self.img.ara))
