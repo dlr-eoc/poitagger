@@ -4303,3 +4303,5 @@ default.json
 test.json
 poitagger/test/dialog.py
 poitagger/premium.py
+install-python.ps1
+install-python.cmd
