@@ -25,6 +25,7 @@ import numpy as np
 import sys
 import os
 import shutil
+import platform
 
 from . import nested
 from . import gpx
@@ -270,7 +271,11 @@ class Main(QMainWindow):
                 if os.path.isdir(outdir):
                     gpxfilename = "pois.gpx"
                     outpath = os.path.join(outdir,gpxfilename)
-                    shutil.copyfile(gpxfile, outpath)
+                    os_ver = platform.version().split(".")
+                    if os_ver[0]=="10":
+                        os.system('copy "' + gpxfile.replace("/",os.sep) + '" "' + outpath.replace("/",os.sep) + '" ')
+                    else:
+                        shutil.copyfile(gpxfile, outpath)
                     QtGui.QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden hierher kopiert: %s "%outpath); 
                     
                 
