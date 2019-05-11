@@ -23,13 +23,13 @@ from . import upload
     
 class PoiView(QMainWindow):
     sigJumpTo = QtCore.pyqtSignal(str)
-    def __init__(self,parent = None):
-        super(PoiView, self).__init__(parent)
+    def __init__(self,model):
+        super().__init__()
         uic.loadUi(os.path.join(PATHS["UI"],'pois.ui'),self)
         self.dialog = upload.UploadDialog("Upload")
         
         self.t = ParameterTree(showHeader=False)
-        self.model = poimodel2.PoiModel()
+        self.model = model
         self.horizontalLayout.addWidget(self.t)#self.listw)
         self.cb = QComboBox()
         self.cb.currentTextChanged.connect(self.chooseLayer)

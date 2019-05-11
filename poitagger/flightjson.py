@@ -232,16 +232,17 @@ class FlightWidget(QMainWindow):
         self.actionsave.triggered.connect(self.flight.save)
         self.actionreload.triggered.connect(self.flight.load)
         self.actionsave_template.triggered.connect(self.saveTemplate)#openDialog)
-        self.actionopen.triggered.connect(self.testParam)
+   #     self.actionopen.triggered.connect(self.testParam)
         self.flight.progress.connect(self.progressBar)
         self.flight.ifm.progress.connect(self.progressBar)
         self.flight.sigError.connect(self.errorMsg)
         self.flight.sigEmpty.connect(self.openDialog)
     
-    def testParam(self):
-        a = self.chooseDialog.confdialog.p.saveState()
-        print(a)
-        print(a["children"]["images"]["children"]["orientation"])
+    # def testParam(self):
+        # a = self.chooseDialog.confdialog.p.saveState()
+        # print(a)
+        # print(a["children"]["images"]["children"]["orientation"])
+        
     def saveTemplate(self):
         filepath, proceed = QInputDialog.getText(self,"Konfiguration speichern","Filename:",QLineEdit.Normal, "default.json")
         if proceed:

@@ -39,6 +39,7 @@ def par(meta,treepath=[],default=None):
     
 class PoiModel(QtCore.QObject):
     sigPois =  QtCore.pyqtSignal(list)
+    changed = QtCore.pyqtSignal()
     
     def __init__(self):
         super().__init__()
@@ -146,8 +147,9 @@ class PoiModel(QtCore.QObject):
         self.Ext.setCameraBoresight(droll=self.boresight_roll, dpitch= self.boresight_pitch, dyaw=self.boresight_yaw, order=self.boresight_order)
         self.setIntrinsics(self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
         #print("loadMeta",self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
+        self.changed.emit()
         
-    def getPois(self,filename):
+    def getPois(self,filename): # get pois in this image
         Pois = []
         Reprojected = []
         #print("========",filename,"============")

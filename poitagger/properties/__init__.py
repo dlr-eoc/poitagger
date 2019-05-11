@@ -3,7 +3,7 @@ from PyQt5 import QtCore, QtGui, uic
 import ast
 import os
 import pyqtgraph as pg
-from . import pois_conf,gps_conf,image_conf,geoview_conf
+from . import pois_conf,gps_conf,image_conf,geoview_conf,gpx_conf
 from .. import PATHS 
 class PropertyDialog(QtGui.QDialog):
    
@@ -15,13 +15,15 @@ class PropertyDialog(QtGui.QDialog):
         self.settings = settings
         self.poisproperties = pois_conf.PoisProperties(self.settings)
         self.gpsproperties = gps_conf.GpsProperties(self.settings)
+        self.gpxproperties = gpx_conf.GpxProperties(self.settings)
         self.imageproperties = image_conf.ImageProperties(self.settings)
         self.geoviewproperties = geoview_conf.GeoviewProperties(self.settings)
         self.tabWidget.addTab(self.poisproperties,"Pois")
         self.tabWidget.addTab(self.gpsproperties,"GPS-Device")
+        self.tabWidget.addTab(self.gpxproperties,"GPX")
         self.tabWidget.addTab(self.imageproperties,"Image")
         self.tabWidget.addTab(self.geoviewproperties,"Map")
-        self.ConfWidgetList = [self.poisproperties,self.gpsproperties,self.imageproperties,self.geoviewproperties]
+        self.ConfWidgetList = [self.poisproperties,self.gpsproperties,self.gpxproperties,self.imageproperties,self.geoviewproperties]
         
         self.connections()
         

@@ -192,8 +192,6 @@
    </attribute>
    <addaction name="separator"/>
    <addaction name="actionSD_Karte_einlesen"/>
-   <addaction name="actionAra_korrigieren"/>
-   <addaction name="actionSave_poi_gpx"/>
    <addaction name="actionGpx_to_gps"/>
   </widget>
   <widget class="QDockWidget" name="GeoViewDockWidget">
@@ -204,6 +202,15 @@
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_3"/>
+  </widget>
+  <widget class="QDockWidget" name="GpxDockWidget">
+   <property name="windowTitle">
+    <string>Gpx</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents"/>
   </widget>
   <action name="actionUAV_Pose">
    <property name="checkable">
@@ -278,24 +285,6 @@
     <string>jpg export</string>
    </property>
   </action>
-  <action name="actionAra_korrigieren">
-   <property name="icon">
-    <iconset>
-     <normaloff>icons/edit-text-file.png</normaloff>icons/edit-text-file.png</iconset>
-   </property>
-   <property name="text">
-    <string>Ara korrigieren</string>
-   </property>
-  </action>
-  <action name="actionSave_poi_gpx">
-   <property name="icon">
-    <iconset>
-     <normaloff>icons/poitagger.png</normaloff>icons/poitagger.png</iconset>
-   </property>
-   <property name="text">
-    <string>save_poi_gpx</string>
-   </property>
-  </action>
   <action name="actionGoogleMaps">
    <property name="icon">
     <iconset>
@@ -363,10 +352,10 @@
     <string>Druckansicht</string>
    </property>
   </action>
-  <zorder>CalibDockWidget</zorder>
   <zorder>InfoDockWidget</zorder>
   <zorder>PixeltempDockWidget</zorder>
   <zorder>GeoViewDockWidget</zorder>
+  <zorder>GpxDockWidget</zorder>
  </widget>
  <resources/>
  <connections/>

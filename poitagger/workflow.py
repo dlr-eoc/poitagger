@@ -171,7 +171,7 @@ class Araloader(QtCore.QThread):
                 self.progress.emit(int(prog/imgamount*100))
         
         
-    def FolderRead(self):
+    def FolderRead(self): #das ist nur fuer ara korrigieren!!!
         self.flugnr = 1
         self.s_latlon = {"flugnr" : None, "lat": None, "lon": None, "ele": None }
         lastraw = None

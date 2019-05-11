@@ -45,7 +45,7 @@ class GeoWidget(QMainWindow):
         
     def loadGoogleMaps(self):
         try:
-            url = QtCore.QUrl("https://www.google.de/maps/place//@%s,%s,17z/data=!3m1!1e3!4m2!3m1!1s0x0:0x0" % (self.imgheader["gps"]["latitude"],self.imgheader["gps"]["longitude"]))
+            url = QtCore.QUrl("https://www.google.de/maps/place//@%s,%s,20m/data=!3m1!1e3!4m2!3m1!1s0x0:0x0" % (self.imgheader["gps"]["latitude"],self.imgheader["gps"]["longitude"]))
             QtGui.QDesktopServices.openUrl(url)
         except:
             logging.error("loadGoogleMaps failed!")

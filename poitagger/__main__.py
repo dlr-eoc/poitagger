@@ -29,6 +29,7 @@ import platform
 
 from . import nested
 from . import gpx
+from . import poimodel2
 from . import utils2
 from . import flightjson
 from . import PATHS
@@ -43,6 +44,8 @@ from . import geoview
 from . import properties
 from . import imageview
 from . import treeview
+from . import gpxexport
+
 #from . import dem
 
 paramreduce = nested.Nested(callback=nested.paramtodict,callback_pre=nested.pre_paramtodict,tupletype=list)
@@ -68,7 +71,7 @@ class Main(QMainWindow):
         self.saveDialog = save_as.SaveAsDialog(self)
         
         self.conf = properties.PropertyDialog("Einstellungen",self.settings)
-        self.conf.setModal(True)   
+        
         
         self.img = imageview.Img(self.conf,os.path.join(id,startfilename),self.settings)
         if self.useflight:
@@ -78,10 +81,14 @@ class Main(QMainWindow):
        # self.dem = dem.Dem()
         self.wf = workflow.Araloader()
         
-        #self.pois = pois.Pois(self.conf)
-        self.pois = poiview.PoiView()
+        #self.poiview = pois.Pois(self.conf)
+        self.poidata = poimodel2.PoiModel()
+        self.poiview = poiview.PoiView(self.poidata)
+        self.gpxview = gpxexport.GpxView(self.settings,self.poidata)
+        
+            
         if self.useflight:
-            self.pois.setMeta(self.flight.p) 
+            self.poiview.setMeta(self.flight.p) 
         
         self.geomain = geoview.GeoWidget(self.settings)
         
@@ -114,15 +121,17 @@ class Main(QMainWindow):
      #   self.setDockWidget(self.CalibDockWidget,        'GUI/CalibDock',        self.calib)
         #self.setDockWidget(self.DEMDockWidget,          'GUI/DEMDock',          self.dem)
         self.setDockWidget(self.ConsoleDockWidget,      'GUI/ConsoleDock',      self.Console)
-        self.setDockWidget(self.PoisDockWidget,         'GUI/PoisDock',         self.pois)
+        self.setDockWidget(self.PoisDockWidget,         'GUI/PoisDock',         self.poiview)
         self.setDockWidget(self.GeoViewDockWidget,      'GUI/GeoViewDock',      self.geomain)
         self.setDockWidget(self.PixeltempDockWidget,    'GUI/PixeltempDock',    self.img.imgUI)
         self.setDockWidget(self.InfoDockWidget,         'GUI/InfoDock',         self.info.t)
         self.setDockWidget(self.FMInfoDockWidget,       'GUI/FMInfoDock',       self.flightmain) #fminfo
         self.setDockWidget(self.VerzeichnisDockWidget,  'GUI/VerzeichnisDock',  self.treemain)#.tree
+        self.setDockWidget(self.GpxDockWidget, 'GUI/GpxDock',self.gpxview)
         
         upperwidgets = [self.GeoViewDockWidget]#,self.CalibDockWidget]#, self.ViewControlDockWidget, self.DEMDockWidget]
-        lowerwidgets = [self.ConsoleDockWidget, self.PoisDockWidget, self.FMInfoDockWidget]# self.DebugDockWidget,
+        lowerwidgets = [self.ConsoleDockWidget, self.PoisDockWidget, self.GpxDockWidget,self.FMInfoDockWidget]# self.DebugDockWidget,
+        self.Console.hide()
         [self.tabifyDockWidget( self.PixeltempDockWidget, w) for w in upperwidgets]
         [self.tabifyDockWidget( self.InfoDockWidget,w) for w in lowerwidgets]
         
@@ -146,14 +155,10 @@ class Main(QMainWindow):
         self.wf.info.connect(lambda txt : QtGui.QMessageBox.information(self, "SD-Karte einlesen",txt))
         self.escAction.triggered.connect(self.close)
         
-        self.pois.sigJumpTo.connect(self.treemain.view.setCurrent)
-    #    self.pois.liste.connect(self.img.paintPois) #selektierter Poi
-        self.pois.model.sigPois.connect(self.img.paintPois)
-       # self.pois.model.sig_reprojected.connect(self.img.paintPois)
-      #  self.pois.model.sigPois.connect(self.treemodel.pois)
-        
-        # aRA UEBERSCHREIBEN MIT EIGENEN wERTEN
-       # self.calib.conf.connect(lambda conf: self.wf.readFolder(self.treemain.view.imgdir,conf))
+        self.poiview.sigJumpTo.connect(self.treemain.view.setCurrent)
+        self.poidata.sigPois.connect(self.img.paintPois)
+       # self.poidata.sig_reprojected.connect(self.img.paintPois)
+      #  self.poidata.sigPois.connect(self.treemodel.pois)
         
         self.treemain.view.imgPathChanged.connect(self.onImagePathChanged)
         self.treemain.view.imgDirChanged.connect(self.onDirChanged)
@@ -164,23 +169,20 @@ class Main(QMainWindow):
             self.geomain.actionFitMap.triggered.connect(lambda: self.geomain.view.fitBounds(paramreduce.load(self.flight.p.child("general").child("bounding").getValues())))
             self.flight.uavpath.connect(self.geomain.view.setUavPath)
             self.flight.general.connect(self.img.setOrientation)
-            self.flight.loadfinished.connect(lambda: self.pois.model.loadMeta(self.flight.p))
-            self.flight.poisChanged.connect(lambda: self.pois.model.loadMeta(self.flight.p))
+            self.flight.loadfinished.connect(lambda: self.poidata.loadMeta(self.flight.p))
+            self.flight.poisChanged.connect(lambda: self.poidata.loadMeta(self.flight.p))
             self.img.sigOrientation.connect(self.flight.setOrientation)
             self.flight.pois.connect(self.treemain.reloadPoiFiles)
             self.flight.sigEmpty.connect(self.geomain.view.clear)
             
-    #        self.flight.pois.connect(lambda pois: self.pois.load(pois, self.flight.path))
             self.flight.pois.connect(self.geomain.view.loadpois)
         
         self.img.highlighting.connect(self.treemain.vb.imagename.setStyleSheet)
-        self.img.sigPixel.connect(self.pois.addView)
+        self.img.sigPixel.connect(self.poiview.addView)
         self.img.sigMouseMode.connect(self.focusDockWidget)
     
     def actionconnects(self):
         self.actionSD_Karte_einlesen.triggered.connect(lambda: self.wf.readSDCard(self.saveDialog,self.settings))
-        self.actionAra_korrigieren.triggered.connect(lambda: self.wf.readFolder(self.treemain.view.current_path()))
-    #    self.actionSave_poi_gpx.triggered.connect(self.pois.save_gpx)
         self.actionJpg_export.triggered.connect(self.img.save_jpg)
         self.actionPng_export.triggered.connect(self.img.save_png)
         self.actionConvert_folder_to_jpg.triggered.connect(lambda: self.wf.convertFolderJpg(self.treemain.view.current_path()))
@@ -195,7 +197,6 @@ class Main(QMainWindow):
         self.img.log.connect(self.Console.append)
         self.info.log.connect(self.Console.append)
         self.img.temp.log.connect(self.Console.append)
-    #    self.pois.log.connect(self.Console.append)
         
     def onDirChanged(self,path):
         if self.useflight:
@@ -208,17 +209,12 @@ class Main(QMainWindow):
         
     def onImageChanged(self,ara):
         self.info.load_data(ara.header)
-      #  self.calib.load_data(ara.header)
-        #self.pois.model.load(ara.header)
-        self.pois.model.setPose(ara.header)
-        self.pois.model.getPois(ara.filename)
+        self.poidata.setPose(ara.header)
+        self.poidata.getPois(ara.filename)
         self.geomain.setCurrentImg(ara.header)
-        
-    #    self.pois.load_data(ara,self.treemain.view.imgname,self.calib)#self.img.araalt,
       
     def gpx_to_gps(self):
-    #    self.pois.save()
-        pois = self.pois.getPoisAsGpx()
+        pois = self.poiview.getPoisAsGpx()
         if self.useflight:
             self.flight.save()
         
@@ -232,16 +228,12 @@ class Main(QMainWindow):
             self.gpxgen.save(PATHS["POIS"],False)
         except:
             logging.error("GPS_TO_GPS save failed",exc_info=True)
-            #traceback.print_exc()#"save gpx failed"
-        
+            
         self.exportgpx(PATHS["POIS"])#,self.conf)
-        #poisfilename = PATHS["POIS"]
-        #cmd = 'gpsbabel -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + poisfilename + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
-        #print cmd
-        #os.system(cmd)
-    
+        
     
     def exportgpx(self,gpxfile):#, conf):
+        #self.gpxdialog.show()
         if str(self.settings.value('GPS-DEVICE/exportType')) == "serial":# conf.garminserial_rB.isChecked():
             cmd = 'gpsbabel -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + gpxfile + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
             print(cmd)
@@ -318,7 +310,7 @@ class Main(QMainWindow):
         self.img.infoUI.CVfliphorCheckBox.setChecked(s.value('VIEW/fliphor')=="true")
         self.img.infoUI.CVflipverCheckBox.setChecked(s.value('VIEW/flipver')=="true")
         
-    #    self.pois.loadSettings(self.settings)
+    #    self.poiview.loadSettings(self.settings)
         
     def writeSettings(self,s):
         s.setValue('PATHS/rootdir', self.treemain.view.rootdir)
@@ -335,7 +327,7 @@ class Main(QMainWindow):
         s.setValue('VIEW/fliphor',self.img.infoUI.CVfliphorCheckBox.isChecked())
         s.setValue('VIEW/flipver',self.img.infoUI.CVflipverCheckBox.isChecked())
         s.setValue("SDCARD/device",self.saveDialog.sourceLE.text())
-    #    self.pois.writeSettings()
+    #    self.poiview.writeSettings()
         
         
     def shortcuts(self):
