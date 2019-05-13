@@ -17,7 +17,7 @@ import shutil
 from .image import Image
 import traceback
 from . import PATHS     
-   
+from . import image   
 class Araloader(QtCore.QThread):   
     log = QtCore.pyqtSignal(str)
     critical = QtCore.pyqtSignal(str)
@@ -32,7 +32,7 @@ class Araloader(QtCore.QThread):
         # self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
         # self.settings.setFallbacksEnabled(False) 
         
-    def readSDCard(self,dialog,settings):
+    def readSDCard(self,dialog,settings): #dialog kann nicht in einem qthread erzeugt werden! Deshalb wird der uebergeben
         sdcardname = "IR_"
         remove = dialog.SDCard_leeren.checkState()
         flying = dialog.nurFlugBilder.checkState()
@@ -54,6 +54,7 @@ class Araloader(QtCore.QThread):
         if ok == True:
             self.outdir=str(dialog.pathBox.text())
             self.name = str(dialog.nameBox.text())
+            self.indir = str(dialog.sourceLE.text())
             self.start()
         else:
             pass
@@ -90,7 +91,7 @@ class Araloader(QtCore.QThread):
         self.remove_images = remove_images
         self.only_flying = only_flying
         self.year = int(time.strftime("%y"))%10 if year == None else year
-        print(type(self.settings))
+        #print(type(self.settings))
         self.flugnr = int(float(self.settings.value("SYSTEM/flightcounter",0)))
         self.owner_id = self.settings.value("SYSTEM/owner_id","X")
         outdir = self.settings.value("PATHS/rootdir", os.path.join(self.indir,"outdir"))
@@ -203,11 +204,15 @@ class Araloader(QtCore.QThread):
         print(self.outdirlist)
      
     def readnonAsctecSDCard(self):
+        print("READNONASCTEC")
         for root, dirs, files in sorted(os.walk(self.indir)):
             for file in files:
                 if os.path.splitext(file)[1].lower() not in image.SUPPORTED_EXTENSIONS: continue
                 print(file)
                 #shutil.copy(os.path.join(root,file),self.outdir)
+                
+                
+                
     def SDCardRead(self):
         self.flugnr = time.time()
         self.s_latlon = {"flugnr" : None, "lat": None, "lon": None, "ele": None }
@@ -219,8 +224,11 @@ class Araloader(QtCore.QThread):
         try:
             foldersamount = len([name for name in os.listdir(self.indir) if name[:4]=="FLIR"])
             print ("FOLDERS",foldersamount)
+            if foldersamount==0:
+                self.readnonAsctecSDCard()
+                return
         except:
-            self.readnonAsctecSDCard()
+            #self.readnonAsctecSDCard()
             return
         print("start",self.indir)
         

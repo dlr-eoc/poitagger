@@ -24,7 +24,7 @@
    <item row="1" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QLineEdit" name="pathBox">
+      <widget class="QLineEdit" name="rootLE">
        <property name="minimumSize">
         <size>
          <width>0</width>
@@ -62,7 +62,7 @@
     </widget>
    </item>
    <item row="2" column="1">
-    <widget class="QLineEdit" name="nameBox">
+    <widget class="QLineEdit" name="flightnameLE">
      <property name="minimumSize">
       <size>
        <width>0</width>

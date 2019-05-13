@@ -35,7 +35,7 @@ from . import flightjson
 from . import PATHS
 from . import __version__
 # Widgets
-from . import save_as
+from . import importer
 from . import workflow
 from . import poiview
 from . import info
@@ -68,7 +68,7 @@ class Main(QMainWindow):
         self.imgdiff = 1 if imgdir is not None else int(self.settings.value('PATHS/lastimgid',0))
         startfilename = str(self.settings.value('PATHS/lastimgname'))
         
-        self.saveDialog = save_as.SaveAsDialog(self)
+        self.saveDialog = importer.SaveAsDialog(self)
         
         self.conf = properties.PropertyDialog("Einstellungen",self.settings)
         
@@ -79,7 +79,7 @@ class Main(QMainWindow):
         self.info = info.Info()
        # self.calib = calib.Calib()
        # self.dem = dem.Dem()
-        self.wf = workflow.Araloader()
+        #self.wf = workflow.Araloader()
         
         #self.poiview = pois.Pois(self.conf)
         self.poidata = poimodel2.PoiModel()
@@ -151,8 +151,6 @@ class Main(QMainWindow):
         self.logconnects()
         self.info.position.connect(self.geomain.view.moveUav)
         #self.wf.progress.connect(self.AraLoaderProgressBar.setValue)
-        self.wf.critical.connect(lambda txt : QtGui.QMessageBox.critical(self, "SD-Karte einlesen",txt))
-        self.wf.info.connect(lambda txt : QtGui.QMessageBox.information(self, "SD-Karte einlesen",txt))
         self.escAction.triggered.connect(self.close)
         
         self.poiview.sigJumpTo.connect(self.treemain.view.setCurrent)
@@ -182,17 +180,17 @@ class Main(QMainWindow):
         self.img.sigMouseMode.connect(self.focusDockWidget)
     
     def actionconnects(self):
-        self.actionSD_Karte_einlesen.triggered.connect(lambda: self.wf.readSDCard(self.saveDialog,self.settings))
+        self.actionSD_Karte_einlesen.triggered.connect(self.saveDialog.open) #lambda: self.wf.readSDCard(self.saveDialog,self.settings))
         self.actionJpg_export.triggered.connect(self.img.save_jpg)
         self.actionPng_export.triggered.connect(self.img.save_png)
-        self.actionConvert_folder_to_jpg.triggered.connect(lambda: self.wf.convertFolderJpg(self.treemain.view.current_path()))
-        self.actionCreate_subimages.triggered.connect(lambda: self.wf.createSubimages(self.treemain.view.current_path()))
+        #self.actionConvert_folder_to_jpg.triggered.connect(lambda: self.wf.convertFolderJpg(self.treemain.view.current_path()))
+        #self.actionCreate_subimages.triggered.connect(lambda: self.wf.createSubimages(self.treemain.view.current_path()))
         self.actionGpx_to_gps.triggered.connect(self.gpx_to_gps)
         self.actionEinstellungen.triggered.connect(self.conf.openPropDialog)
     
     def logconnects(self):
         self.log.connect(self.Console.append)
-        self.wf.log.connect(self.Console.append)
+        #self.wf.log.connect(self.Console.append)
         self.treemain.view.log.connect(self.Console.append)
         self.img.log.connect(self.Console.append)
         self.info.log.connect(self.Console.append)
@@ -326,7 +324,7 @@ class Main(QMainWindow):
         
         s.setValue('VIEW/fliphor',self.img.infoUI.CVfliphorCheckBox.isChecked())
         s.setValue('VIEW/flipver',self.img.infoUI.CVflipverCheckBox.isChecked())
-        s.setValue("SDCARD/device",self.saveDialog.sourceLE.text())
+     #   s.setValue("SDCARD/device",self.saveDialog.sourceLE.text())
     #    self.poiview.writeSettings()
         
         

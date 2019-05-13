@@ -578,6 +578,7 @@ class ImageJpg(Image):
         self.header["file"]["about"]=a.get("rdf:about",0)
         self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
         self.header["file"]["createdate"]=a.get("xmp:createdate",0)
+        self.header["file"]["DateTimeOriginal"]=self.extract_exif("EXIF DateTimeOriginal")
         self.header["file"]["format"]=a.get("dc:format",0)
         self.header["file"]["version"]=a.get("crs:version",0)
         
@@ -816,7 +817,7 @@ class ImageAra(Image):
         self.header["camera"]["pixelshift_y"] = 17e-6
         self.header["gps"]["dateTtime"] = UTCFromGps(self.rawheader["falcon"]["gps_week"],
                                                         self.rawheader["falcon"]["gps_time_ms"])
-        
+        self.header["file"]["DateTimeOriginal"] = self.header["gps"]["dateTtime"]  # a must have parameter
         
         self.header["file"]["asctec_fw_version"] = {"major":self.rawheader["firmware_version"]["major"],
                                                     "minor":self.rawheader["firmware_version"]["minor"],
@@ -975,6 +976,7 @@ class ImageTiff(Image):
         self.header["file"]["about"]=a.get("rdf:about",0)
         self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
         self.header["file"]["createdate"]=a.get("xmp:createdate",0)
+        self.header["file"]["DateTimeOriginal"] = a.get("xmp:createdate",0)
         self.header["file"]["format"]=a.get("dc:format",0)
         self.header["file"]["version"]=a.get("crs:version",0)
          
