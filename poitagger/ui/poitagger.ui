@@ -97,6 +97,12 @@
    <widget class="QWidget" name="dockWidgetContents_7"/>
   </widget>
   <widget class="QDockWidget" name="ConsoleDockWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="minimumSize">
     <size>
      <width>91</width>

@@ -131,7 +131,7 @@ class Main(QMainWindow):
         
         upperwidgets = [self.GeoViewDockWidget]#,self.CalibDockWidget]#, self.ViewControlDockWidget, self.DEMDockWidget]
         lowerwidgets = [self.ConsoleDockWidget, self.PoisDockWidget, self.GpxDockWidget,self.FMInfoDockWidget]# self.DebugDockWidget,
-        self.Console.hide()
+       # self.Console.hide()
         [self.tabifyDockWidget( self.PixeltempDockWidget, w) for w in upperwidgets]
         [self.tabifyDockWidget( self.InfoDockWidget,w) for w in lowerwidgets]
         

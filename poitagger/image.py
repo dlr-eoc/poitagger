@@ -364,8 +364,8 @@ class ImageJpg(Image):
                 exif = exifread.process_file(f,details=False)
                 d = f.read()
             
-            xmp_start = d.find(b"<rdf:RDF")
-            xmp_end = d.find(b"</rdf:RDF")
+            xmp_start = d.lower().find(b"<rdf:rdf")
+            xmp_end = d.lower().find(b"</rdf:rdf")
             xmp_str = d[xmp_start:xmp_end+10]
             xmp = BeautifulSoup(xmp_str,"lxml")
         except FileNotFoundError as e:
@@ -386,7 +386,7 @@ class ImageJpg(Image):
             endian = ">"
         if len(fffchunk)<64:
             return
-                
+        #print (fffchunk[0:68])        
         for i in FLIRFILEHEAD:
             val = struct.Struct(endian+i[2]).unpack_from(fffchunk[0:64],i[0])
             if "s" in i[2]:
@@ -394,8 +394,10 @@ class ImageJpg(Image):
             name = i[1]
             ffh[name]=val[0]
         
+       # print("FFH",ffh)
         indexes = ffh["Number of indexes"]
         FFI = []
+        #print(fffchunk[64+0*32:96+14*32])
         for idx in range(0,indexes):
             ffi = {}
             for i in FLIRFILEINDEX:
@@ -411,13 +413,15 @@ class ImageJpg(Image):
                 basicstart= ffi['DataPtr']
                 basicend = basicstart + ffi['DataSize']
             FFI.append(ffi)
-        
+       # print("FFI:",FFI)
         self.fff = self.flir_header(fffchunk[basicstart:basicend])
+       # print("FFF",self.fff)
+        
         if not onlyheader:
             self.rawbody = self.get_raw(fffchunk[rawstart:rawend])
         else:
             self.bitdepth = struct.Struct("<H").unpack_from(fffchunk[rawstart:rawstart+2],0)
-            print("BITDEPTH",self.bitdepth)
+         #   print("BITDEPTH",self.bitdepth)
     def get_raw(self,bytearr):
         geom = {}
         for i in GEOMETRIC_INFO:
@@ -455,6 +459,7 @@ class ImageJpg(Image):
         
      
     def fill_header_flir(self):
+        print("DAs ist ein Flir BIld")
         self.header["file"]["name"] = self.filename
         self.header["image"]["width"] = self.rwidth if self.rwidth else self.width #self.extract_exif("Raw Thermal Image Width")
         self.header["image"]["height"] = self.rheight if self.rheight else self.height #self.extract_exif("Raw Thermal Image Height")
@@ -468,21 +473,37 @@ class ImageJpg(Image):
         self.header["camera"]["make"] = self.extract_exif("Image Make")
         self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
         self.header["uav"]["yaw"] = self.extract_xmp("flir:mavyaw") 
-        self.header["camera"]["yaw"] = self.extract_xmp("flir:mavyaw") + self.extract_xmp("camera:yaw")
+        try:
+            self.header["camera"]["yaw"] = self.extract_xmp("flir:mavyaw") + self.extract_xmp("camera:yaw")
+        except:
+            self.header["camera"]["yaw"] = -9999
         self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch") 
         self.header["uav"]["euler_order"] = "ZYX"
         
-        self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
-        self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
-        self.header["gps"]["rel_altitude"]= self.extract_xmp("flir:mavrelativealtitude")
-        self.header["gps"]["abs_altitude"] = self.extract_exif("GPS GPSAltitude")
-        
-        self.header["gps"]["timestamp"] = self.extract_exif("GPS GPSTimeStamp")
-        UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
-        self.header["gps"]["UTM_X"] = UTM_X
-        self.header["gps"]["UTM_Y"] = UTM_Y
-        self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
-        self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
+        try:
+            self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
+        except:  pass
+        try:
+            self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
+        except:  pass
+        try:
+            self.header["gps"]["rel_altitude"]= self.extract_xmp("flir:mavrelativealtitude")
+        except:  pass
+        try:
+            self.header["gps"]["abs_altitude"] = self.extract_exif("GPS GPSAltitude")
+        except:  pass
+        try:
+            self.header["gps"]["timestamp"] = self.extract_exif("GPS GPSTimeStamp")
+        except:  pass
+        try:
+            UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
+        except:  pass
+        try:
+            self.header["gps"]["UTM_X"] = UTM_X
+            self.header["gps"]["UTM_Y"] = UTM_Y
+            self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
+            self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
+        except: pass
         
         
         
@@ -504,41 +525,44 @@ class ImageJpg(Image):
             self.header["camera"]["serial"] = self.fff.get('CameraSerialNumber',"").decode("utf-8") 
             self.header["file"]["DateTimeOriginal"] = isotimestr(*self.fff.get("DateTimeOriginal",0))
         except:
-            self.header["camera"]['PartNumber'] = self.fff.get("CameraPartNumber","")
-            self.header["camera"]["serial"] = self.fff.get('CameraSerialNumber',"")
-            self.header["file"]["DateTimeOriginal"] = self.fff.get("DateTimeOriginal",0)
+            try:
+                self.header["camera"]['PartNumber'] = self.fff.get("CameraPartNumber","")
+                self.header["camera"]["serial"] = self.fff.get('CameraSerialNumber',"")
+                self.header["file"]["DateTimeOriginal"] = self.fff.get("DateTimeOriginal",0)
         #self.header["file"]["modifydate"] = self.fff.get("DateTimeOriginal",0)
         #self.header["file"]["createdate"] = self.fff.get("DateTimeOriginal",0)
-    
-        
-        self.header["gps"]["hor_accuracy"]= self.extract_xmp("camera:gpsxyaccuracy")
-        self.header["gps"]["ver_accuracy"]= self.extract_xmp("camera:gpszaccuracy")
-        self.header["gps"]["climbrate"] = self.extract_xmp("flir:mavrateofclimb") 
-        self.header["gps"]["climbrateref"] = self.extract_xmp("flir:mavrateofclimbref")
-        self.header["gps"]["abs_altituderef"] = self.extract_exif("GPS GPSAltitudeRef")
-        self.header["gps"]["speed"] = self.extract_exif("GPS GPSSpeed")
-        self.header["gps"]["speedref"] = self.extract_exif("GPS GPSSpeedRef")
-        self.header["gps"]["version"] = self.extract_exif("GPS GPSVersionID")
-                
-        
-        self.header["image"]["colorspace"] = self.extract_exif("EXIF ColorSpace")
-        self.header["image"]["componentsconfiguration"] = self.extract_exif("EXIF ComponentsConfiguration")
-                
-        self.header["uav"]["rollrate"] = self.extract_xmp("flir:mavrollrate") 
-        self.header["uav"]["yawrate"] = self.extract_xmp("flir:mavyawrate") 
-        self.header["uav"]["pitchrate"] = self.extract_xmp("flir:mavpitchrate") 
-        
-        self.header["calibration"]["radiometric"]["R"] = float(self.fff.get("PlanckR1",(0))[0])
-        self.header["calibration"]["radiometric"]["F"] = float(self.fff.get("PlanckF",(1))[0])
-        self.header["calibration"]["radiometric"]["B"] = float(self.fff.get("PlanckB",(0))[0])
-        self.header["calibration"]["radiometric"]["R2"] = float(self.fff.get("PlanckR2",(0))[0])
-        self.header["calibration"]["radiometric"]["coretemp"] = self.fff.get("Coretemp",(1))[0]
-      
-        self.header["calibration"]["radiometric"]["timestamp"] = 0
-        self.header["calibration"]["radiometric"]["IRWindowTemperature"] = float(self.fff.get("IRWindowTemperature",(0))[0])
-        self.header["calibration"]["radiometric"]["IRWindowTransmission"] = float(self.fff.get("IRWindowTransmission",(1))[0])
-        
-        
+            except:
+                pass
+        try:
+            self.header["gps"]["hor_accuracy"]= self.extract_xmp("camera:gpsxyaccuracy")
+            self.header["gps"]["ver_accuracy"]= self.extract_xmp("camera:gpszaccuracy")
+            self.header["gps"]["climbrate"] = self.extract_xmp("flir:mavrateofclimb") 
+            self.header["gps"]["climbrateref"] = self.extract_xmp("flir:mavrateofclimbref")
+            self.header["gps"]["abs_altituderef"] = self.extract_exif("GPS GPSAltitudeRef")
+            self.header["gps"]["speed"] = self.extract_exif("GPS GPSSpeed")
+            self.header["gps"]["speedref"] = self.extract_exif("GPS GPSSpeedRef")
+            self.header["gps"]["version"] = self.extract_exif("GPS GPSVersionID")
+                    
+            
+            self.header["image"]["colorspace"] = self.extract_exif("EXIF ColorSpace")
+            self.header["image"]["componentsconfiguration"] = self.extract_exif("EXIF ComponentsConfiguration")
+                    
+            self.header["uav"]["rollrate"] = self.extract_xmp("flir:mavrollrate") 
+            self.header["uav"]["yawrate"] = self.extract_xmp("flir:mavyawrate") 
+            self.header["uav"]["pitchrate"] = self.extract_xmp("flir:mavpitchrate") 
+            
+            self.header["calibration"]["radiometric"]["R"] = float(self.fff.get("PlanckR1",(0))[0])
+            self.header["calibration"]["radiometric"]["F"] = float(self.fff.get("PlanckF",(1))[0])
+            self.header["calibration"]["radiometric"]["B"] = float(self.fff.get("PlanckB",(0))[0])
+            self.header["calibration"]["radiometric"]["R2"] = float(self.fff.get("PlanckR2",(0))[0])
+            self.header["calibration"]["radiometric"]["coretemp"] = self.fff.get("Coretemp",(1))[0]
+          
+            self.header["calibration"]["radiometric"]["timestamp"] = 0
+            self.header["calibration"]["radiometric"]["IRWindowTemperature"] = float(self.fff.get("IRWindowTemperature",(0))[0])
+            self.header["calibration"]["radiometric"]["IRWindowTransmission"] = float(self.fff.get("IRWindowTransmission",(1))[0])
+            
+        except:
+            pass
         
     def fill_header_dji(self):
         a = self.xmp.find("rdf:description")
@@ -1017,28 +1041,30 @@ if  __name__=="__main__":
     pp = pprint.PrettyPrinter(indent=4)
     import matplotlib.pyplot as plt
     
-    a = Image.factory("test/dji_example.jpg")
-    pp.pprint(a.header)      
-    plt.imshow(a.image)
-    plt.show()
+   # a = Image.factory("test/dji_example.jpg")
+   # pp.pprint(a.header)      
+   # plt.imshow(a.image)
+   # plt.show()
     
-    a = Image.factory("test/20180523_220000.jpg")
-    pp.pprint(a.header)      
-    plt.imshow(a.image,"gray")
-    plt.show()
+ #   a = Image.factory("test/20180523_220000.jpg")
+ #   pp.pprint(a.header)      
+ #   plt.imshow(a.image,"gray")
+ #   plt.show()
     
-    a = Image.factory("test/20180919_151905_R.jpg")
-    pp.pprint(a.header)      
-    plt.imshow(a.image,"gray")
-    plt.show()
+    a = Image.factory("test/Duo_Pro_R.jpg")
+    #a = Image.factory("test/20190327_104730_R.jpg")
+   # pp.pprint(a.header)      
     
-    a = Image.factory("test/20180530_152906.tiff")
-    pp.pprint(a.header)      
-    plt.imshow(a.image,"gray")
-    plt.show()
+   # plt.imshow(a.image,"gray")
+   # plt.show()
     
-    a = Image.factory("test/BRH08151525_0037.ara")
-    pp.pprint(a.header)      
-    plt.imshow(a.image,"gray")
-    plt.show()
+   # a = Image.factory("test/20180530_152906.tiff")
+   # pp.pprint(a.header)      
+   # plt.imshow(a.image,"gray")
+   # plt.show()
+    
+   # a = Image.factory("test/BRH08151525_0037.ara")
+   # pp.pprint(a.header)      
+   # plt.imshow(a.image,"gray")
+   # plt.show()
     
