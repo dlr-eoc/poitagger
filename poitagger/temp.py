@@ -12,6 +12,8 @@ import csv
 import logging
 from . import PATHS
 
+logger = logging.getLogger(__name__)
+
 class Temp(QtGui.QWidget):
     
     log = QtCore.pyqtSignal(str)
@@ -59,7 +61,7 @@ class Temp(QtGui.QWidget):
             
         except:
             pt = 0
-            logging.error("calc_pixtemp didn't work. there might be no calibration data in the image header.",exc_info=True)
+            logger.error("calc_pixtemp didn't work. there might be no calibration data in the image header.",exc_info=True)
         return pt
         
     def fill_pixtemp(self,x,y,dn):

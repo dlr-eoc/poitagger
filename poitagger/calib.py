@@ -4,6 +4,9 @@ import os
 import logging
 from . import image
 from . import PATHS
+
+logger = logging.getLogger(__name__)
+
 class Calib(QtGui.QMainWindow):
     log = QtCore.pyqtSignal(str)
     conf =  QtCore.pyqtSignal(QtCore.QSettings) 
@@ -77,7 +80,7 @@ class Calib(QtGui.QMainWindow):
             self.dlr_geom_pixelshift_x.setValue(ara["camera"].get("pixelshift_x",17e-6))   #does not yet work!
             self.dlr_geom_pixelshift_y.setValue(ara["camera"].get("pixelshift_y",17e-6)) #does not yet work!
         except:
-            logging.error("calib load data faild",exc_info=True)
+            logger.error("calib load data faild",exc_info=True)
     
     def ausDatei(self):
         s = self.getSettings(True)

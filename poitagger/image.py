@@ -4,6 +4,9 @@ import doctest
 import os
 import re
 import utm
+
+logger = logging.getLogger(__name__)
+
 try:
     import exifread
     from PIL import Image as pilimage
@@ -13,7 +16,7 @@ try:
     import datetime
     import dateutil
 except ImportError:
-    logging.error("loading a module failed! maybe you can not read all types of images",exc_info=True)
+    logger.error("loading a module failed! maybe you can not read all types of images",exc_info=True)
 
 from bs4 import BeautifulSoup
      
@@ -207,9 +210,9 @@ class Image(object):
     exif = None
     xmp = None
     
-    def __init__(self):
-        logging.basicConfig(level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
+    #def __init__(self):
+        #logging.basicConfig(level=logging.INFO)
+        #self.logger = logging.getLogger(__name__)
     
     def factory(imgpath,onlyheader=False):
         root, ext = os.path.splitext(imgpath)
@@ -283,9 +286,11 @@ class Image(object):
 
 
 class ImageJpg(Image):
-    bitdepth = None
+    bitdepth = 8
     def __init__(self,imgpath=None,bitsPerPixel=np.uint16,onlyheader=False):
         if imgpath is not None:
+         #   print("start 0")
+         #   self.start = time.time()
             self.load(imgpath,onlyheader=onlyheader)
         
     def load(self,imgpath,onlyheader=False):
@@ -295,13 +300,22 @@ class ImageJpg(Image):
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
         d, self.exif, self.xmp = self.get_meta(imgpath)
+        #self.t1 = time.time()
+        #print(self.t1 - self.t6)
+            
         self.segments = self.find_segments(d)
         self.width,self.height,self.channels = self.get_size(self.segments,d)
+        
+       # self.t2 = time.time()
+       # print(self.t2 - self.t1)
         
         self.rwidth = int(str(self.exif.get("Raw Thermal Image Width",0)))
         self.rheight = int(str(self.exif.get("Raw Thermal Image Height",0 )))
         
         self.extract_flir(d,onlyheader)
+        
+        #self.t3 = time.time()
+        #print(self.t3 - self.t2)
         
         if str(self.exif.get("Image Make","")) == "DJI":
             self.fill_header_dji()
@@ -360,18 +374,26 @@ class ImageJpg(Image):
         xmp = ""
         d = []
         try:
+            #self.t4 = time.time()
+            #print(self.t4 - self.start)
             with open(imgpath,"rb") as f:
                 exif = exifread.process_file(f,details=False)
                 d = f.read()
-            
+                
+            #self.t5 = time.time()
+            #print(self.t5 - self.t4)
+        
             xmp_start = d.lower().find(b"<rdf:rdf")
             xmp_end = d.lower().find(b"</rdf:rdf")
             xmp_str = d[xmp_start:xmp_end+10]
             xmp = BeautifulSoup(xmp_str,"lxml")
+           # self.t6 = time.time()
+           # print(self.t6 - self.t5)
+        
         except FileNotFoundError as e:
-            logging.error(e)
+            logger.error(e)
         except:
-            logging.error(e)
+            logger.error(e)
         return d, exif, xmp
 
     
@@ -459,7 +481,6 @@ class ImageJpg(Image):
         
      
     def fill_header_flir(self):
-        print("DAs ist ein Flir BIld")
         self.header["file"]["name"] = self.filename
         self.header["image"]["width"] = self.rwidth if self.rwidth else self.width #self.extract_exif("Raw Thermal Image Width")
         self.header["image"]["height"] = self.rheight if self.rheight else self.height #self.extract_exif("Raw Thermal Image Height")
@@ -479,6 +500,12 @@ class ImageJpg(Image):
             self.header["camera"]["yaw"] = -9999
         self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch") 
         self.header["uav"]["euler_order"] = "ZYX"
+        try:
+            self.header["file"]["DateTimeOriginal"] = self.exif("Exif DateTimeOriginal")
+        except:  pass
+        try:
+            self.header["file"]["SubSecTimeOriginal"] = self.exif("Exif SubSecTimeOriginal")
+        except:  pass
         
         try:
             self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
@@ -495,6 +522,7 @@ class ImageJpg(Image):
         try:
             self.header["gps"]["timestamp"] = self.extract_exif("GPS GPSTimeStamp")
         except:  pass
+        
         try:
             UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
         except:  pass
@@ -660,15 +688,15 @@ class ImageJpg(Image):
             pass #no thermal infrared
         
 
-def UTCFromGps(gpsWeek, SOW, leapSecs=16,gpxstyle=False): 
+def UTCFromGps(gpsWeek, mSOW, leapSecs=16,gpxstyle=False): 
     """
-    SOW = seconds of week 
+    mSOW = milliseconds of week 
     gpsWeek is the full number (not modulo 1024) 
     """ 
-    secFract = SOW % 1 
+    secFract = mSOW % 1000 
     epochTuple = (1980, 1, 6, 0, 0, 0) + (-1, -1, 0)  
     t0 = time.mktime(epochTuple) - time.timezone  #mktime is localtime, correct for UTC 
-    tdiff = (gpsWeek * 604800) + SOW - leapSecs 
+    tdiff = (gpsWeek * 604800) + mSOW/1000.0 - leapSecs 
     t = t0 + tdiff 
     (year, month, day, hh, mm, ss, dayOfWeek, julianDay, daylightsaving) = time.gmtime(t) 
     if gpxstyle==True:
@@ -698,9 +726,9 @@ class ImageAra(Image):
                     self.read_body(fileobj,BITDEPTH[self.header["image"]["bitdepth"]],
                         self.header["image"]["width"],self.header["image"]["height"])
         except FileNotFoundError as e:
-            logging.error(e)
+            logger.error(e)
         except:
-            logging.error("AraHeader read_header() failed", exc_info=True)
+            logger.error("AraHeader read_header() failed", exc_info=True)
     
     
     def read_body(self, fileobj,bitsPerPixel, im_width,im_height):
@@ -768,7 +796,7 @@ class ImageAra(Image):
                 }
             
         except:
-            logging.error("read header failed", exc_info=True)
+            logger.error("read header failed", exc_info=True)
             
     def get_meta(self,old=True):
         self.exif = self.rawheader
@@ -925,10 +953,10 @@ class ImageTiff(Image):
                 self.fill_header_flir()
                 
         except FileNotFoundError as e:
-            logging.error(e,exc_info=True)
+            logger.error(e,exc_info=True)
             
         except:
-            logging.error("ImageTiff load image failed", exc_info=True)
+            logger.error("ImageTiff load image failed", exc_info=True)
      #   print (self.imgpath, self.image.shape)
         
     def dms2dd(self,dms,ref):

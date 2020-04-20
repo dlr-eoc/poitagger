@@ -19,6 +19,8 @@ from PyQt5 import QtGui,QtCore,uic
 
 POITYPE = ["Vielleicht","Kitz_1","Kitz_2","Kitz_3","Kitz_4","Kitz_5","Kitz_6","Kitz_7","Kitz_8","Kitz_9","Kitz_10","Sonstiges"]
     
+
+logger = logging.getLogger(__name__)
         
 class Pois(QtGui.QMainWindow):
     refresh = QtCore.pyqtSignal()
@@ -293,7 +295,7 @@ class Pois(QtGui.QMainWindow):
             lat,lon,ele = self.project(x_geo,y_geo,self.CamR) #-------------------------------- bis hier hin
         except:
             lat,lon,ele = 0,0,0
-            logging.error("reproject did not work", exc_info=True)
+            logger.error("reproject did not work", exc_info=True)
         #self.Cam.project()
         
         #print "latlon",lat,lon,ele,type(lat),type(lon),type(ele)
@@ -342,7 +344,7 @@ class Pois(QtGui.QMainWindow):
             self.view.setFocus()
             self.refresh.emit()
         except:
-            logging.error("pois load data failed",exc_info=True)
+            logger.error("pois load data failed",exc_info=True)
         
     def checkcamorientation(self,x,y,width = 640, height = 512):
         #x_geo = x
@@ -373,7 +375,7 @@ class Pois(QtGui.QMainWindow):
             
             return str("%2.6f"%ll[0]),str("%2.6f"%ll[1]),str(poi[2][0])
         except:
-            logging.error("project did not work", exc_info=True)
+            logger.error("project did not work", exc_info=True)
                         
     def pos(self,x,y): #set poi at current mouse position click
         x_geo,y_geo = self.checkcamorientation(x,y)
@@ -388,7 +390,7 @@ class Pois(QtGui.QMainWindow):
             roll_offset  = self.ara.header["calibration"]["boresight"].get("cam_roll_offset",0)
             yaw_offset   = self.ara.header["calibration"]["boresight"].get("cam_yaw_offset",0)
         except:
-            logging.error("pois pos(): load header data failed")
+            logger.error("pois pos(): load header data failed")
             return
         self.id = self.id+1
         try:
@@ -406,7 +408,7 @@ class Pois(QtGui.QMainWindow):
             self.view.selectRow(len(self.currentlist)-1)
             self.view.setFocus()
         except:    
-            logging.error("pois set pos did not work",exc_info=True)
+            logger.error("pois set pos did not work",exc_info=True)
     
         
     def save_gpx(self):

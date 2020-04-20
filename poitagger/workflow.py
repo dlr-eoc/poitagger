@@ -18,6 +18,10 @@ from .image import Image
 import traceback
 from . import PATHS     
 from . import image   
+
+
+logger = logging.getLogger(__name__)
+
 class Araloader(QtCore.QThread):   
     log = QtCore.pyqtSignal(str)
     critical = QtCore.pyqtSignal(str)
@@ -287,7 +291,7 @@ class Araloader(QtCore.QThread):
             except:
                 self.critical.emit("SD-Karte einlesen fehlgeschlagen: SD-Karte scheint leer zu sein")
           
-                logging.error("SD einlesen error",exc_info=True)
+                logger.error("SD einlesen error",exc_info=True)
          
             
         except:

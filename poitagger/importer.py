@@ -13,6 +13,8 @@ from dateutil import parser
 from . import PATHS     
 from . import image   
 
+logger = logging.getLogger(__name__)
+
 class CopyThread(QtCore.QThread):   
     log = QtCore.pyqtSignal(str)
     critical = QtCore.pyqtSignal(str)
@@ -37,7 +39,7 @@ class CopyThread(QtCore.QThread):
             else:
                 return False
         except:
-            logging.warning("there was no rel_altitude exif tag in the image header")
+            logger.warning("there was no rel_altitude exif tag in the image header")
             return False
     
     def get_foldername(self,img):
@@ -46,7 +48,7 @@ class CopyThread(QtCore.QThread):
             time = parser.parse(img.header["file"]["DateTimeOriginal"])
         except: 
             time = datetime.datetime.now()
-            logging.warning("I didn't find a 'DateTimeOriginal'-Tag in Image Header, so i'll take the current time")
+            logger.warning("I didn't find a 'DateTimeOriginal'-Tag in Image Header, so i'll take the current time")
         foldername = time.strftime("%y%m%d_%H%M_")+self.flightname.replace(" ", "_") #.astimezone(get_localzone())
         outpath = os.path.join(self.rootdir,foldername)
         return outpath

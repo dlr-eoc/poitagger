@@ -19,6 +19,9 @@ from . import PATHS
 WIDTH = 0.00003
 HEIGHT = 0.00003
 
+
+logger = logging.getLogger(__name__)
+
 class GeoWidget(QMainWindow): 
     def __init__(self,settings):
         super().__init__()
@@ -48,7 +51,7 @@ class GeoWidget(QMainWindow):
             url = QtCore.QUrl("https://www.google.de/maps/place//@%s,%s,20m/data=!3m1!1e3!4m2!3m1!1s0x0:0x0" % (self.imgheader["gps"]["latitude"],self.imgheader["gps"]["longitude"]))
             QtGui.QDesktopServices.openUrl(url)
         except:
-            logging.error("loadGoogleMaps failed!")
+            logger.error("loadGoogleMaps failed!")
             
     def handlePrint(self):
         dialog = QtPrintSupport.QPrintDialog()
@@ -152,10 +155,12 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
  
     def setMarker(self,lat,lng):
         #print("geoview: setMarker")
+        
         self.page.runJavaScript('var marker = new mapboxgl.Marker().setLngLat([{}, {}]).addTo(map);'.format(lng,lat))
         
     def clear(self):
         geojson = {"type": "Feature", "geometry": {"type": "LineString","coordinates": []}}
+        #print ("CLEAR")
         self.page.runJavaScript('map.getSource("uavpath").setData({});'.format(geojson))
         #print("geoview: clear")
         #self.page.runJavaScript('map.removeLayer("uavpath");map.removeSource("uavpath");') #console.log(map.getSource("uav"))
@@ -180,7 +185,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
                 arr.append(feature)
             self.page.runJavaScript('map.getSource("pois").setData({{"type": "FeatureCollection","features": {} }})'.format(arr))
         except:
-            logging.error("geoview: loadpois failed", exc_info=True)
+            logger.error("geoview: loadpois failed", exc_info=True)
     
     def moveUav(self,lat,lon):
         if not self.jsloaded: return 
@@ -190,6 +195,8 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         geojson = {"type": "Feature",
                 "geometry": {"type": "Point","coordinates": [lon, lat]},
                 "properties": {"title": "UAV","icon": "drone"}}
+        #print ("MOVEUAV")
+        
         self.page.runJavaScript('map.getSource("uav").setData({});'.format(geojson))
         
     
@@ -216,9 +223,10 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
             bound = [[P.T[0].min(),P.T[1].min()],[P.T[0].max(),P.T[1].max()]]
             self.fitBounds(bound)
         except:
-            logging.warning("calculate boundary from uavpath failed")
+            logger.warning("calculate boundary from uavpath failed")
             
         geojson = {"type": "Feature", "geometry": {"type": "LineString","coordinates": uavpath}}
+        #print ("UAVPATH")
         self.page.runJavaScript('map.getSource("uavpath").setData({});'.format(geojson))
         
     
@@ -227,7 +235,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
             self.moveUav(ara["gps"].get("latitude",0),ara["gps"].get("longitude",0))
             self.panMap(ara["gps"].get("latitude",0),ara["gps"].get("longitude",0))
         except:
-            logging.error("geoview load filedata failed")
+            logger.error("geoview load filedata failed")
             
     def setLayerVisible(self,layer,checked):
         if not self.jsloaded: return 

@@ -28,6 +28,8 @@ types = {"<class 'int'>":"int",
         "<class 'bool'>":"bool",
         "<class 'bytes'>":"str"}
 
+logger = logging.getLogger(__name__)
+
 def getBranch(container,branchlist):
     if len(branchlist)==0:
         return container
@@ -211,7 +213,7 @@ class FlightConfig(QDialog):
                 if os.path.splitext(file)[1].lower() not in image.SUPPORTED_EXTENSIONS: continue
                 return image.Image.factory(os.path.join(self.path,file),onlyheader=True)    
         except:
-            logging.error("FC _loadImgHeader failed", exc_info = True)
+            logger.error("FC _loadImgHeader failed", exc_info = True)
        
 class FlightWidget(QMainWindow):
     def __init__(self,parent = None):
@@ -370,7 +372,7 @@ class Flight(QtCore.QObject): #QThread
                 # if "id" in entry:
                     # pois.append(entry)
         # except:
-            # logging.warning("flightmeta: append poi failed",exc_info=True)
+            # logger.warning("flightmeta: append poi failed",exc_info=True)
         # self.pois.emit(pois)
         # #p = poisparam.getValues()
         # #print(len(p),p["0"][1]["data"][1])
@@ -396,7 +398,7 @@ class Flight(QtCore.QObject): #QThread
                             "borsight_euler_order":view.opts["boresight_euler_order"],
                             "found_time":view.opts["found_time"]})
         except:
-            logging.warning("loadPoisList failed",exc_info=True)
+            logger.warning("loadPoisList failed",exc_info=True)
        # print(pois)
         self.pois.emit(pois)
         
@@ -510,7 +512,7 @@ class Flight(QtCore.QObject): #QThread
         except:
      #       print("Empty")
             self._loadEmpty()
-#            logging.warning("Loading flightmeta failed")
+#            logger.warning("Loading flightmeta failed")
         
     def _loadEmpty(self):
         hasimages = False
@@ -534,12 +536,12 @@ class Flight(QtCore.QObject): #QThread
             ppath = str(self.p.child("general").child("path").value())
             text = "Der Pfad aus .poitagger.json stimmt nicht mit dem Speicherort überein.\n .poitagger.json: {0}, Speicherort: {1}".format(ppath,self.path)
             if not ppath==self.path:
-                logging.warning(text)
-                self.sigError.emit(text)
+                logger.warning(text)
+               # self.sigError.emit(text)
             else:
                 self.save_ok()
         except:
-            logging.error("Flightmeta save", exc_info=True)
+            logger.error("Flightmeta save", exc_info=True)
     
     def save_ok(self):
             fpath = os.path.join(self.path,self.filename)
@@ -594,7 +596,7 @@ class ImportFlightMeta(QtCore.QThread):
                 self.ImgHdr.append(img.header)
             return self.ImgHdr
         except:
-            logging.error("FM _loadImgHeader failed", exc_info = True)
+            logger.error("FM _loadImgHeader failed", exc_info = True)
             return self.ImgHdr
             
     def _createUavPath(self):
@@ -604,7 +606,7 @@ class ImportFlightMeta(QtCore.QThread):
                 if i["gps"].get("longitude") != None:
                     self.uavpath.append([float(i["gps"].get("longitude")), float(i["gps"].get("latitude"))])
         except:
-            logging.error("FM _createUavPath failed",exc_info=True)
+            logger.error("FM _createUavPath failed",exc_info=True)
         
     def _generalParams(self):
         Width = []
@@ -628,7 +630,7 @@ class ImportFlightMeta(QtCore.QThread):
             if Bitdepth.count(Bitdepth[0])==len(Bitdepth): bitdepth = Bitdepth[0]
             else: bitdepth = np.bincount(Bitdepth).argmax() #achtung rundet ab!
         except:
-            logging.error("FM _generalParams failed",exc_info=True)
+            logger.error("FM _generalParams failed",exc_info=True)
         return {"bounding":self._getBounding(self.ImgHdr),"path":self.path,"images": {"width":width,"height":height,"bitdepth":bitdepth,"orientation":orientation}}
         
     def _getBounding(self,ImgHdr):
@@ -705,7 +707,7 @@ class ImportFlightMeta(QtCore.QThread):
         try:
             pois = json.loads(str(result_tree)[23:-3]+"]")
         except:
-            logging.error("convert pois.xml to json failed")
+            logger.error("convert pois.xml to json failed")
             pois = []
         if pois == None: pois = []
         ts = datetime.datetime.fromtimestamp(os.path.getmtime(self.path)).isoformat()
@@ -741,7 +743,7 @@ class ImportFlightMeta(QtCore.QThread):
                 with open(self.path, 'r') as stream:
                     self.Meta = json.load(stream)#,Loader=yamlordereddictloader.Loader))
             except:
-                logging.error("Flightmeta load", exc_info=True)
+                logger.error("Flightmeta load", exc_info=True)
         else:
             self.pois = {"name":"pois","type":"group", "expanded":True, "children":[]}
             self. images = []

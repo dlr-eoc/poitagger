@@ -28,6 +28,9 @@ def paramtree(dic):
             params.append({"name": k, 'type': "group", 'expanded':True, 'renamable':True, 'children': paramtree(v)})
     return params
     
+
+logger = logging.getLogger(__name__)
+
 class Calib(QMainWindow):
     log = QtCore.pyqtSignal(str)
     

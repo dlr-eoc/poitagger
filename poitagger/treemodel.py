@@ -7,6 +7,8 @@ from . import image
 from . import PATHS
 rootdir = "D:/WILDRETTER-DATEN"
 
+#logger = logging.getLogger(__name__)
+
 class TreeModel(QFileSystemModel):
     def __init__(self, parent = None):
         super(TreeModel, self).__init__(parent)

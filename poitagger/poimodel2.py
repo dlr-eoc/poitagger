@@ -21,6 +21,8 @@ from . import upload
 from . import transform
 
 np.set_printoptions(suppress=True)
+
+logger = logging.getLogger(__name__)
     
 epsilon=1e-6
 
@@ -34,7 +36,7 @@ def par(meta,treepath=[],default=None):
         #print (chain)
         return eval(chain)
     except:
-        #logging.error("par failed",exc_info=True)
+        #logger.error("par failed",exc_info=True)
         return default
     
 class PoiModel(QtCore.QObject):
@@ -66,7 +68,7 @@ class PoiModel(QtCore.QObject):
             self.Cam.attitudeMat(mat)
     
     def setPose(self,imgheader):
-        #logging.warning("SET POSE " + imgheader["file"]["name"])
+        #logger.warning("SET POSE " + imgheader["file"]["name"])
         self.imgheader = imgheader
         try:
             uavyaw = imgheader["uav"].get("yaw",0)
@@ -86,7 +88,7 @@ class PoiModel(QtCore.QObject):
             self.Ext.setGimbal(roll=roll,pitch=pitch,yaw=yaw,order=gimbalorder)
             #self.Ext.setUAVBoresight(dx=0.2)
         except:
-            logging.error("pois load data failed",exc_info=True)
+            logger.warning("pois load data failed",exc_info=True)
         self.setAttitude()
        # print(self.Ext.getParams())
        # print(self.ExtR.getParams()["pose"])
@@ -142,7 +144,7 @@ class PoiModel(QtCore.QObject):
                                 "layer":L.name(),
                                 "filename":view.name()}) 
         except:
-            logging.error("load Calib failed",exc_info=True)
+            logger.error("load Calib failed",exc_info=True)
             
         self.Ext.setCameraBoresight(droll=self.boresight_roll, dpitch= self.boresight_pitch, dyaw=self.boresight_yaw, order=self.boresight_order)
         self.setIntrinsics(self.im_width,self.im_height,self.im_fx,self.im_cx,self.im_cy)
@@ -168,7 +170,7 @@ class PoiModel(QtCore.QObject):
                         rep["reprojected"]=True
                         Reprojected.append(rep)
                 except:
-                    logging.warning("getPois Reproject failed",exc_info=True)
+                    logger.warning("getPois Reproject failed",exc_info=True)
         Pois.extend(Reprojected)
        # print("REPROJECTED:")
        # print (Reprojected)
@@ -227,11 +229,11 @@ class PoiModel(QtCore.QObject):
         
         rd_n = np.dot(raydir.ravel()[:3], n)
         if abs(rd_n) < epsilon:
-            logging.warning("length of raydir is 0")
+            logger.warning("length of raydir is 0")
             return np.array([[None],[None],[None]])
         if front_only == True:
             if rd_n >= epsilon:
-                logging.warning("raydir points away")
+                logger.warning("raydir points away")
                 return np.array([[None],[None],[None]])
         pd = np.dot(p, n)
         p0_n = np.dot(raypos.ravel(), n)

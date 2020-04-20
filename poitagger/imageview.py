@@ -51,13 +51,15 @@ from . import utils2
 #import imageprocessing2
 from . import temp
 SIZE = 30 # This is just the distance for the Labeling of the Pois
-
 try:
     from . import premium
     is_premium = True
 except:
     is_premium = False
     pass
+
+
+logger = logging.getLogger(__name__)
     
 class ORIENTATION(object):
     FLIP_LR = 0x01
@@ -172,7 +174,8 @@ class Img(QtGui.QWidget):
             
         if is_premium:
             params.append({'name': 'Premium', 'type': 'group', 'children': [
-                {'name': 'homogenize', 'type': 'bool'},]})
+                {'name': 'homogenize', 'type': 'bool'},
+                {'name': 'analog', 'type': 'bool'}]})
             
         self.p = Parameter.create(name='params', type='group',children=params)
         self.t.setParameters(self.p, showTop=False)
@@ -209,6 +212,7 @@ class Img(QtGui.QWidget):
         self.p.child('orientation').child('flip diag').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
         if is_premium:
             self.p.child('Premium').child('homogenize').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
+            self.p.child('Premium').child('analog').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
         
         self.w.scene().sigMouseMoved.connect(self.mouseMoved)
         self.w.scene().sigMouseClicked.connect(self.pixelClicked)
@@ -317,7 +321,7 @@ class Img(QtGui.QWidget):
             
             return r_pix * zoom
         except:
-            logging.error("imageview calc_kitzsize load image header failed", exc_info=True)
+            logger.error("imageview calc_kitzsize load image header failed", exc_info=True)
             return 1
             
     def flip(self,img):
@@ -367,7 +371,9 @@ class Img(QtGui.QWidget):
         painter.end()
         preprocessed = self.flip(img)
         #print("IMAGESHAPE:",preprocessed.shape,img.shape)
-        if is_premium and self.p.child('Premium').child('homogenize').value() :
+        if is_premium and self.p.child('Premium').child('analog').value() :
+            preprocessed = (premium.analog(preprocessed))
+        elif is_premium and self.p.child('Premium').child('homogenize').value() :
             preprocessed = (premium.homogenize(preprocessed))
         
         self.image = pg.ImageItem(preprocessed)
@@ -395,7 +401,7 @@ class Img(QtGui.QWidget):
                 hlstr = ""
             self.highlighting.emit(hlstr)
         except:
-            logging.error("loadImg set color did not work",exc_info=True)
+            logger.error("loadImg set color did not work",exc_info=True)
         self.loaded.emit(True)
     
     def onSetMask(self):
@@ -445,7 +451,7 @@ class Img(QtGui.QWidget):
                 dn = self.ara.rawbody[y, x]
             except:
                 dn = self.ara.image[y, x]
-                logging.warning("no rawdata!")
+                logger.warning("no rawdata!")
             if self.poiAction.isChecked():
     #            eli = QtGui.QGraphicsEllipseItem(int(pt.x())-SIZE/2.0,int(pt.y())-SIZE/2.0,SIZE,SIZE)
     #            eli.setPen(QtGui.QPen(QtGui.QColor("#ff0000")))
@@ -455,7 +461,7 @@ class Img(QtGui.QWidget):
                 print(self.temp.calc_pixtemp(dn))
                 #self.temp.fill_pixtemp(x,y,dn)
         except:
-            logging.error("imageview pixelClicked failed", exc_info=True)
+            logger.error("imageview pixelClicked failed", exc_info=True)
             
     def save_jpg(self):
         if not self.saveimgdir:

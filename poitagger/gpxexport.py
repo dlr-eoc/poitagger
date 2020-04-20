@@ -3,11 +3,15 @@ from PyQt5.QtWidgets import QFileDialog,QMainWindow,QTableWidgetItem
 import os
 import platform
 import shutil
+import logging
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
 from . import PATHS 
 from . import upload
 from . import gpx
+
+
+logger = logging.getLogger(__name__)
 
 class GpxView(QMainWindow):
     def __init__(self,settings,model):
@@ -57,7 +61,7 @@ class GpxView(QMainWindow):
                 self.gpxgen.add_wpt(str(i["lat"]),str(i["lon"]),str(i["ele"]),i["found_time"],str(i["name"]),"poi")
             self.gpxgen.save(PATHS["POIS"],False)
         except:
-            logging.error("GPS_TO_GPS save failed",exc_info=True)
+            logger.error("GPX_TO_GPS save failed",exc_info=True)
             
         if str(self.settings.value('GPX/exportType')) == "serial":# conf.garminserial_rB.isChecked():
             self.exportserial()

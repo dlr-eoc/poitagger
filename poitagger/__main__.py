@@ -21,11 +21,15 @@ from PyQt5 import QtCore,QtGui,uic, QtWidgets
 from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow,QMessageBox,QTextEdit
 
 import numpy as np
+import logging
+import logging.config
 
+    
 import sys
 import os
 import shutil
 import platform
+import qdarkstyle
 
 from . import nested
 from . import gpx
@@ -45,10 +49,12 @@ from . import properties
 from . import imageview
 from . import treeview
 from . import gpxexport
-
+#from . import mplog
 #from . import dem
 
 paramreduce = nested.Nested(callback=nested.paramtodict,callback_pre=nested.pre_paramtodict,tupletype=list)
+
+logger = logging.getLogger(__name__)
      
 class Main(QMainWindow):
     curimgpath = QtCore.pyqtSignal(str)
@@ -225,7 +231,7 @@ class Main(QMainWindow):
                 self.gpxgen.add_wpt(str(i["lat"]),str(i["lon"]),str(i["ele"]),i["found_time"],str(i["name"]),"poi")
             self.gpxgen.save(PATHS["POIS"],False)
         except:
-            logging.error("GPS_TO_GPS save failed",exc_info=True)
+            logger.warning("GPS_TO_GPS save failed",exc_info=True)
             
         self.exportgpx(PATHS["POIS"])#,self.conf)
         
@@ -383,6 +389,42 @@ def main():
     app_icon.addFile(os.path.join(PATHS["ICONS"],'poitagger/48x48_.png'), QtCore.QSize(48,48))
     app_icon.addFile(os.path.join(PATHS["ICONS"],'poitagger/256x256_.png'), QtCore.QSize(256,256))
     
+	 
+    log_conf={
+            "version": 1, 
+            "disable_existing_loggers": False, 
+            "formatters": {
+                "simple": {
+                    "format": "%(name)-20s%(levelname)-8s%(message)s"
+                }
+            }, 
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler", 
+                    "level": "ERROR", 
+                    "formatter": "simple", 
+                    "stream": "ext://sys.stdout"
+                }, 
+                "mplog": {
+                    "class": "mplog.MultiProcessingLog", 
+                    "level": "DEBUG", 
+                    "formatter": "simple", 
+                    "name": "mplog.log", 
+                    "mode": "a", 
+                    "maxsize": 1024, 
+                    "rotate": 0
+                }
+            }, 
+            "root": {
+                "level": "DEBUG", 
+                "handlers": ["console", "mplog"]
+            }
+        }
+    
+    logging.config.dictConfig(log_conf)
+    
+   # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+	
     imgdir = None
     rootdir = None
     if arg["<infolder>"] is not None:

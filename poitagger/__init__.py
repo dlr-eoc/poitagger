@@ -2,7 +2,7 @@ import pkg_resources
 import os
 from shutil import copyfile
 
-__version__ = "0.2.7"
+__version__ = "0.2.8"
 
 PATHS = {}
 
@@ -17,7 +17,7 @@ if not os.path.exists(PATHS["USER_CALIB"]):
     os.mkdir(PATHS["USER_CALIB"])
 
 PATHS["CONF"] = os.path.join(PATHS["USER"], "poitagger.ini")
-PATHS["POIS"] = os.path.join(PATHS["USER"], "poitagger_pois.gpx")
+PATHS["POIS"] = os.path.join(PATHS["USER"], "pois.gpx")
 
 if not os.path.exists(PATHS["CONF"]):
     copyfile(pkg_resources.resource_filename('poitagger', 'conf.ini'), PATHS["CONF"])

@@ -21,6 +21,8 @@ from . import poimodel2
 from . import upload
 
     
+logger = logging.getLogger(__name__)
+
 class PoiView(QMainWindow):
     sigJumpTo = QtCore.pyqtSignal(str)
     def __init__(self,model):
@@ -84,7 +86,7 @@ class PoiView(QMainWindow):
             self.t.clear()
         except:
             pass
-            #logging.warning("clear failed")
+            #logger.warning("clear failed")
         self.t.addParameters(self.p.child(str(current)).child("data"), showTop=False)
         
     def addPoi(self,value):
@@ -129,13 +131,13 @@ class PoiView(QMainWindow):
                                 "layer":L.name(),
                                 "filename":view.name()}) 
         except:
-            logging.error("getPoisAsGpx failed",exc_info=True)
+            logger.error("getPoisAsGpx failed",exc_info=True)
         return pois    
             
     def jumpTo(self): #jump in the treeview to the image that is currently selected
-        logging.warning("image jumpTo")
+        logger.warning("image jumpTo")
         cur = self.t.currentItem()
-        logging.warning(cur.param.opts)
+        logger.warning(cur.param.opts)
         if cur== None: return
         if cur.param.opts.get("paramtyp")=="view":
             self.sigJumpTo.emit(cur.param.name())
@@ -150,7 +152,7 @@ class PoiView(QMainWindow):
                 #print("lat",cur.param.opts["latitude"])
                 self.model.getPois(filename)
             except:
-                logging.warning("addView",exc_info=True)
+                logger.warning("addView",exc_info=True)
                 QtGui.QMessageBox.information(self, "POI Ansicht ","Dieser POI wurde auf diesem Bild schon einmal gesetzt!"); 
         else:
             QtGui.QMessageBox.information(self, "POI setzen","Es ist noch kein POI angelegt bzw. ausgewählt!"); 
