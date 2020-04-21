@@ -29,7 +29,7 @@ import sys
 import os
 import shutil
 import platform
-import qdarkstyle
+#import qdarkstyle
 
 from . import nested
 from . import gpx
