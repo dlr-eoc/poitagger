@@ -167,7 +167,7 @@ class UploadDialog(QtGui.QDialog):
         if self.hoststr == None:
             self.hoststr = "https://td.programmiera.de/"
         self.server.insert(self.hoststr)
-        self.key.insert(keystr)
+        self.key.insert(self.keystr)
         
     def writeSettings(self):
         print("write Settings UploadDialog")
