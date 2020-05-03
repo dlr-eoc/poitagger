@@ -166,7 +166,7 @@ class UploadDialog(QtGui.QDialog):
         self.keystr = str(self.settings.value('WILDRETTERAPP/key'))
         if self.hoststr == None:
             self.hoststr = "https://td.programmiera.de/"
-        self.server.insert(hostatr)
+        self.server.insert(self.hoststr)
         self.key.insert(keystr)
         
     def writeSettings(self):
