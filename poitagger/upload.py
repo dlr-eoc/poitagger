@@ -5,7 +5,7 @@ import ast
 import requests
 import simplejson as json
 from urllib.parse import urlencode
-import urllib.parse
+#import urllib.parse
 from urllib.request import Request, urlopen
 import traceback
 import os
@@ -75,8 +75,7 @@ class UploadDialog(QtGui.QDialog):
                                 # "boresight_euler_order":view.opts["boresight_euler_order"],
                                 # "found_time":view.opts["found_time"]})
 
-        key = str(self.settings.value('WILDRETTERAPP/key'))
-        Myjson = {"key":key,"pois":[]}#,"debug":"True"
+        Myjson = {"key":self.keystr,"pois":[]}#,"debug":"True"
         for k,i in enumerate(self.poilist):
             Myjson["pois"].append({"POI_PTFK":1, "POI_Reliability":50, "POI_ImageSrc":i["filename"], "POI_Comment":"",
                     "POI_FFK":self.flightid,"POI_PFBFK":1,"POI_Found_Timestamp":i["found_time"].replace("T"," "),
@@ -92,8 +91,8 @@ class UploadDialog(QtGui.QDialog):
 
         # url = "http://wildretter.caf.dlr.de/poitaggerbridge/jsonread.php"
         
-        host = str(self.settings.value('WILDRETTERAPP/url'))
-        url = host + 'apis/upload_pois'
+        #host = str(self.settings.value('WILDRETTERAPP/url'))
+        url = self.hoststr + 'apis/upload_pois'
         headers = {'Content-type': 'application/json'}
         try:
             r = requests.post(url, data=json.dumps(Myjson), headers=headers)
@@ -108,12 +107,10 @@ class UploadDialog(QtGui.QDialog):
     def createSession(self):
         
         # url = 'http://wildretter.caf.dlr.de/poitaggerbridge/insertsession.php' # Set destination URL here
-        host = str(self.settings.value('WILDRETTERAPP/url'))
         
-        
-        url = host + 'apis/create_session'
+        url = self.hoststr + 'apis/create_session'
         print ("create_session",url)
-        post_fields = {'Key':str(self.settings.value('WILDRETTERAPP/key')),'SES_GTFK':'1','SES_WFK':'1','SES_FWRFK':'1','SES_Comment':'Kommentar','SES_Point':"ST_GeomFromText('POINT(10.820 47.181)', 4326)",'SES_Area':"NULL",'SES_Name':"Test"}     # Set POST fields here
+        post_fields = {'Key':self.keystr,'SES_GTFK':'1','SES_WFK':'1','SES_FWRFK':'1','SES_Comment':'Kommentar','SES_Point':"ST_GeomFromText('POINT(10.820 47.181)', 4326)",'SES_Area':"NULL",'SES_Name':"Test"}     # Set POST fields here
         # url = 'https://td.programmiera.de/apis/create_session'
         # post_fields = {'Key':'1cea2d29f7f91c000da772c5b00fc8fc94a979df980ce5f572dd01280775986f','SES_GTFK':'1','SES_WFK':'1','SES_FWRFK':'1','SES_Comment':'Kommentar','SES_Point':"ST_GeomFromText('POINT(10.820 47.181)', 4326)",'SES_Area':"NULL",'SES_Name':"Test"}     # Set POST fields here
         content = ""
@@ -135,9 +132,9 @@ class UploadDialog(QtGui.QDialog):
     def postFlightPath(self):   #noch nicht fertig!
         # url = 'http://wildretter.caf.dlr.de/poitaggerbridge/insertflightpath.php' # Set destination URL here
         #url = 'https://td.programmiera.de/apis/post_flight_path'
-        host = str(self.settings.value('WILDRETTERAPP/url'))
-        url = host + 'apis/post_flight_path'
-        post_fields = {'Key':str(self.settings.value('WILDRETTERAPP/key')),'F_Start':'2018-04-30 12:01:45','F_Stop':'2018-04-30 12:24:23','F_Comment':'Kommentar x','F_SESFK':self.SessionID.text(), 'F_Number':'1', 'F_Path':"NULL",'F_Track':"NULL",'F_TimeTrack':"NULL"}     # Set POST fields here
+        #host = str(self.settings.value('WILDRETTERAPP/url'))
+        url = self.hoststr + 'apis/post_flight_path'
+        post_fields = {'Key':self.keystr,'F_Start':'2018-04-30 12:01:45','F_Stop':'2018-04-30 12:24:23','F_Comment':'Kommentar x','F_SESFK':self.SessionID.text(), 'F_Number':'1', 'F_Path':"NULL",'F_Track':"NULL",'F_TimeTrack':"NULL"}     # Set POST fields here
         try:
             request = Request(url, urlencode(post_fields).encode())
             content = urlopen(request).read()
@@ -156,20 +153,21 @@ class UploadDialog(QtGui.QDialog):
         #rot, Version 2012_1	DLR	Asctec, Falcon 8	 	Sensoren: IR-CAM: Tau640 , RGB-CAM: e-Cam50
         # url = 'http://wildretter.caf.dlr.de/poitaggerbridge/insertpois.php' # Set destination URL here
        # url = 'https://td.programmiera.de/apis/post_pois'
-        host = str(self.settings.value('WILDRETTERAPP/url'))
-        url = host + 'apis/post_pois'
+        url = self.hoststr + 'apis/post_pois'
         print(url)
-        post_fields = {'Key':str(self.settings.value('WILDRETTERAPP/key')),'POI_PTFK': '1','POI_Reliability':'50','POI_ImageSrc':'','POI_Comment':'No Comment','POI_FFK':self.FlightID.text(),'POI_PFBFK':'1','POI_Found_Timestamp':'2018-04-12 12:30:00','POI_Found_at_Flight_Height': '79.45','POI_Point':"ST_GeometryFromText ( 'POINT (11.282862 48.088271)', 4326 )", 'POI_Label':'1','POI_Name':'k1', 'POI_GPS_Accuracy':'1'}     # Set POST fields here
+        post_fields = {'Key':self.keystr,'POI_PTFK': '1','POI_Reliability':'50','POI_ImageSrc':'','POI_Comment':'No Comment','POI_FFK':self.FlightID.text(),'POI_PFBFK':'1','POI_Found_Timestamp':'2018-04-12 12:30:00','POI_Found_at_Flight_Height': '79.45','POI_Point':"ST_GeometryFromText ( 'POINT (11.282862 48.088271)', 4326 )", 'POI_Label':'1','POI_Name':'k1', 'POI_GPS_Accuracy':'1'}     # Set POST fields here
         request = Request(url, urlencode(post_fields).encode())
         json = urlopen(request).read()#.decode()
         print(json)
 
 
     def loadSettings(self,settings):
-        host = str(self.settings.value('WILDRETTERAPP/url'))
-        key = str(self.settings.value('WILDRETTERAPP/key'))
-        self.server.insert(host)
-        self.key.insert(key)
+        self.hoststr = str(self.settings.value('WILDRETTERAPP/url'))
+        self.keystr = str(self.settings.value('WILDRETTERAPP/key'))
+        if self.hoststr == None:
+            self.hoststr = "https://td.programmiera.de/"
+        self.server.insert(hostatr)
+        self.key.insert(keystr)
         
     def writeSettings(self):
         print("write Settings UploadDialog")
