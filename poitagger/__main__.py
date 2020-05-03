@@ -89,7 +89,7 @@ class Main(QMainWindow):
         
         #self.poiview = pois.Pois(self.conf)
         self.poidata = poimodel2.PoiModel()
-        self.poiview = poiview.PoiView(self.poidata)
+        self.poiview = poiview.PoiView(self.settings,self.poidata)
         self.gpxview = gpxexport.GpxView(self.settings,self.poidata)
         
             
@@ -331,7 +331,7 @@ class Main(QMainWindow):
         s.setValue('VIEW/fliphor',self.img.infoUI.CVfliphorCheckBox.isChecked())
         s.setValue('VIEW/flipver',self.img.infoUI.CVflipverCheckBox.isChecked())
      #   s.setValue("SDCARD/device",self.saveDialog.sourceLE.text())
-    #    self.poiview.writeSettings()
+        self.poiview.writeSettings()
         
         
     def shortcuts(self):

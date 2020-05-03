@@ -17,7 +17,7 @@ class GpxView(QMainWindow):
     def __init__(self,settings,model):
         super().__init__()
         uic.loadUi(os.path.join(PATHS["UI"],'gpx.ui'),self)
-        self.dialog = upload.UploadDialog("Upload")
+        self.dialog = upload.UploadDialog("Upload",settings)
         self.gpxdialog = GPXExportDialog()
         self.settings = settings
         self.model = model

@@ -25,11 +25,11 @@ logger = logging.getLogger(__name__)
 
 class PoiView(QMainWindow):
     sigJumpTo = QtCore.pyqtSignal(str)
-    def __init__(self,model):
+    def __init__(self,settings,model):
         super().__init__()
         uic.loadUi(os.path.join(PATHS["UI"],'pois.ui'),self)
-        self.dialog = upload.UploadDialog("Upload")
-        
+        self.dialog = upload.UploadDialog("Upload",settings)
+        self.settings = settings
         self.t = ParameterTree(showHeader=False)
         self.model = model
         self.horizontalLayout.addWidget(self.t)#self.listw)
@@ -163,7 +163,12 @@ class PoiView(QMainWindow):
         if reply == QMessageBox.Yes:
             c.remove()
 
- 
+    def writeSettings(self):
+        print("write Settings Poiview")
+        self.dialog.writeSettings()
+        #self.settings.setValue('WILDRETTERAPP/url', str(self.server.text()))
+        #self.settings.setValue('WILDRETTERAPP/key', str(self.key.text()))
+   
    # def saveState(self):
      #   with open("saveState.yml", 'w') as outfile:
      #       yaml.dump(self.p.saveState(), outfile, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
