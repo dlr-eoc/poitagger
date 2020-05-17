@@ -323,13 +323,15 @@ class ImageJpg(Image):
             self.fill_header_flir()
         
         if not onlyheader:
-            self.image = np.array(pilimage.open(imgpath))    
-            if len(self.image.shape)==3:
-                (self.height, self.width,self.channels) = self.image.shape
-            else:
-                (self.height,self.width) = self.image.shape
-                self.channels = 1
-                
+            try:
+                self.image = np.array(pilimage.open(imgpath))    
+                if len(self.image.shape)==3:
+                    (self.height, self.width,self.channels) = self.image.shape
+                else:
+                    (self.height,self.width) = self.image.shape
+                    self.channels = 1
+            except:
+                logger.warning("can not load image %s" % imgpath)
     def find_segments(self,d):
         cpattern = re.compile(b"..|".join(MARKER.keys()))
         segments = []
@@ -479,7 +481,15 @@ class ImageJpg(Image):
                 flirdata.append(i[start:length])
         return b"".join(flirdata)
         
-     
+       
+    def correct_latlon(self, lat, lon):
+        if abs(lat) > 90 and abs(lon) > 180:
+            return lat * 10e-8, lon * 10e-8
+        elif abs(lat) < 1 and abs(lon) < 1:
+            return lat * 10e8, lon * 10e8
+        else:
+            return lat,lon
+ 
     def fill_header_flir(self):
         self.header["file"]["name"] = self.filename
         self.header["image"]["width"] = self.rwidth if self.rwidth else self.width #self.extract_exif("Raw Thermal Image Width")
@@ -508,10 +518,9 @@ class ImageJpg(Image):
         except:  pass
         
         try:
-            self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
-        except:  pass
-        try:
-            self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
+            lat = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
+            lon = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
+            self.header["gps"]["latitude"], self.header["gps"]["longitude"] = self.correct_latlon(lat,lon)
         except:  pass
         try:
             self.header["gps"]["rel_altitude"]= self.extract_xmp("flir:mavrelativealtitude")
