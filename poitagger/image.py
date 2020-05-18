@@ -483,12 +483,15 @@ class ImageJpg(Image):
         
        
     def correct_latlon(self, lat, lon):
-        if abs(lat) > 90 and abs(lon) > 180:
-            return lat * 10e-8, lon * 10e-8
-        elif abs(lat) < 1 and abs(lon) < 1:
-            return lat * 10e8, lon * 10e8
-        else:
-            return lat,lon
+        if abs(lat) > 90: 
+            lat = lat * 10e-8
+        elif abs(lat) < 1:
+            lat = lat * 10e8
+        if abs(lon) > 180:
+            lon = lon * 10e-8
+        elif abs(lon) < 1:
+            lon = lon * 10e8
+        return lat,lon
  
     def fill_header_flir(self):
         self.header["file"]["name"] = self.filename
