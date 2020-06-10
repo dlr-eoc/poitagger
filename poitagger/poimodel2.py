@@ -82,6 +82,7 @@ class PoiModel(QtCore.QObject):
             
             yaw = imgheader["camera"].get("yaw",0)
             gimbalorder = imgheader["camera"].get("euler_order","ZXY")
+            #logger.info(self.imgheader)
             self.UTM_Y,self.UTM_X,self.ZoneNumber,self.ZoneLetter = utm.from_latlon(self.imgheader["gps"]["latitude"],self.imgheader["gps"]["longitude"])
         
             self.Ext.setPose(X=uavX,Y=uavY,Z=uavZ,order=uavorder)

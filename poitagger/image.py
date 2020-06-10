@@ -316,10 +316,14 @@ class ImageJpg(Image):
         
         #self.t3 = time.time()
         #print(self.t3 - self.t2)
-        
-        if str(self.exif.get("Image Make","")) == "DJI":
+        #logger.info("IMAGE")
+            
+        if str(self.exif.get("Image Make","")) in ["DJI", "Hasselblad"]:
+            logger.info("DJI")
             self.fill_header_dji()
+            logger.info("after DJI FILL HEADER")
         elif str(self.exif.get("Image Make","")) == "FLIR":
+            logger.info("FLIR")
             self.fill_header_flir()
         
         if not onlyheader:
@@ -606,29 +610,36 @@ class ImageJpg(Image):
         
     def fill_header_dji(self):
         a = self.xmp.find("rdf:description")
-        if a == None: return
+        #if a == None: 
+        #    logger.error("Not a compatible Image")
+        #    return
         self.header["file"]["name"] = self.filename
         self.header["image"]["width"] = self.rwidth if self.rwidth else self.width #extract_exif("EXIF ExifImageWidth")
         self.header["image"]["height"] = self.rheight if self.rheight else self.height
         self.header["image"]["bitdepth"] = self.bitdepth     
         
-        self.header["camera"]["roll"] = float(a.get("drone-dji:gimbalrolldegree",0))
-        self.header["camera"]["yaw"] = float(a.get("drone-dji:gimbalyawdegree",0))
-        self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",0))
-        self.header["camera"]["euler_order"] = "ZYX"
-        self.header["camera"]["model"] = a.get("tiff:model",0)
-        self.header["camera"]["make"] = a.get("tiff:make",0)
-        self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
-        self.header["uav"]["yaw"] = float(a.get("drone-dji:flightyawdegree",0))
-        self.header["uav"]["pitch"] = float(a.get("drone-dji:flightpitchdegree",0))
+        try:
+            self.header["camera"]["roll"] = float(a.get("drone-dji:gimbalrolldegree",0))
+            self.header["camera"]["yaw"] = float(a.get("drone-dji:gimbalyawdegree",0))
+            self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",0))
+            self.header["camera"]["euler_order"] = "ZYX"
+            self.header["camera"]["model"] = a.get("tiff:model",0)
+            self.header["camera"]["make"] = a.get("tiff:make",0)
+            self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
+            self.header["uav"]["yaw"] = float(a.get("drone-dji:flightyawdegree",0))
+            self.header["uav"]["pitch"] = float(a.get("drone-dji:flightpitchdegree",0))
+        except:
+            logger.warning("no xmp-data")
+            
         self.header["uav"]["euler_order"] = "ZXY"
         self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
         self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
-        self.header["gps"]["rel_altitude"]=float(a.get("drone-dji:relativealtitude",0))
-        self.header["gps"]["abs_altitude"]=float(a.get("drone-dji:absolutealtitude",0))
+        try:
+            self.header["gps"]["rel_altitude"]=float(a.get("drone-dji:relativealtitude",0))
+            self.header["gps"]["abs_altitude"]=float(a.get("drone-dji:absolutealtitude",0))
+        except:
+            pass
         
-        
-            
         UTM_Y,UTM_X,ZoneNumber,ZoneLetter = utm.from_latlon(self.header["gps"]["latitude"],self.header["gps"]["longitude"])
         self.header["gps"]["UTM_X"] = UTM_X
         self.header["gps"]["UTM_Y"] = UTM_Y
@@ -636,16 +647,18 @@ class ImageJpg(Image):
         self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
         
         self.header["gps"]["gpsmapdatum"] = self.extract_exif("GPS GPSMapDatum")
+        try:
+            self.header["camera"]["focallength"] = float(a.get("drone-dji:calibratedfocallength",0))
         
-        self.header["camera"]["focallength"] = float(a.get("drone-dji:calibratedfocallength",0))
-        
-        self.header["file"]["about"]=a.get("rdf:about",0)
-        self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
-        self.header["file"]["createdate"]=a.get("xmp:createdate",0)
-        self.header["file"]["DateTimeOriginal"]=self.extract_exif("EXIF DateTimeOriginal")
-        self.header["file"]["format"]=a.get("dc:format",0)
-        self.header["file"]["version"]=a.get("crs:version",0)
-        
+            self.header["file"]["about"]=a.get("rdf:about",0)
+            self.header["file"]["modifydate"]=a.get("xmp:modifydate",0)
+            self.header["file"]["createdate"]=a.get("xmp:createdate",0)
+            self.header["file"]["DateTimeOriginal"]=self.extract_exif("EXIF DateTimeOriginal")
+            self.header["file"]["format"]=a.get("dc:format",0)
+            self.header["file"]["version"]=a.get("crs:version",0)
+        except:
+            pass
+            
         try:
             #self.header["calibration"]["geometric"]["fx"]=float(a.get("drone-dji:calibratedfocallength"))
             self.header["calibration"]["geometric"]["cx"]=float(a.get("drone-dji:calibratedopticalcenterx",self.header["image"]["width"]/2.0))
@@ -698,6 +711,7 @@ class ImageJpg(Image):
             self.header["calibration"]["radiometric"]["coretemp"] = float(self.fff.get("Coretemp",(0,))[0])
         except:
             pass #no thermal infrared
+            logger.info("no thermal infrared calibration")
         
 
 def UTCFromGps(gpsWeek, mSOW, leapSecs=16,gpxstyle=False): 
@@ -959,9 +973,12 @@ class ImageTiff(Image):
             self.xmp = BeautifulSoup(self.exif["XMP"],"lxml")
            # print ("EXIF",self.exif)      
            # print ("XMP",self.xmp)      
+           # print("IMAGE")
             if str(self.exif.get("Make","")) == "DJI":
+           #     print("DJI")
                 self.fill_header_dji()
             elif str(self.exif.get("Make","")) == "FLIR":
+            #    print("FLIR")
                 self.fill_header_flir()
                 
         except FileNotFoundError as e:
