@@ -40,10 +40,10 @@ class PoisProperties(QtGui.QWidget):
         
     def loadSettings(self,s):
         self.settings = s
-        self.setColor(self.poicolor,s.value('POIS/color'))
-        self.size.setValue(int(s.value('POIS/size')))
-        self.setColor(self.poicolor_repro,s.value('POIS/color_repro'))
-        self.defaultname.setText(s.value('POIS/defaultname'))
+        self.setColor(self.poicolor,s.value('POIS/color',"#ff0000"))
+        self.size.setValue(int(s.value('POIS/size',"30")))
+        self.setColor(self.poicolor_repro,s.value('POIS/color_repro',"#0000ff"))
+        self.defaultname.setText(s.value('POIS/defaultname',""))
         
     def writeSettings(self):
         self.settings.setValue('POIS/color',str(self.poicolor.color.name()))

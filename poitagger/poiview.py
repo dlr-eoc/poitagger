@@ -41,8 +41,8 @@ class PoiView(QMainWindow):
         self.actionVisible.triggered.connect(self.setVis)
         self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.model.pois))
         
-        self.actionNeuerMarker.setChecked(utils2.toBool(self.settings.value('POIS/neuerMarker')))
-        self.actionVisible.setChecked(utils2.toBool(self.settings.value('POIS/visible')))
+        self.actionNeuerMarker.setChecked(utils2.toBool(self.settings.value('POIS/neuerMarker',"True")))
+        self.actionVisible.setChecked(utils2.toBool(self.settings.value('POIS/visible',"True")))
         
     
     def setVis(self,trigger):
@@ -101,7 +101,7 @@ class PoiView(QMainWindow):
         currentdata = self.p.child(str(self.cb.currentText())).child("data")
         last = len(currentdata.children())
         #childnames = [i.name() for i in self.p.children()]
-        defaultname = self.settings.value("POIS/defaultname") 
+        defaultname = self.settings.value("POIS/defaultname","") 
         currentdata.insertChild(last,{"name":defaultname+str(last),"value":value,"type":"group", "readonly":False,"expanded":False,"removable":True,"renamable":True})
         data = self.t.topLevelItem(0)
         currentItem = data.child(data.childCount()-1)

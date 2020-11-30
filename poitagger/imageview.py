@@ -416,7 +416,7 @@ class Img(QtGui.QWidget):
         return x,y
     
     def paintPois(self,liste): 
-        self.size = int(self.settings.value("POIS/size"))
+        self.size = int(self.settings.value("POIS/size","30"))
         if self.ara.header["calibration"].get("error_flags",0) & image.ERRORFLAGS.ALL_META: return
         for item in self.vbox.addedItems[:]:# nur die Overlays loeschen #self.scene.items():
             if type(item) in [QtGui.QGraphicsTextItem, QtGui.QGraphicsEllipseItem,]: # pg.graphicsItems.ImageItem.ImageItem: 
