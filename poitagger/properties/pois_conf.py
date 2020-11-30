@@ -21,7 +21,6 @@ class PoisProperties(QtGui.QWidget):
         
     def connections(self):
         self.changeColor.pressed.connect(lambda: self.selectColor(self.poicolor))
-        self.changeColor2.pressed.connect(lambda: self.selectColor(self.poicolor2))
         self.changeColor3.pressed.connect(lambda: self.selectColor(self.poicolor_repro))
         self.colorChooser.colorSelected.connect(self.receiveColor)
         
@@ -42,13 +41,15 @@ class PoisProperties(QtGui.QWidget):
     def loadSettings(self,s):
         self.settings = s
         self.setColor(self.poicolor,s.value('POIS/color'))
-        self.setColor(self.poicolor2,s.value('POIS/color2'))
+        self.size.setValue(int(s.value('POIS/size')))
         self.setColor(self.poicolor_repro,s.value('POIS/color_repro'))
-    
+        self.defaultname.setText(s.value('POIS/defaultname'))
+        
     def writeSettings(self):
         self.settings.setValue('POIS/color',str(self.poicolor.color.name()))
-        self.settings.setValue('POIS/color2',str(self.poicolor2.color.name()))
         self.settings.setValue('POIS/color_repro',str(self.poicolor_repro.color.name()))
+        self.settings.setValue('POIS/size',str(self.size.value()))
+        self.settings.setValue('POIS/defaultname',str(self.defaultname.text()))
         
        
         

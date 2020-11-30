@@ -13,17 +13,17 @@ class PropertyDialog(QtGui.QDialog):
         self.setWindowTitle(title)
         
         self.settings = settings
-        self.poisproperties = pois_conf.PoisProperties(self.settings)
-        self.gpsproperties = gps_conf.GpsProperties(self.settings)
-        self.gpxproperties = gpx_conf.GpxProperties(self.settings)
-        self.imageproperties = image_conf.ImageProperties(self.settings)
-        self.geoviewproperties = geoview_conf.GeoviewProperties(self.settings)
-        self.tabWidget.addTab(self.poisproperties,"Pois")
-        self.tabWidget.addTab(self.gpsproperties,"GPS-Device")
-        self.tabWidget.addTab(self.gpxproperties,"GPX")
-        self.tabWidget.addTab(self.imageproperties,"Image")
-        self.tabWidget.addTab(self.geoviewproperties,"Map")
-        self.ConfWidgetList = [self.poisproperties,self.gpsproperties,self.gpxproperties,self.imageproperties,self.geoviewproperties]
+        self.pois = pois_conf.PoisProperties(self.settings)
+        self.gps = gps_conf.GpsProperties(self.settings)
+        self.gpx = gpx_conf.GpxProperties(self.settings)
+        self.image = image_conf.ImageProperties(self.settings)
+        self.geoview = geoview_conf.GeoviewProperties(self.settings)
+        self.tabWidget.addTab(self.pois,"Pois")
+        self.tabWidget.addTab(self.gps,"GPS-Device")
+        self.tabWidget.addTab(self.gpx,"GPX")
+        self.tabWidget.addTab(self.image,"Image")
+        self.tabWidget.addTab(self.geoview,"Map")
+        self.ConfWidgetList = [self.pois,self.gps,self.gpx,self.image,self.geoview]
         
         self.connections()
         

@@ -43,6 +43,12 @@ def toQImage(im, copy=False):
     # gray = np.array(flipped, dtype=np.uint8)         
     # return gray
 
+def toBool(mystr):
+    if str(mystr).lower() == "true":
+        return True
+    else: 
+        return False
+        
 def normalize(img,fliphor=False,inverse=False):
     normalized = img - img.min()
     normalized = np.multiply(normalized, 255.0/normalized.max() )

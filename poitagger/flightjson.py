@@ -160,12 +160,20 @@ class FlightChoose(QDialog):
         self.setModal(True)
         self.confdialog = FlightConfig()
         
+        self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
+        self.settings.setFallbacksEnabled(False) 
+        
         calibfiles = os.listdir(PATHS["USER_CALIB"])
         self.comboBox.addItems(calibfiles)
         self.path = path
-        
+        #print ("settings:",self.settings.value("FLIGHT/cameraconfiguration"))
+        self.comboBox.setCurrentText(str(self.settings.value("FLIGHT/cameraconfiguration")))
+        self.comboBox.currentTextChanged.connect(self.writeSettings)
         self.show()
     
+    def writeSettings(self,value):
+        self.settings.setValue("FLIGHT/cameraconfiguration",value)
+        
     def createConfig(self):
         self.confdialog.setPath(self.path)
         
@@ -179,6 +187,8 @@ class FlightChoose(QDialog):
     def openconfig(self):
         self.createConfig()
         self.confdialog.show()
+        
+    
         
 class FlightConfig(QDialog):
     def __init__(self):
@@ -227,6 +237,7 @@ class FlightWidget(QMainWindow):
         self.progressDialog.reset()
         
     def setMeta(self,fm):
+        logger.debug("FW:setMeta")
         self.flight = fm
         self.t.setParameters(self.flight.p, showTop=False)
         self.actiondelete.triggered.connect(self.delete)
@@ -246,6 +257,7 @@ class FlightWidget(QMainWindow):
         # print(a["children"]["images"]["children"]["orientation"])
         
     def saveTemplate(self):
+        logger.debug("FW:ssaveTemplate")
         filepath, proceed = QInputDialog.getText(self,"Konfiguration speichern","Filename:",QLineEdit.Normal, "default.json")
         if proceed:
             if not filepath.lower().endswith(".json"):
@@ -253,11 +265,13 @@ class FlightWidget(QMainWindow):
             self.flight.saveTemplate(os.path.join(PATHS["USER_CALIB"],filepath))
             
     def openDialog(self):
+        logger.debug("FW:openDialog")
         self.chooseDialog = FlightChoose(self.flight.path)
         self.chooseDialog.buttonBox.accepted.connect(self.writecalib)
         self.chooseDialog.buttonBox.rejected.connect(self.flight.start)
 
     def writecalib(self):
+        logger.debug("FW:writecalib")
         self.flight.loadAndSave(self.chooseDialog.confdialog.p.saveState())
         #.p.child("general").child("images")
         #self.flight.p.child("general").child("images")
@@ -265,9 +279,11 @@ class FlightWidget(QMainWindow):
         #self.flight.p.child("calibration").restoreState()
         
     def errorMsg(self,text):
+        logger.debug("FW:errorMsg")
         QtGui.QMessageBox.critical(self, "Speichern von poitagger.json fehlgeschlagen!",text)
         
     def createMsg(self):
+        logger.debug("FW:createMsg")
         reply = QtGui.QMessageBox.question(self, "Flightmeta-Datei anlegen?","Dieser Ordner enthält noch keine Flightmeta-Datei (.poitagger.json). Zur Georeferenzierung ist dies nötig.",)
         
         if reply == QtGui.QMessageBox.Yes:
@@ -276,11 +292,13 @@ class FlightWidget(QMainWindow):
             self.flight.start()
             
     def progressBar(self,val):
+        logger.debug("FW:progressBar")
         if val == 0:
             self.progressDialog.show()
         self.progressDialog.setValue(val)
         
     def delete(self):
+        logger.debug("FW:delete")
         mypath = os.path.join(self.flight.path,self.flight.filename)
         if os.path.exists(mypath):
             reply = QMessageBox.question(self, "Flightmetadatei loeschen?","Soll die Datei '{}'  tatsaechlich geloescht werden?".format(mypath),QMessageBox.Yes,QMessageBox.No); 
@@ -288,35 +306,41 @@ class FlightWidget(QMainWindow):
                 os.remove(mypath)
     
     def save(self):
+        logger.debug("FW:save")
         tree = self.flight.p.getValues()
         n = nested.Nested(tree,nested.paramtodict,nested.paramtodict,tupletype=list)
         self.flight.set(n.data)
         
     def addParameter(self):
+        logger.debug("FW:addParameter")
         c = self.t.currentItem().param
         if not c.isType("group"): c = c.parent()
         last = len(c.children())
         c.insertChild(last,{"name":"","value":"","type":"str", "readonly":False,"removable":True,"renamable":True})
     
     def addPoi(self,value):
+        logger.debug("FW:addPoi")
         c = self.flight.p.child("pois")
         last = len(c.children())
         c.insertChild(last,{"name":str(last),"value":value,"type":"str", "readonly":False,"removable":True,"renamable":True})
 
     def delParameter(self):
+        logger.debug("FW:delParameter")
         c = self.t.currentItem().param
         reply = QMessageBox.question(self, "Parameter loeschen?","Soll der Parameter '{}'  tatsaechlich geloescht werden?".format(c.name()),QMessageBox.Yes,QMessageBox.No) 
         if reply == QMessageBox.Yes:
             c.remove()
         
     def saveState(self):
-           with open("saveState.json", 'w') as outfile:
-                json.dump(self.p.saveState(), outfile) #, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
+        logger.debug("FW:saveState")
+        with open("saveState.json", 'w') as outfile:
+            json.dump(self.p.saveState(), outfile) #, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
                 
     def test(self):
+        logger.debug("FW:test")
         print (self.flight.p.child("children").child("general").child("path").value())
         
-class Flight(QtCore.QObject): #QThread
+class Flight(QtCore.QObject): #kein QThread
     import_enabled = False
     pois = QtCore.pyqtSignal(list)
     poisChanged = QtCore.pyqtSignal()
@@ -328,7 +352,7 @@ class Flight(QtCore.QObject): #QThread
     sigError = QtCore.pyqtSignal(str)
     sigEmpty = QtCore.pyqtSignal()
     sigClear = QtCore.pyqtSignal()
-    
+    task = None
     progress = QtCore.pyqtSignal(int)
     path = None
     
@@ -352,7 +376,26 @@ class Flight(QtCore.QObject): #QThread
         self.calibparam = None
         self.loadfinished.connect(self.savehandler)
         
+        self.uavpath.connect(lambda: self.debugsignal(uavpath))
+        self.pois.connect(lambda: self.debugsignal("pois"))
+        self.poisChanged.connect(lambda: self.debugsignal("poisChanged"))
+        self.calibration.connect(lambda: self.debugsignal("calibration"))
+        self.general.connect(lambda: self.debugsignal("general"))
+        self.changed.connect(lambda: self.debugsignal("changed"))
+        self.loadfinished.connect(lambda: self.debugsignal("loadfinished"))
+        self.sigError.connect(lambda: self.debugsignal("sigError"))
+        self.sigEmpty.connect(lambda: self.debugsignal("sigEmpty"))
+        self.sigClear.connect(lambda: self.debugsignal("sigClear"))
+        self.progress.connect(lambda: self.debugsignal("progress"))
+        #self..connect(lambda: self.debugsignal())
+        
+    def debugsignal(self,name):
+        logger.debug("F:debugsignal")
+        
+        logger.warning(name + " signal emited")
+        
     def prepareGeneral(self,generalparam):
+        logger.debug("F:prepareGeneral")
         if generalparam.children()== [] : return
         self.general.emit(generalparam)
         
@@ -380,6 +423,7 @@ class Flight(QtCore.QObject): #QThread
        # #     print(p["0"])
     
     def __loadPoisList(self):
+        logger.debug("F:__loadPoisList")
         layer = self.p.child("pois").children()
         pois = []
         try:
@@ -403,14 +447,17 @@ class Flight(QtCore.QObject): #QThread
         self.pois.emit(pois)
         
     def prepareUavPath(self,uavpathparam):
+        logger.debug("F:prepareUavPath")
         if uavpathparam.value()== None : return
         pathlist = list(uavpathparam.value())
         self.uavpath.emit(pathlist)
     
     def setOrientation(self,val):
+        logger.debug("F:setOrientation")
         self.p.child("general").child("images").child("orientation").setValue(val)
         
     def saveTemplate(self,filename):
+        logger.debug("F:saveTemplate")
         a = self.p.child("general").child("images").saveState()
         b = self.p.child("calibration").saveState()
         with open(filename, 'w') as outfile:
@@ -425,9 +472,11 @@ class Flight(QtCore.QObject): #QThread
         #filename:
         
     def enableImport(self,toggle):
+        logger.debug("F:enableImport")
         self.import_enabled = toggle
     
     def setFromImport(self,value):
+        logger.debug("F:setFromImport")
         self.task = "restoreParameter"
         #print(value)
         self.meta = value
@@ -441,6 +490,7 @@ class Flight(QtCore.QObject): #QThread
 
     
     def start(self): #run
+        logger.debug("F:start")
         self.progress.emit(0)
         if self.calibparam is not None:
             self.meta["children"]["general"]["children"]["images"] = self.calibparam["children"]["images"]
@@ -474,7 +524,7 @@ class Flight(QtCore.QObject): #QThread
            # self.sigClear.emit()
         
     def loadAndSave(self,defaultparam=None):
-        #print("loadANdSave")
+        logger.debug("F:loadAndSave")
         self.calibparam = defaultparam
         self.enableImport(True)
         self.save_after_loading=True
@@ -482,17 +532,15 @@ class Flight(QtCore.QObject): #QThread
         self.enableImport(False)
     
     def savehandler(self):
-        #print("nowSave",self.save_after_loading)
-       # if self.calibparam is not None:
-       #     self.p.child("general").child("images") = self.calibparam.child("images")
-       #     self.p.child("calibration").child("geometric") = self.calibparam.child("calibration").child("geometric")
-       #     self.p.child("calibration").child("boresight") = self.calibparam.child("calibration").child("boresight")
-            
+        logger.debug("F:savehandler")
         if self.save_after_loading:
+            #print("save after loading")
             self.save()
             self.save_after_loading = False
+    
             
     def load(self,path=None,filename=None):
+        logger.debug("F:load")
         self.progress.emit(0)
             
         if path:
@@ -502,9 +550,11 @@ class Flight(QtCore.QObject): #QThread
         try:
             myjson = os.path.join(self.path,self.filename)
             if self.import_enabled:
+                print ("THREAD STARTING!!!!")
                 self.ifm.load(self.path)
             elif os.path.exists(myjson):
                 #self._loadJson()
+                print ("THREAD STARTING!!!!")
                 self.ifm.load(myjson,True)
             else:
     #            print("Empty")
@@ -515,6 +565,7 @@ class Flight(QtCore.QObject): #QThread
 #            logger.warning("Loading flightmeta failed")
         
     def _loadEmpty(self):
+        logger.debug("F:_loadEmpty")
         hasimages = False
         for file in os.listdir(self.path):
             if os.path.splitext(file)[1].lower() in image.SUPPORTED_EXTENSIONS: 
@@ -526,10 +577,13 @@ class Flight(QtCore.QObject): #QThread
         self.start()
         
     def _loadJson(self):
+        logger.debug("F:_loadJson")
         self.task = "loadJson"
         self.start()
         
+        
     def save(self):
+        logger.debug("F:save")
         if self.path == None: return
         if self.task == "loadEmpty": return
         try:
@@ -537,24 +591,27 @@ class Flight(QtCore.QObject): #QThread
             text = "Der Pfad aus .poitagger.json stimmt nicht mit dem Speicherort überein.\n .poitagger.json: {0}, Speicherort: {1}".format(ppath,self.path)
             if not ppath==self.path:
                 logger.warning(text)
-               # self.sigError.emit(text)
             else:
                 self.save_ok()
         except:
             logger.error("Flightmeta save", exc_info=True)
-    
+        #self.savefinished.emit()    
+
     def save_ok(self):
-            fpath = os.path.join(self.path,self.filename)
-            if os.name == "nt":
-                import ctypes
-                ctypes.windll.kernel32.SetFileAttributesW(fpath, 128)
-                with open(fpath, 'w') as outfile:
-                    json.dump(self.p.saveState(), outfile)#, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
-                ctypes.windll.kernel32.SetFileAttributesW(fpath, 2)
-            else:
-                with open(fpath, 'w') as outfile:
-                    json.dump(self.p.saveState(), outfile)#, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
-            
+        logger.debug("F:saveok")
+        fpath = os.path.join(self.path,self.filename)
+        if os.name == "nt":
+            import ctypes
+            ctypes.windll.kernel32.SetFileAttributesW(fpath, 128)
+            with open(fpath, 'w') as outfile:
+                print("WINDOWS")
+               # self.p.saveState()
+                json.dump(self.p.saveState(), outfile)#, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
+            ctypes.windll.kernel32.SetFileAttributesW(fpath, 2)
+        else:
+            with open(fpath, 'w') as outfile:
+                json.dump(self.p.saveState(), outfile)#, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
+        
     #def change(self):
     #    print("flight.change()")
     #    print (self.p.child("uavpath").value())
@@ -569,6 +626,7 @@ class ImportFlightMeta(QtCore.QThread):
     finished = QtCore.pyqtSignal(dict)
     progress = QtCore.pyqtSignal(int)
     loadJson = False
+    path = None
     def __init__(self):
         QtCore.QObject.__init__(self)
         self.Meta = {"general":None,"pois":[],"uavpath":[],"images":[], "calibration": {"geometric":{},"radiometric":{},"boresight":{}}}

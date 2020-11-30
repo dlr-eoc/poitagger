@@ -31,6 +31,7 @@ import shutil
 import platform
 #import qdarkstyle
 
+
 from . import nested
 from . import gpx
 from . import poimodel2
@@ -40,7 +41,7 @@ from . import PATHS
 from . import __version__
 # Widgets
 from . import importer
-from . import workflow
+#from . import workflow
 from . import poiview
 from . import info
 from . import calib
@@ -193,7 +194,9 @@ class Main(QMainWindow):
         #self.actionCreate_subimages.triggered.connect(lambda: self.wf.createSubimages(self.treemain.view.current_path()))
         self.actionGpx_to_gps.triggered.connect(self.gpx_to_gps)
         self.actionEinstellungen.triggered.connect(self.conf.openPropDialog)
-    
+        self.poiview.actionVisible.triggered.connect(lambda: self.img.loadImg(self.img.curimg))
+        
+        
     def logconnects(self):
         self.log.connect(self.Console.append)
         #self.wf.log.connect(self.Console.append)
@@ -203,7 +206,12 @@ class Main(QMainWindow):
         self.img.temp.log.connect(self.Console.append)
         
     def onDirChanged(self,path):
+       # print ("old:",self.flight.path)
+       # print ("new:",path)
+       # self.flight.save()
+       # time.sleep(5)
         if self.useflight:
+        #    self.flight.saveandload(path)
             self.flight.load(path)
         self.geomain.setCurrentDir(path)
         
@@ -334,6 +342,7 @@ class Main(QMainWindow):
         self.poiview.writeSettings()
         
         
+        
     def shortcuts(self):
         self.escAction = QtGui.QAction('escape', self)
         self.clearAction = QtGui.QAction('clear', self)
@@ -401,7 +410,7 @@ def main():
             "handlers": {
                 "console": {
                     "class": "logging.StreamHandler", 
-                    "level": "ERROR", 
+                    "level": "WARNING", 
                     "formatter": "simple", 
                     "stream": "ext://sys.stdout"
                 }, 

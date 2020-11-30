@@ -22,7 +22,7 @@
      <x>0</x>
      <y>0</y>
      <width>414</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>
@@ -37,7 +37,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionNeuerMarker"/>
-   <addaction name="actionReproMarker"/>
+   <addaction name="actionVisible"/>
    <addaction name="actionshow"/>
    <addaction name="actionUpload"/>
    <addaction name="separator"/>
@@ -45,7 +45,7 @@
   </widget>
   <action name="actionNeuerMarker">
    <property name="checkable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="icon">
     <iconset>
@@ -55,7 +55,7 @@
     <string>neuerMarker</string>
    </property>
   </action>
-  <action name="actionReproMarker">
+  <action name="actionVisible">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -64,13 +64,13 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>icons/path3102.png</normaloff>icons/path3102.png</iconset>
+     <normaloff>icons/visible.png</normaloff>icons/visible.png</iconset>
    </property>
    <property name="text">
-    <string>Reprojekt Marker</string>
+    <string>visible Markers</string>
    </property>
    <property name="toolTip">
-    <string>Reprojekt Marker aus anderen Bildern</string>
+    <string>make Marker visible</string>
    </property>
   </action>
   <action name="actionAllePois">

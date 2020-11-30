@@ -170,7 +170,7 @@ class UploadDialog(QtGui.QDialog):
         self.key.insert(self.keystr)
         
     def writeSettings(self):
-        print("write Settings UploadDialog")
+#        print("write Settings UploadDialog")
         self.settings.setValue('WILDRETTERAPP/url', str(self.server.text()))
         self.settings.setValue('WILDRETTERAPP/key', str(self.key.text()))
         

@@ -35,11 +35,19 @@ class PoiView(QMainWindow):
         self.horizontalLayout.addWidget(self.t)#self.listw)
         self.cb = QComboBox()
         self.cb.currentTextChanged.connect(self.chooseLayer)
-        self.actionNeuerMarker.triggered.connect(lambda : self.addPoi("Point"))
         self.actiondelLayer.triggered.connect(self.delLayer)
         #self.actionnewLayer.triggered.connect(self.newLayer)
         self.actionshow.triggered.connect(self.jumpTo)
+        self.actionVisible.triggered.connect(self.setVis)
         self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.model.pois))
+        
+        self.actionNeuerMarker.setChecked(utils2.toBool(self.settings.value('POIS/neuerMarker')))
+        self.actionVisible.setChecked(utils2.toBool(self.settings.value('POIS/visible')))
+        
+    
+    def setVis(self,trigger):
+        self.settings.setValue('POIS/visible', str(self.actionVisible.isChecked()))
+       # print("reproject",str(self.actionVisible.isChecked()))
         
     def setMeta(self,fm):
         self.model.loadMeta(fm)
@@ -93,7 +101,8 @@ class PoiView(QMainWindow):
         currentdata = self.p.child(str(self.cb.currentText())).child("data")
         last = len(currentdata.children())
         #childnames = [i.name() for i in self.p.children()]
-        currentdata.insertChild(last,{"name":"Point"+str(last),"value":value,"type":"group", "readonly":False,"expanded":False,"removable":True,"renamable":True})
+        defaultname = self.settings.value("POIS/defaultname") 
+        currentdata.insertChild(last,{"name":defaultname+str(last),"value":value,"type":"group", "readonly":False,"expanded":False,"removable":True,"renamable":True})
         data = self.t.topLevelItem(0)
         currentItem = data.child(data.childCount()-1)
         self.t.setCurrentItem(currentItem)
@@ -143,6 +152,8 @@ class PoiView(QMainWindow):
             self.sigJumpTo.emit(cur.param.name())
         
     def addView(self,filename,x,y):
+        if not self.actionNeuerMarker.isChecked(): return
+        self.addPoi("Point")
         cur = self.t.currentItem()
         if not cur == None and cur.parent() == self.t.topLevelItem(0):  
             try:
@@ -164,10 +175,10 @@ class PoiView(QMainWindow):
             c.remove()
 
     def writeSettings(self):
-        print("write Settings Poiview")
+#       print("write Settings Poiview")
         self.dialog.writeSettings()
         #self.settings.setValue('WILDRETTERAPP/url', str(self.server.text()))
-        #self.settings.setValue('WILDRETTERAPP/key', str(self.key.text()))
+        self.settings.setValue('POIS/neuerMarker', str(self.actionNeuerMarker.isChecked()))
    
    # def saveState(self):
      #   with open("saveState.yml", 'w') as outfile:

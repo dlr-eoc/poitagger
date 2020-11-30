@@ -7,6 +7,8 @@ from . import treemodel
 from . import image
 from . import PATHS
 
+logger = logging.getLogger(__name__)
+
 class TreeWidget(QMainWindow):
     poifiles = []
     def __init__(self,parent = None):
@@ -159,6 +161,7 @@ class TreeView(QTreeView):
         
      
     def loadRoot(self,root):
+        logger.debug("TV:loadRoot")
         self.rootdir = root
         self.model.setRootPath(root)
         self.setModel(self.model)
@@ -170,18 +173,21 @@ class TreeView(QTreeView):
         self.rootDirChanged.emit(root)
             
     def rootPathLoaded(self,rootpath):
+        logger.debug("TV:rootPathLoaded")
         rootindex = self.model.index(rootpath)
         if self.model.hasChildren(rootindex):
             firstchild = self.model.index(0,0,rootindex)
             self.setCurrentIndex(firstchild)
     
     def setCurrent(self,name):
+        logger.debug("TV:setCurrent")
         curpath = self.current_path()        
         curdir = curpath if os.path.isdir(curpath) else os.path.dirname(curpath)    
         index = self.model.index(os.path.join(curdir,name))
         self.setCurrentIndex(index)
         
     def move(self,steps):
+        logger.debug("TV:move")
         i = self.currentIndex()
         newindex = self.model.sibling(i.row()+steps,0,i)
         if not newindex.row() == -1:
@@ -195,9 +201,11 @@ class TreeView(QTreeView):
             self.setCurrentIndex(newindex)
         
     def current_path(self):
+        logger.debug("TV:current_path")
         return str(self.model.fileInfo(self.currentIndex()).absoluteFilePath())
         
     def currentChanged(self, current, last):
+        logger.debug("TV:currentChanged")
         #print ("TV, CURRENT CHANGED")
         self.scrollTo(current)
         upper = self.indexAbove(current)
@@ -213,6 +221,7 @@ class TreeView(QTreeView):
             self.imgPathChanged.emit(curpath)
         lastdir = lastpath if os.path.isdir(lastpath) else os.path.dirname(lastpath)    
         curdir = curpath if os.path.isdir(curpath) else os.path.dirname(curpath)    
+        #print (self.imgname, lastpath)
         if os.path.isdir(lastdir): 
             if not os.path.samefile(lastdir,curdir):
                 self.imgdir = curdir

@@ -50,7 +50,7 @@ from . import utils2
 #widgets
 #import imageprocessing2
 from . import temp
-SIZE = 30 # This is just the distance for the Labeling of the Pois
+#SIZE = 30 # This is just the distance for the Labeling of the Pois
 try:
     from . import premium
     is_premium = True
@@ -339,6 +339,7 @@ class Img(QtGui.QWidget):
                 return out.T
             
     def loadImg(self,curimg):
+        #print("Load img")
         self.curimg = curimg
         self.imgdir, self.imgname = os.path.split(str(curimg))
         self.imgbasename, ext = os.path.splitext(self.imgname)
@@ -415,6 +416,7 @@ class Img(QtGui.QWidget):
         return x,y
     
     def paintPois(self,liste): 
+        self.size = int(self.settings.value("POIS/size"))
         if self.ara.header["calibration"].get("error_flags",0) & image.ERRORFLAGS.ALL_META: return
         for item in self.vbox.addedItems[:]:# nur die Overlays loeschen #self.scene.items():
             if type(item) in [QtGui.QGraphicsTextItem, QtGui.QGraphicsEllipseItem,]: # pg.graphicsItems.ImageItem.ImageItem: 
@@ -422,23 +424,24 @@ class Img(QtGui.QWidget):
         for i in liste:
             x,y = float(i["x"]),float(i["y"])
             #print (type(x),type(y))
-            y2 = y+SIZE/2.0 #if not self.proc.flipud else self.imheight - i[4]+SIZE/2.0 -1
-            eli = QtGui.QGraphicsEllipseItem(x-SIZE/2.0,y-SIZE/2.0,SIZE,SIZE)
+            y2 = y+self.size/2.0 #if not self.proc.flipud else self.imheight - i[4]+self.size/2.0 -1
+            eli = QtGui.QGraphicsEllipseItem(x-self.size/2.0,y-self.size/2.0,self.size,self.size)
             mytext = QtGui.QGraphicsTextItem(str(i["name"])) 
-            mytext.setPos(x-SIZE/2.0,y2)
+            mytext.setPos(x-self.size/2.0,y2)
+            if str(self.settings.value("POIS/visible")).lower() != "true": return
             if i["filename"]==self.imgname:
-                pcol = QtGui.QPen(QtGui.QColor("#ff0000"))
-                col =  QtGui.QColor("#ff0000") 
+                pcol = QtGui.QPen(QtGui.QColor(self.conf.pois.poicolor.color))#"#ff0000"
+                col =  QtGui.QColor(self.conf.pois.poicolor.color) #"#ff0000"
                 eli.setPen(pcol)
                 mytext.setDefaultTextColor(col)
             else:
-                pcol = QtGui.QPen(QtGui.QColor("#0000ff"))#self.conf.poicolor_repro.color) 
-                col =  QtGui.QColor("#0000ff")#self.conf.poicolor_repro.color 
+                pcol = QtGui.QPen(QtGui.QColor(self.conf.pois.poicolor_repro.color))#"#0000ff") 
+                col =  QtGui.QColor(self.conf.pois.poicolor_repro.color)# "#0000ff"
                 eli.setPen(pcol)
                 mytext.setDefaultTextColor(col)
             self.vbox.addItem(eli)
             self.vbox.addItem(mytext)
-    
+        
     
         
     def pixelClicked( self, event ):
@@ -453,7 +456,7 @@ class Img(QtGui.QWidget):
                 dn = self.ara.image[y, x]
                 logger.warning("no rawdata!")
             if self.poiAction.isChecked():
-    #            eli = QtGui.QGraphicsEllipseItem(int(pt.x())-SIZE/2.0,int(pt.y())-SIZE/2.0,SIZE,SIZE)
+    #            eli = QtGui.QGraphicsEllipseItem(int(pt.x())-self.size/2.0,int(pt.y())-self.size/2.0,self.size,self.size)
     #            eli.setPen(QtGui.QPen(QtGui.QColor("#ff0000")))
     #            self.vbox.addItem(eli)
                 self.sigPixel.emit(self.imgname,x,y)

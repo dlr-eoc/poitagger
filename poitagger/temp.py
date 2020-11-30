@@ -61,7 +61,7 @@ class Temp(QtGui.QWidget):
             
         except:
             pt = 0
-            logger.warning("calc_pixtemp didn't work. there might be no calibration data in the image header.",exc_info=False)
+            logger.debug("calc_pixtemp didn't work. there might be no calibration data in the image header.",exc_info=False)
         return pt
         
     def fill_pixtemp(self,x,y,dn):

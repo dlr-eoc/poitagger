@@ -85,16 +85,19 @@ class Pois(QtGui.QMainWindow):
         self.addAction(self.delAction)
         
         self.delAction.triggered.connect(self.delete_poi)
-        self.actionReproMarker.triggered.connect(self.selectionhandler)
+        self.actionReproMarker.isChecked(self.prin)
+        #self.actionReproMarker.toggled.connect(self.selectionhandler)
         self.selectionModel.selectionChanged.connect(self.selectionhandler)
         self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.reload_poilist()))
         
         
+    def prin(self):
+        print("test")
         
     def selectionhandler(self):
         # Todo: diese Liste ist falsch, wenn man alle Pois anzeigen laesst (auch die , die nicht auf dem aktuellen Bild sichtbar sind)
         # die Zaehlreihenfolge entspricht der auf diesem Bild sichtbaren Pois 
-        #print "selected"
+        print ("selected")
         #print ("selectionhandler",self.poilist)
         
         pois_s = []
