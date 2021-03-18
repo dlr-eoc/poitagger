@@ -298,8 +298,8 @@ class FlightWidget(QMainWindow):
         self.progressDialog.setValue(val)
         
     def delete(self):
-        logger.debug("FW:delete")
-        mypath = os.path.join(self.flight.path,self.flight.filename)
+        logger.debug("FW:delete "+str(self.flight.path)+"/"+str(self.flight.filename))
+        mypath = os.path.join(str(self.flight.path),str(self.flight.filename))
         if os.path.exists(mypath):
             reply = QMessageBox.question(self, "Flightmetadatei loeschen?","Soll die Datei '{}'  tatsaechlich geloescht werden?".format(mypath),QMessageBox.Yes,QMessageBox.No); 
             if reply == QMessageBox.Yes:
@@ -376,7 +376,7 @@ class Flight(QtCore.QObject): #kein QThread
         self.calibparam = None
         self.loadfinished.connect(self.savehandler)
         
-        self.uavpath.connect(lambda: self.debugsignal(uavpath))
+        self.uavpath.connect(lambda: self.debugsignal("uavpath"))
         self.pois.connect(lambda: self.debugsignal("pois"))
         self.poisChanged.connect(lambda: self.debugsignal("poisChanged"))
         self.calibration.connect(lambda: self.debugsignal("calibration"))
@@ -392,7 +392,7 @@ class Flight(QtCore.QObject): #kein QThread
     def debugsignal(self,name):
         logger.debug("F:debugsignal")
         
-        logger.warning(name + " signal emited")
+        #logger.warning(name + " signal emited")
         
     def prepareGeneral(self,generalparam):
         logger.debug("F:prepareGeneral")

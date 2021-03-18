@@ -4,6 +4,7 @@ import doctest
 import os
 import re
 import utm
+#import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -300,6 +301,7 @@ class ImageJpg(Image):
         self.imgpath = imgpath
         self.filename = os.path.basename(str(imgpath))
         d, self.exif, self.xmp = self.get_meta(imgpath)
+        logger.info(self.xmp)
         #self.t1 = time.time()
         #print(self.t1 - self.t6)
             
@@ -548,8 +550,7 @@ class ImageJpg(Image):
             self.header["gps"]["UTM_ZoneNumber"] = ZoneNumber
             self.header["gps"]["UTM_ZoneLetter"] = ZoneLetter 
         except: pass
-        
-        
+           
         
         self.header["camera"]["centralwavelength"] = self.extract_xmp("camera:centralwavelength") 
         self.header["camera"]["wavelengthfwhm"] = self.extract_xmp("camera:wavelengthfwhm") 
@@ -609,34 +610,55 @@ class ImageJpg(Image):
             pass
         
     def fill_header_dji(self):
+        camroll = 0
+        camyaw = 0
+        campitch = 0
+        uavroll = 0
+        uavyaw = 0
+        uavpitch = 0
+        rel_altitude = 0
+        rel_altitude = 0
         a = self.xmp.find("rdf:description")
         #if a == None: 
         #    logger.error("Not a compatible Image")
         #    return
+        
         self.header["file"]["name"] = self.filename
         self.header["image"]["width"] = self.rwidth if self.rwidth else self.width #extract_exif("EXIF ExifImageWidth")
         self.header["image"]["height"] = self.rheight if self.rheight else self.height
         self.header["image"]["bitdepth"] = self.bitdepth     
         
         try:
-            self.header["camera"]["roll"] = float(a.get("drone-dji:gimbalrolldegree",0))
-            self.header["camera"]["yaw"] = float(a.get("drone-dji:gimbalyawdegree",0))
-            self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",0))
-            self.header["camera"]["euler_order"] = "ZYX"
-            self.header["camera"]["model"] = a.get("tiff:model",0)
-            self.header["camera"]["make"] = a.get("tiff:make",0)
-            self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",0))
-            self.header["uav"]["yaw"] = float(a.get("drone-dji:flightyawdegree",0))
-            self.header["uav"]["pitch"] = float(a.get("drone-dji:flightpitchdegree",0))
+            camroll = self.xmp.find("drone-dji:gimbalrolldegree").contents[0]
+            camyaw = self.xmp.find("drone-dji:gimbalyawdegree").contents[0]
+            campitch = self.xmp.find("drone-dji:gimbalpitchdegree").contents[0]
+            uavroll = self.xmp.find("drone-dji:flightrolldegree").contents[0]
+            uavyaw = self.xmp.find("drone-dji:flightyawdegree").contents[0]
+            uavpitch = self.xmp.find("drone-dji:flightpitchdegree").contents[0]
+            rel_altitude = self.xmp.find("drone-dji:relativealtitude").contents[0]
+            abs_altitude = self.xmp.find("drone-dji:absolutealtitude").contents[0]
         except:
-            logger.warning("no xmp-data")
+            logger.warning("this image either is no DJI image or has an old DJI format")
+            
+        try:
+            self.header["camera"]["roll"] =  float(a.get("drone-dji:gimbalrolldegree",camroll))
+            self.header["camera"]["yaw"] =  float(a.get("drone-dji:gimbalyawdegree",camyaw))
+            self.header["camera"]["pitch"] = float(a.get("drone-dji:gimbalpitchdegree",campitch))
+            self.header["camera"]["euler_order"] = "ZYX"
+            self.header["camera"]["model"] = a.get("tiff:model",self.exif["Image Model"])
+            self.header["camera"]["make"] = a.get("tiff:make",self.exif["Image Make"])
+            self.header["uav"]["roll"] = float(a.get("drone-dji:flightrolldegree",uavroll))
+            self.header["uav"]["yaw"] = float(a.get("drone-dji:flightyawdegree",uavyaw))
+            self.header["uav"]["pitch"] = float(a.get("drone-dji:flightpitchdegree",uavpitch))
+        except:
+            logger.warning("no xmp-data",exc_info=true)
             
         self.header["uav"]["euler_order"] = "ZXY"
         self.header["gps"]["latitude"] = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
         self.header["gps"]["longitude"] = self.convert_latlon(self.exif["GPS GPSLongitude"],self.exif["GPS GPSLongitudeRef"])
         try:
-            self.header["gps"]["rel_altitude"]=float(a.get("drone-dji:relativealtitude",0))
-            self.header["gps"]["abs_altitude"]=float(a.get("drone-dji:absolutealtitude",0))
+            self.header["gps"]["rel_altitude"]=float(a.get("drone-dji:relativealtitude",rel_altitude))
+            self.header["gps"]["abs_altitude"]=float(a.get("drone-dji:absolutealtitude",abs_altitude))
         except:
             pass
         
@@ -812,7 +834,7 @@ class ImageAra(Image):
                     "speed_accuracy":h[58],"speed_x":h[59], "speed_y":h[60]},
                 "dlr":{"platzhalter":h[61],"cam_pitch_offset":h[62],"cam_roll_offset":h[63],
                     "cam_yaw_offset":h[64],"boresight_calib_timestamp":h[65],"gps_acc_x":h[66],"gps_acc_y":h[67],
-                    "pois":[{"id":h[i],"x":h[i+1],"y":h[i+2]} for i in range(68,95,3) if h[i] is not 0],
+                    "pois":[{"id":h[i],"x":h[i+1],"y":h[i+2]} for i in range(68,95,3) if h[i] != 0],
                     
                     "changed_flags":h[98],"error_flags":h[99],"radiometric_B":h[100],"radiometric_R":h[101],
                     "radiometric_F":h[102],"radiometric_calib_timestamp":h[103],"geometric_fx":h[104],

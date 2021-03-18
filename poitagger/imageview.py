@@ -130,7 +130,7 @@ class Img(QtGui.QWidget):
     
     def __init__(self,conf,startimage,settings):
         QtGui.QWidget.__init__(self)
-        self.w = pg.GraphicsLayoutWidget()
+        self.w = pg.GraphicsLayoutWidget() # das ist das Centrawidget, das Thermalbild in der Mitte
         self.settings = settings
         
         self.vbox = self.w.addViewBox(lockAspect=True,enableMenu=False,invertY=True)
@@ -141,13 +141,13 @@ class Img(QtGui.QWidget):
         self.vboxdebug.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight))#,padding=0.0
         
         
-        self.imgUI = uic.loadUi(os.path.join(PATHS["UI"],"image.ui"))
+        self.imgUI = uic.loadUi(os.path.join(PATHS["UI"],"image.ui")) # das ist das Image DockWindow an der rechten Seite
         self.infoUI = uic.loadUi(os.path.join(PATHS["UI"],"imgInfo.ui"))
         self.viewCtrlUI = uic.loadUi(os.path.join(PATHS["UI"],'viewcontrol.ui'))
         self.imgDebugUI = uic.loadUi(os.path.join(PATHS["UI"],"imgDebug.ui"))
         self.normkitzUI = uic.loadUi(os.path.join(PATHS["UI"],"normkitz.ui"))
         
-        self.t = ParameterTree(showHeader=False)
+        self.t = ParameterTree(showHeader=False) # das ist die Baumstruktur im Image-Dockwindow
         self.imgUI.horizontalLayout.addWidget(self.t)
         
         params = [
@@ -155,7 +155,7 @@ class Img(QtGui.QWidget):
                 {'name': 'x', 'type': 'int', 'value': 0, 'readonly':True},
                 {'name': 'y', 'type': 'int', 'value': 0, 'readonly':True},
                 {'name': 'Wert (dn)', 'type': 'int', 'value': 0, 'readonly':True},
-                {'name': 'Temp', 'type': 'float', 'value': 0 , 'visible':False, 'suffix': '°C', 'readonly':True}]},
+                {'name': 'Temp', 'type': 'float', 'value': 0 , 'visible':True, 'suffix': '°C', 'readonly':True}]},
             {'name': 'Image', 'type': 'group', 'children': [
                 {'name': 'dn min', 'type': 'int', 'value': 0, 'readonly':True},
                 {'name': 'dn max', 'type': 'int', 'value': 0, 'readonly':True},
@@ -304,7 +304,7 @@ class Img(QtGui.QWidget):
                 return
             dn = self.ara.rawbody[y, x]
             self.p.child('Mouse').child('Wert (dn)').setValue(dn)
-            
+            self.p.child('Mouse').child('Temp').setValue(self.temp.calc_pixtemp(dn))
             #self.infoUI.x_mouse.setValue(pt.x())
             #self.infoUI.y_mouse.setValue(pt.y())
         except:
@@ -462,7 +462,8 @@ class Img(QtGui.QWidget):
                 self.sigPixel.emit(self.imgname,x,y)
             elif self.tempAction.isChecked():
                 print(self.temp.calc_pixtemp(dn))
-                #self.temp.fill_pixtemp(x,y,dn)
+                self.temp.fill_pixtemp(x,y,dn)
+                #calc_pixtemp(self,dn)
         except:
             logger.error("imageview pixelClicked failed", exc_info=True)
             

@@ -65,6 +65,7 @@ class Temp(QtGui.QWidget):
         return pt
         
     def fill_pixtemp(self,x,y,dn):
+        #print("Hallo")
         pt = self.calc_pixtemp(dn)
         self.pixtemp_x.setValue(x)
         self.pixtemp_y.setValue(y)
