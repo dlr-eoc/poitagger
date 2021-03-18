@@ -2,7 +2,7 @@ import pkg_resources
 import os
 from shutil import copyfile,copytree
 
-__version__ = "0.2.11"
+__version__ = "0.2.12"
 
 PATHS = {}
 

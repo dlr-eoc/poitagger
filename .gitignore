@@ -4469,3 +4469,5 @@ poitagger/test/dji_example.jpg
 poitagger/test/Duo_Pro_R.JPG
 build/lib/poitagger/poiview.py
 build/lib/poitagger/poiview.py
+*.log
+mplog.log

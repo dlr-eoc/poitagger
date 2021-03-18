@@ -407,16 +407,16 @@ class ImageJpg(Image):
         fffchunk = self.combine_flir_segments(bytearr)
         ffh = {}
         if str(self.exif.get("Image Make","")) == "DJI":
-            endian = "<"
+            self.endian = "<"
         elif str(self.exif.get("Image Make","")) == "FLIR":
-            endian = ">"
+            self.endian = ">"
         else: 
-            endian = ">"
+            self.endian = ">"
         if len(fffchunk)<64:
             return
         #print (fffchunk[0:68])        
         for i in FLIRFILEHEAD:
-            val = struct.Struct(endian+i[2]).unpack_from(fffchunk[0:64],i[0])
+            val = struct.unpack_from(">"+i[2],fffchunk[0:64],i[0])
             if "s" in i[2]:
                 val = val[0].strip(b"\x00")
             name = i[1]
@@ -429,7 +429,7 @@ class ImageJpg(Image):
         for idx in range(0,indexes):
             ffi = {}
             for i in FLIRFILEINDEX:
-                val = struct.Struct(endian+i[2]).unpack_from(fffchunk[64+idx*32:96+idx*32],i[0])
+                val = struct.Struct(">"+i[2]).unpack_from(fffchunk[64+idx*32:96+idx*32],i[0])
                 if "s" in i[2]:
                     val = val[0].strip(b"\x00")
                 name = i[1]
@@ -448,7 +448,7 @@ class ImageJpg(Image):
         if not onlyheader:
             self.rawbody = self.get_raw(fffchunk[rawstart:rawend])
         else:
-            self.bitdepth = struct.Struct("<H").unpack_from(fffchunk[rawstart:rawstart+2],0)
+            self.bitdepth = struct.Struct(">"+i[2]).unpack_from(fffchunk[rawstart:rawstart+2],0)
          #   print("BITDEPTH",self.bitdepth)
     def get_raw(self,bytearr):
         geom = {}
@@ -466,7 +466,7 @@ class ImageJpg(Image):
     def flir_header(self,fffmeta):    
         fff = {}
         for i in FFF:
-            val = struct.Struct("<"+i[2]).unpack_from(fffmeta,i[0])
+            val = struct.Struct(self.endian+i[2]).unpack_from(fffmeta,i[0])
             if "s" in i[2]:
                 val = val[0].strip(b"\x00")
             name = i[1]
