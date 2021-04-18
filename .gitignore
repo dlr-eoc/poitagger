@@ -4471,3 +4471,10 @@ build/lib/poitagger/poiview.py
 build/lib/poitagger/poiview.py
 *.log
 mplog.log
+poitagger/ki/patchmaker.py
+poitagger/ki/kitzhandler.py
+poitagger/ki/kitzdetektion_runa.h5
+poitagger/ki/kitz_predictor.py
+poitagger/ki/helpers.py
+poitagger/ki/files.py
+poitagger/test/maptest.html

@@ -60,6 +60,7 @@ map.on('load', function () {
             "icon-image": "{icon}-15",
             "icon-allow-overlap": true,
             "text-allow-overlap": true,
+            "icon-rotate": ["get", "rotate"],
             "text-field": "{title}",
             "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
             "text-offset": [0, 0.6],

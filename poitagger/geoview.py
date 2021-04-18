@@ -193,14 +193,22 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         self.lat, self.lon = lat, lon
         if self.followUav:
             self.panMap(lat,lon)
-        geojson = {"type": "Feature",
-                "geometry": {"type": "Point","coordinates": [lon, lat]},
-                "properties": {"title": "UAV","icon": "droneA", "icon-rotate":"25"}}
-        print ("MOVEUAV",yaw)
-        
+        geojson = {"type": "FeatureCollection",
+                "features": [{
+                    "type":"Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [lon, lat]
+                    },
+                    "properties": {
+                        "title": "UAV",
+                        "icon": "droneA", 
+                        "rotate": yaw
+                    }
+                }]
+            }                
         self.page.runJavaScript('map.getSource("uav").setData({});'.format(geojson))
-        #self.page.runJavaScript('map.getSource("uav").rotate(30)')
-    
+        
     def fitBounds(self,bound):
         if not self.jsloaded: return 
         self.page.runJavaScript('map.fitBounds({});'.format(bound)) # bound = [[lng1,lat1],[lng2,lat2]]
