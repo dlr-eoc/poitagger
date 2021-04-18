@@ -142,7 +142,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         
 
         out = ""
-        with open(os.path.join(PATHS["BASE"],"bla2.js"),"r") as f:
+        with open(os.path.join(PATHS["BASE"],"bla.js"),"r") as f:
             self.page.runJavaScript(f.read())
         self.jsloaded = True
         
@@ -195,11 +195,11 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
             self.panMap(lat,lon)
         geojson = {"type": "Feature",
                 "geometry": {"type": "Point","coordinates": [lon, lat]},
-                "properties": {"title": "UAV","icon": "droneA"}}
+                "properties": {"title": "UAV","icon": "droneA", "icon-rotate":"25"}}
         print ("MOVEUAV",yaw)
         
         self.page.runJavaScript('map.getSource("uav").setData({});'.format(geojson))
-        self.page.runJavaScript('map.getSource("uav").rotate(30)')
+        #self.page.runJavaScript('map.getSource("uav").rotate(30)')
     
     def fitBounds(self,bound):
         if not self.jsloaded: return 
