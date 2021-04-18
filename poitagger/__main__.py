@@ -213,6 +213,7 @@ class Main(QMainWindow):
         if self.useflight:
         #    self.flight.saveandload(path)
             self.flight.load(path)
+            
         self.geomain.setCurrentDir(path)
         
     def onImagePathChanged(self,path):

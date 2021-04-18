@@ -32,7 +32,7 @@ def paramtree(dic):
     
 class Info(QtGui.QWidget):
     log = QtCore.pyqtSignal(str)
-    position = QtCore.pyqtSignal(float,float) # lat, lon
+    position = QtCore.pyqtSignal(float,float,float) # lat, lon
     
     def __init__(self):
         QtGui.QWidget.__init__(self)
@@ -56,7 +56,9 @@ class Info(QtGui.QWidget):
             self.t.verticalScrollBar().setValue(self.savedScrollPosition)
             lat = self.importer.p.child("gps").child("latitude").value()
             lon = self.importer.p.child("gps").child("longitude").value()
-            self.position.emit(float(lat),float(lon))
+            yaw = self.importer.p.child("uav").child("yaw").value()
+            
+            self.position.emit(float(lat),float(lon),float(yaw))
         except:
             self.log.emit("localization failed! This image has no geo data")#,exc_info=True)
             

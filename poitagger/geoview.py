@@ -112,6 +112,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         self.setWindowTitle('Loading...')
         self.titleChanged.connect(self.adjustTitle)
         self.page = Page()
+        #self.page.profile().clearHttpCache()
         self.setPage(self.page)
         path = "file:///"+PATHS["BASE"]+"/map_gl.html"
         path = path.replace("\\","/")
@@ -141,7 +142,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         
 
         out = ""
-        with open(os.path.join(PATHS["BASE"],"bla.js"),"r") as f:
+        with open(os.path.join(PATHS["BASE"],"bla2.js"),"r") as f:
             self.page.runJavaScript(f.read())
         self.jsloaded = True
         
@@ -187,18 +188,18 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         except:
             logger.error("geoview: loadpois failed", exc_info=True)
     
-    def moveUav(self,lat,lon):
+    def moveUav(self,lat,lon,yaw=0):
         if not self.jsloaded: return 
         self.lat, self.lon = lat, lon
         if self.followUav:
             self.panMap(lat,lon)
         geojson = {"type": "Feature",
                 "geometry": {"type": "Point","coordinates": [lon, lat]},
-                "properties": {"title": "UAV","icon": "drone"}}
-        #print ("MOVEUAV")
+                "properties": {"title": "UAV","icon": "droneA"}}
+        print ("MOVEUAV",yaw)
         
         self.page.runJavaScript('map.getSource("uav").setData({});'.format(geojson))
-        
+        self.page.runJavaScript('map.getSource("uav").rotate(30)')
     
     def fitBounds(self,bound):
         if not self.jsloaded: return 
@@ -232,7 +233,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
     
     def load_filedata(self,ara):     
         try:
-            self.moveUav(ara["gps"].get("latitude",0),ara["gps"].get("longitude",0))
+            self.moveUav(ara["gps"].get("latitude",0),ara["gps"].get("longitude",0),ara.header["uav"]["yaw"])
             self.panMap(ara["gps"].get("latitude",0),ara["gps"].get("longitude",0))
         except:
             logger.error("geoview load filedata failed")

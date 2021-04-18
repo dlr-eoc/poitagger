@@ -52,7 +52,7 @@ map.on('load', function () {
                 },
                 "properties": {
                     "title": "UAV",
-                    "icon": "drone"
+                    "icon": "droneA"
                 }
             }
         },

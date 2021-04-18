@@ -83,6 +83,9 @@ class TreeWidget(QMainWindow):
        
     def setRoot(self,rd):
         self.rp = RootPath(rd)
+        if not os.path.exists(rd):
+            print ("dieser Pfad existiert nicht", rd)
+            self.rp.ChooseRootPath("")
         self.view.loadRoot(self.rp.rootdir)
         self.rp.changed.connect(self.view.loadRoot)
         self.toolBar.addWidget(self.rp)
@@ -100,7 +103,7 @@ class RootPath(QWidget):
         self.lineEdit.setText(self.rootdir)
         
     def ChooseRootPath(self,x):
-        self.rootdir = str(QFileDialog.getExistingDirectory(self, "Select Directory",self.rootdir))
+        self.rootdir = str(QFileDialog.getExistingDirectory(self, "Wähle das Bilder-Stammverzeichnis",self.rootdir))
         self.lineEdit.setText(self.rootdir)
         self.changed.emit(self.rootdir)
         

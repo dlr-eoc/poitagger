@@ -264,9 +264,23 @@ class FlightWidget(QMainWindow):
                 filepath +=".json"
             self.flight.saveTemplate(os.path.join(PATHS["USER_CALIB"],filepath))
             
+    def getImagesize(self):
+        Dir = sorted(os.listdir(self.flight.path))
+        try:
+            for k,file in enumerate(Dir):
+                if os.path.splitext(file)[1].lower() not in image.SUPPORTED_EXTENSIONS: continue
+                img = image.Image.factory(os.path.join(self.flight.path,file),onlyheader=True)    
+                return (img.header["image"]["width"],img.header["image"]["height"])
+        except:
+            logger.error("FM _loadImgHeader failed", exc_info = True)
+            return (0,0)
+        
+        
     def openDialog(self):
         logger.debug("FW:openDialog")
+        
         self.chooseDialog = FlightChoose(self.flight.path)
+        self.chooseDialog.textBrowser.append("Dieser Ordner enthält ein Bild mit den Abmessungen <b>"+ str(self.getImagesize()) + "</b>")
         self.chooseDialog.buttonBox.accepted.connect(self.writecalib)
         self.chooseDialog.buttonBox.rejected.connect(self.flight.start)
 

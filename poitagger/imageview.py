@@ -175,7 +175,9 @@ class Img(QtGui.QWidget):
         if is_premium:
             params.append({'name': 'Premium', 'type': 'group', 'children': [
                 {'name': 'homogenize', 'type': 'bool'},
-                {'name': 'analog', 'type': 'bool'}]})
+                {'name': 'analog', 'type': 'bool'},
+                {'name': 'ki', 'type': 'bool'},
+                ]})
             
         self.p = Parameter.create(name='params', type='group',children=params)
         self.t.setParameters(self.p, showTop=False)
@@ -376,6 +378,9 @@ class Img(QtGui.QWidget):
             preprocessed = (premium.analog(preprocessed))
         elif is_premium and self.p.child('Premium').child('homogenize').value() :
             preprocessed = (premium.homogenize(preprocessed))
+        
+        if is_premium and self.p.child('Premium').child('ki').value() :
+            premium.ki(self.ara,curimg)
         
         self.image = pg.ImageItem(preprocessed)
         
