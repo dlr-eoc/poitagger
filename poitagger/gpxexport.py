@@ -6,6 +6,10 @@ import shutil
 import logging
 import pyqtgraph as pg
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from . import PATHS 
 from . import upload
 from . import gpx
@@ -30,13 +34,14 @@ class GpxView(QMainWindow):
         self.gpxdialog.accepted.connect(self.exportgpx)
     
     def exportserial(self):
-        cmd = self.settings.value('GPX/gpsbabel') + ' -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + PATHS["POIS"] + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
-        print(cmd)
+      #  print(PATHS["POIS"])
+        cmd = self.settings.value('GPX/gpsbabel',"gpsbabel.exe") + ' -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + PATHS["POIS"] + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
+       # print(cmd)
         ret = os.system(cmd)
         if ret == 0: 
             QtGui.QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden ueber das Garmin-Serial/USB-Protokoll uebertragen"); 
         else:
-            QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","ein altes Garmin Geraet wurde nicht gefunden (bei einem neueren GPS-Geraet muss unter Einstellungen/allgemein/GPS-Device MassStorage Device anstatt Garmin Serial/USB ausgewaehlt werden)!"); 
+            QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","Ein altes Garmin Geraet wurde nicht gefunden. Falls es ordnungsgemaess angeschlossen ist, koennte es sein, dass der Treiber noch nicht installiert ist. <a href='https://download.garmin.com/software/USBDrivers_2312.exe'>Garmin Serial Treiber herunterladen</a>. "); 
                 
     def exportmassstorage(self):
         outdir = str(self.settings.value('GPX/outpath'))
@@ -52,6 +57,23 @@ class GpxView(QMainWindow):
         else:
             QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Das angegebene Verzeichnis %s existiert nicht)!"%outdir); 
             
+    def exportemail(self):
+      #  print(PATHS["POIS"])
+        senderEmail = str(self.settings.value('GPX/emailsender'))
+        empfangsEmail = str(self.settings.value('GPX/emailreceiver'))
+        msg = MIMEMultipart()
+        msg['From'] = senderEmail
+        msg['To'] = empfangsEmail
+        msg['Subject'] = "POIs"
+        emailText = "Pois sind hier"
+        msg.attach(MIMEText(emailText, 'html'))
+        server = smtplib.SMTP(str(self.settings.value('GPX/smtpserver')), str(self.settings.value('GPX/smtpport'))) # Die Server Daten
+        server.starttls()
+        server.login(senderEmail, str(self.settings.value('GPX/emailpassword'))) # Das Passwort
+        text = msg.as_string()
+        server.sendmail(senderEmail, empfangsEmail, text)
+        server.quit()
+      
     def exportgpx(self):
         if os.path.exists(PATHS["POIS"]):
             os.remove(PATHS["POIS"])
@@ -67,6 +89,11 @@ class GpxView(QMainWindow):
             self.exportserial()
         elif  str(self.settings.value('GPX/exportType')) == "massStorage":# conf.massStorage_rB.isChecked():
             self.exportmassstorage()
+        elif  str(self.settings.value('GPX/exportType')) == "email":# conf.massStorage_rB.isChecked():
+            self.exportemail()
+        elif  str(self.settings.value('GPX/exportType')) == "wildretter":# conf.massStorage_rB.isChecked():
+            self.exportemail()
+            
         else:
             QtGui.QMessageBox.critical(self, "Info2","kein export device typ gewaehlt "); 
     
@@ -120,6 +147,8 @@ class GPXExportDialog(QtGui.QDialog):
             self.settings.setValue('GPX/exportType',"email")
         elif self.wildretterRB.isChecked():
             self.settings.setValue('GPX/exportType',"wildretter")
+            QtGui.QMessageBox.critical(self, "Diese Auswahl geht noch nicht. Bitte vorerst noch den alten Upload nutzen (Wolken-Icon)"); 
+            
         self.done(1)
         
     def reject(self):

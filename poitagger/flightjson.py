@@ -508,6 +508,7 @@ class Flight(QtCore.QObject): #kein QThread
         self.progress.emit(0)
         if self.calibparam is not None:
             self.meta["children"]["general"]["children"]["images"] = self.calibparam["children"]["images"]
+            #print(self.meta)
             self.meta["children"]["calibration"]["children"]["geometric"] = self.calibparam["children"]["calibration"]["children"]["geometric"]
             self.meta["children"]["calibration"]["children"]["boresight"] = self.calibparam["children"]["calibration"]["children"]["boresight"]
         
@@ -736,7 +737,11 @@ class ImportFlightMeta(QtCore.QThread):
                 geom[k] = np.bincount(v).argmax() #achtung rundet ab!
         for k,v in Radi.items(): 
             if v.count(v[0])==len(v): radi[k] = v[0]
-            else: radi[k] = np.bincount(v).argmax() #achtung rundet ab!
+            else: 
+                try:
+                    radi[k] = np.bincount(v).argmax() #achtung rundet ab!
+                except:
+                    radi[k] = 0
         for k,v in Bore.items(): 
             if v.count(v[0])==len(v): bore[k] = v[0]
             else: bore[k] = np.bincount(v).argmax() #achtung rundet ab!

@@ -3,7 +3,7 @@ import os
 from shutil import copyfile,copytree
 from PyQt5 import QtCore
 from datetime import datetime
-__version__ = "0.2.13"
+__version__ = "0.2.14"
 
 PATHS = {}
 
@@ -33,7 +33,7 @@ if not os.path.exists(PATHS["CONF"]):
 
 settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
 
-if float(settings.value("INI/version",0)) < 1.0:
+if float(settings.value("INI/version",0)) < 1.1:
     print("INI-File veraltet")
     copyfile(os.path.join(PATHS["BASE"],"calib","Flir_Boson_640_14mm.json"),os.path.join(PATHS["USER_CALIB"],"Flir_Boson_640_14mm.json"))
     copyfile(os.path.join(PATHS["BASE"],"calib","Flir_Vue_640_19mm.json"),os.path.join(PATHS["USER_CALIB"],"Flir_Vue_640_19mm.json"))
