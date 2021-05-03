@@ -4478,3 +4478,6 @@ poitagger/ki/kitz_predictor.py
 poitagger/ki/helpers.py
 poitagger/ki/files.py
 poitagger/test/maptest.html
+mplog.log
+mplog.log
+*.log

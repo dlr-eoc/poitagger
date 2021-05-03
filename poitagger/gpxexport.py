@@ -26,7 +26,7 @@ class GpxView(QMainWindow):
         self.settings = settings
         self.model = model
         self.actionGpxExport.triggered.connect(self.gpxdialog.show)
-        self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.model))
+       # self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.model))
         self.model.changed.connect(self.refresh)
         self.tableWidget.setColumnCount(3)
         self.tableWidget.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)

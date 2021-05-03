@@ -264,8 +264,8 @@ class Camera(object):
         rp = self.reproject(poi_cam)
         campos = self.position()
         raydir = rp - campos
-        print ("campos",campos)
-        print ("raydir",raydir)
+       # print ("campos",campos)
+       # print ("raydir",raydir)
         poi = self.ray_intersect_plane(campos[0:3],raydir[0:3],np.array([0,0,1,ele]))
         return poi
             

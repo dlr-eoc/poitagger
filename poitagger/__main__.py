@@ -24,7 +24,7 @@ import numpy as np
 import logging
 import logging.config
 
-    
+import time    
 import sys
 import os
 import shutil
@@ -206,10 +206,10 @@ class Main(QMainWindow):
         self.img.temp.log.connect(self.Console.append)
         
     def onDirChanged(self,path):
-       # print ("old:",self.flight.path)
-       # print ("new:",path)
-       # self.flight.save()
-       # time.sleep(5)
+        print ("old:",self.flight.path)
+        print ("new:",path)
+        #self.flight.save()
+        #time.sleep(5)
         if self.useflight:
         #    self.flight.saveandload(path)
             self.flight.load(path)

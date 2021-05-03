@@ -44,7 +44,7 @@ class CopyThread(QtCore.QThread):
     
     def get_foldername(self,img):
         try:
-            print(img.header["file"]["DateTimeOriginal"],img.header["file"]["name"])
+         #   print(img.header["file"]["DateTimeOriginal"],img.header["file"]["name"])
             time = parser.parse(img.header["file"]["DateTimeOriginal"])
         except: 
             time = datetime.datetime.now()

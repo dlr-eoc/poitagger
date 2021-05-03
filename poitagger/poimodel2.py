@@ -158,10 +158,12 @@ class PoiModel(QtCore.QObject):
         #print("========",filename,"============")
         for i in self.pois:
             if i["filename"]==filename:
+                #print("from file")
                 Pois.append(i)
             else:
                 try:
                     attitude = self.prepareReproject(i)    
+                    #print("reprojected ",i,self.im_fx)
                     j = self.backreproject(i, attitude)
                  #   print(j)
                     if not j.all() == None:

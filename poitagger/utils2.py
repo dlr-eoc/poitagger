@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 import dateutil.parser
 import datetime
 import pytz 
+import math
 from . import image
 
 
@@ -166,7 +167,41 @@ def get_latlon(path):
         #print traceback.print_exc()
         return None
     return latlon
+
+def valid_gps(lat,lon):
+    lat_ok = True if 1<=abs(lat)<90 else False
+    lon_ok = True if 1<=abs(lon)<180 else False
+    return True if lat_ok and lon_ok else False
+
+def magnitudeorder(value,start=100):
+    value= abs(value)
+    order = start
+    if value > math.pow(10,start):
+        raise Exception("value bigger than magnitude (start)")
+    if value>1.0:
+        while value>1.0:
+            order=order-1
+            value=value/10
+        return start-order
+    else:
+        if value < math.pow(10,-start):
+            raise Exception("value smaler than magnitude (-start)")
+        while value<1.0:
+            order=order-1
+            value=value*10
+        return order-start
     
+def adapt_magnitude(wrong,reference):
+    digits = len(str(int(reference)))
+    out = wrong*math.pow(10,magnitudeorder(reference/wrong))
+    digout = len(str(int(out)))
+    if digout == digits:
+        return out
+    else:
+        return wrong*math.pow(10,magnitudeorder(reference/wrong)-digout+digits)
+
+        
+        
 def dms2dd(degrees, minutes, seconds, direction):
     dd = float(degrees) + float(minutes)/60 + float(seconds)/(60*60);
     if direction == 'W' or direction == 'S':

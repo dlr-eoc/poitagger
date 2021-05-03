@@ -13,6 +13,7 @@ try:
     from PIL import Image as pilimage
     import struct
     import time
+    import math
     import tifffile as tf
     import datetime
     import dateutil

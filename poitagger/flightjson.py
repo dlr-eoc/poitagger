@@ -352,7 +352,7 @@ class FlightWidget(QMainWindow):
                 
     def test(self):
         logger.debug("FW:test")
-        print (self.flight.p.child("children").child("general").child("path").value())
+       # print (self.flight.p.child("children").child("general").child("path").value())
         
 class Flight(QtCore.QObject): #kein QThread
     import_enabled = False
@@ -565,11 +565,11 @@ class Flight(QtCore.QObject): #kein QThread
         try:
             myjson = os.path.join(self.path,self.filename)
             if self.import_enabled:
-                print ("THREAD STARTING!!!!")
+             #   print ("THREAD STARTING!!!!")
                 self.ifm.load(self.path)
             elif os.path.exists(myjson):
                 #self._loadJson()
-                print ("THREAD STARTING!!!!")
+           ##     print ("THREAD STARTING!!!!")
                 self.ifm.load(myjson,True)
             else:
     #            print("Empty")
@@ -598,7 +598,8 @@ class Flight(QtCore.QObject): #kein QThread
         
         
     def save(self):
-        logger.debug("F:save")
+        print("FLIGHT SAVE", self.path)
+        #logger.debug("F:save")
         if self.path == None: return
         if self.task == "loadEmpty": return
         try:
@@ -619,7 +620,7 @@ class Flight(QtCore.QObject): #kein QThread
             import ctypes
             ctypes.windll.kernel32.SetFileAttributesW(fpath, 128)
             with open(fpath, 'w') as outfile:
-                print("WINDOWS")
+           #     print("WINDOWS")
                # self.p.saveState()
                 json.dump(self.p.saveState(), outfile)#, Dumper=yamlordereddictloader.Dumper, default_flow_style=False)
             ctypes.windll.kernel32.SetFileAttributesW(fpath, 2)
@@ -662,10 +663,21 @@ class ImportFlightMeta(QtCore.QThread):
         try:
             for k,file in enumerate(Dir):
                 #print(int((k/num)*60))
+               # print(k,file)
                 if k%10==0:
                     self.progress.emit(int((k/num)*60))
                 if os.path.splitext(file)[1].lower() not in image.SUPPORTED_EXTENSIONS: continue
                 img = image.Image.factory(os.path.join(path,file),onlyheader=True)    
+                if utils2.valid_gps(img.header["gps"]["latitude"],img.header["gps"]["longitude"]):
+                    last={"lat":img.header["gps"]["latitude"],"lon":img.header["gps"]["longitude"]}
+                else:
+                    if img.header["gps"]["latitude"] == 0:
+                        img.header["gps"]["latitude"] = last["lat"]
+                    if img.header["gps"]["longitude"] == 0:
+                        img.header["gps"]["longitude"] = last["lon"]
+                    img.header["gps"]["latitude"] = utils2.adapt_magnitude(img.header["gps"]["latitude"],last["lat"])
+                    img.header["gps"]["longitude"] = utils2.adapt_magnitude(img.header["gps"]["longitude"],last["lon"])
+                    print(img.header["gps"]["latitude"], img.header["gps"]["longitude"])
                 self.ImgHdr.append(img.header)
             return self.ImgHdr
         except:

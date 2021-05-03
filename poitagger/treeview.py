@@ -36,7 +36,7 @@ class TreeWidget(QMainWindow):
         self.view.imgPathChanged.connect(self.progress)
         self.actiontest.triggered.connect(self.setFilter)
         self.view.imgDirChanged.connect(self.releasePoiFilter)
-        
+    
     def releasePoiFilter(self):
         if self.actiontest.isChecked():
             self.actiontest.trigger()
@@ -150,6 +150,7 @@ class TreeView(QTreeView):
     imgDirChanged = QtCore.pyqtSignal(str)   #imgdir is the current folder where the images are in
     rootdir = ""
     imgdir = ""
+    lastdir = ""
     aralist = []
     imgname = ""
     def __init__(self,parent = None):
@@ -159,6 +160,7 @@ class TreeView(QTreeView):
         self.model.setNameFilters(["*"+x for x in image.SUPPORTED_EXTENSIONS])
         self.model.setNameFilterDisables(False)
         self.model.directoryLoaded.connect(self.rootPathLoaded)
+       
      #   self.sortByColumn(1,QtCore.Qt.AscendingOrder)
      #   self.setSortingEnabled(True)
         
@@ -176,11 +178,13 @@ class TreeView(QTreeView):
         self.rootDirChanged.emit(root)
             
     def rootPathLoaded(self,rootpath):
-        logger.debug("TV:rootPathLoaded")
+        print("ROOT PATH loaded",rootpath)
+        #logger.warning("TV:rootPathLoaded")
         rootindex = self.model.index(rootpath)
         if self.model.hasChildren(rootindex):
-            firstchild = self.model.index(0,0,rootindex)
-            self.setCurrentIndex(firstchild)
+            if not self.lastdir == self.imgdir:
+                firstchild = self.model.index(0,0,rootindex)
+                self.setCurrentIndex(firstchild)
     
     def setCurrent(self,name):
         logger.debug("TV:setCurrent")
@@ -208,8 +212,8 @@ class TreeView(QTreeView):
         return str(self.model.fileInfo(self.currentIndex()).absoluteFilePath())
         
     def currentChanged(self, current, last):
-        logger.debug("TV:currentChanged")
-        #print ("TV, CURRENT CHANGED")
+        #logger.debug("TV:currentChanged")
+        #print ("TV, CURRENT CHANGED", current, last)
         self.scrollTo(current)
         upper = self.indexAbove(current)
         if upper.isValid():
@@ -222,11 +226,11 @@ class TreeView(QTreeView):
         if os.path.isfile(curpath): 
             self.imgname = os.path.basename(curpath)
             self.imgPathChanged.emit(curpath)
-        lastdir = lastpath if os.path.isdir(lastpath) else os.path.dirname(lastpath)    
+        self.lastdir = lastpath if os.path.isdir(lastpath) else os.path.dirname(lastpath)    
         curdir = curpath if os.path.isdir(curpath) else os.path.dirname(curpath)    
         #print (self.imgname, lastpath)
-        if os.path.isdir(lastdir): 
-            if not os.path.samefile(lastdir,curdir):
+        if os.path.isdir(self.lastdir): 
+            if not os.path.samefile(self.lastdir,curdir):
                 self.imgdir = curdir
                 self.imgDirChanged.emit(curdir)
         

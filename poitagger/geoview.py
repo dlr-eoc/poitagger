@@ -15,7 +15,7 @@ import copy
 import numpy as np
 import logging
 from . import PATHS
-
+from . import utils2
 WIDTH = 0.00003
 HEIGHT = 0.00003
 
@@ -170,7 +170,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         
     def loadpois(self,pois):
         if not self.jsloaded: return 
-        print("geoview: loadPois",pois)
+      #  print("geoview: loadPois",pois)
         arr = []
         if pois==[] or pois == None:
             self.page.runJavaScript('map.getSource("pois").setData({{"type": "FeatureCollection","features": {} }})'.format(arr))
@@ -190,6 +190,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
     
     def moveUav(self,lat,lon,yaw=0):
         if not self.jsloaded: return 
+        if not utils2.valid_gps(lat,lon): return 
         self.lat, self.lon = lat, lon
         if self.followUav:
             self.panMap(lat,lon)
