@@ -411,6 +411,7 @@ class ImageJpg(Image):
         ffh = {}
         if str(self.exif.get("Image Make","")) == "DJI":
             self.endian = "<"
+            print ("DJI Image")
         elif str(self.exif.get("Image Make","")) == "FLIR":
             self.endian = ">"
         else: 

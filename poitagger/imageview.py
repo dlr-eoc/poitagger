@@ -408,6 +408,7 @@ class Img(QtGui.QWidget):
             self.highlighting.emit(hlstr)
         except:
             logger.error("loadImg set color did not work",exc_info=True)
+        self.vbox.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight),padding=0.0)   # set fullscreen!!!  
         self.loaded.emit(True)
     
     def onSetMask(self):
