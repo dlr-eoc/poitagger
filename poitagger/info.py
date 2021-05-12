@@ -4,6 +4,7 @@ import pyqtgraph.parametertree.parameterTypes as pTypes
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 import logging
 
+# Das ist der Exif-Tab
 
 def is_equal(a, b, encoding="utf8"):
     if isinstance(a, bytes):

@@ -598,6 +598,10 @@ class ImageJpg(Image):
             self.header["uav"]["yawrate"] = self.extract_xmp("flir:mavyawrate") 
             self.header["uav"]["pitchrate"] = self.extract_xmp("flir:mavpitchrate") 
             
+            self.header["uav"]["xacc"] = self.extract_xmp("td:uavaccx") 
+            self.header["uav"]["yacc"] = self.extract_xmp("td:uavaccy") 
+            self.header["uav"]["zacc"] = self.extract_xmp("td:uavaccz") 
+            
             self.header["calibration"]["radiometric"]["R"] = float(self.fff.get("PlanckR1",(0))[0])
             self.header["calibration"]["radiometric"]["F"] = float(self.fff.get("PlanckF",(1))[0])
             self.header["calibration"]["radiometric"]["B"] = float(self.fff.get("PlanckB",(0))[0])
