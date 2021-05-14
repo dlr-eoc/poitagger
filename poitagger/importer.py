@@ -45,12 +45,15 @@ class CopyThread(QtCore.QThread):
     def get_foldername(self,img):
         try:
          #   print(img.header["file"]["DateTimeOriginal"],img.header["file"]["name"])
-            time = parser.parse(img.header["file"]["DateTimeOriginal"])
+            time = parser.parse(str(img.header["gps"]["date"]) + " "+ str(img.header["gps"]["timestamp"]))
         except: 
-            time = datetime.datetime.now()
-            logger.warning("I didn't find a 'DateTimeOriginal'-Tag in Image Header, so i'll take the current time")
+            logger.error("I didn't find a 'DateTimeOriginal'-Tag in Image Header",exc_info=True)
+          #  time = datetime.datetime.now()
+          #  logger.warning("I didn't find a 'DateTimeOriginal'-Tag in Image Header, so i'll take the current time")
         foldername = time.strftime("%y%m%d_%H%M_")+self.flightname.replace(" ", "_") #.astimezone(get_localzone())
         outpath = os.path.join(self.rootdir,foldername)
+        #print ("HALLO HIER BIN ICH",outpath)
+        
         return outpath
         
     def create_folder(self,foldername): #and append (1) or (2) ... if it already exist

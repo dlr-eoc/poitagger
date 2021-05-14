@@ -760,9 +760,13 @@ class ImportFlightMeta(QtCore.QThread):
         if len(bore)==0:
             bore = {"cam_pitch":0,"cam_roll":0,"cam_yaw":0,"cam_euler_order":"ZXY"}
         if len(geom)==0:
-            width = self.ImgHdr[0]["image"]["width"]
-            height = self.ImgHdr[0]["image"]["height"]
-            geom = {"fx":1115,"fy":1115,"cx":width/2,"cy":height/2,"skew":0,"k1":0,"k2":0,"k3":0,"p1":0,"p2":0,"pixelshift":0,"timestamp":0}
+            try:
+                width = self.ImgHdr[0]["image"]["width"]
+                height = self.ImgHdr[0]["image"]["height"]
+                geom = {"fx":1115,"fy":1115,"cx":width/2,"cy":height/2,"skew":0,"k1":0,"k2":0,"k3":0,"p1":0,"p2":0,"pixelshift":0,"timestamp":0}
+            except:
+                logger.warning("filling geometric calibration parameters failed")
+                geom = {"fx":1115,"fy":1115,"cx":320,"cy":256,"skew":0,"k1":0,"k2":0,"k3":0,"p1":0,"p2":0,"pixelshift":0,"timestamp":0}
         if len(radi)==0:
             radi = {"B":333,"R":12996.665,"F":1,"coretemp":30,"timestamp":0}
             

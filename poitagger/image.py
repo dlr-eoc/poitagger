@@ -61,6 +61,31 @@ def dms2dd(degrees, minutes, seconds, direction):
     if direction == 'W' or direction == 'S':
         dd *= -1
     return dd;
+
+
+def convert_rational(exifread_rational):
+    rational_str = str(exifread_rational)
+    p = re.compile(r'[\(, \)]+|[\[, \]]+')
+    Lst1 = p.split(rational_str)[1:-1]
+    Lst2 = []
+    for i in Lst1:
+        try:
+            Lst2.append(int(i))
+        except ValueError:
+            Lst2.append(evaldiv(i))
+    return Lst2
+
+def evaldiv(string):
+        splitted = str(string).split("/")
+        if len(splitted)>2: 
+            raise Exception("too many '/' in string")
+        elif len(splitted)== 2:
+            zaehler, nenner = splitted 
+        else:
+            zaehler, nenner = splitted[0], 1
+        if float(nenner) != 0:    
+            return float(zaehler) / float(nenner)
+        return float(zaehler)
            
 MARKER = {
 b"\xff\xe0":"APP0" , # JFIF APP0 segment marker
@@ -205,6 +230,7 @@ GEOMETRIC_INFO = [[0x00,"pixelSize", "H"],
         [0x1e,'reserved1', "H"]]
 
     
+    
 class Image(object):
     header = {"camera":{},"uav":{},"image":{},"file":{},"gps":{},
          "calibration":{"geometric":{},"radiometric":{},"boresight":{}},"exif":{},
@@ -228,21 +254,10 @@ class Image(object):
     factory = staticmethod(factory)
      
     
-    def evaldiv(self,string):
-        splitted = str(string).split("/")
-        if len(splitted)>2: 
-            raise Exception("too many '/' in string")
-        elif len(splitted)== 2:
-            zaehler, nenner = splitted 
-        else:
-            zaehler, nenner = splitted[0], 1
-        if float(nenner) != 0:    
-            return float(zaehler) / float(nenner)
-        return float(zaehler)
 
     def extract_xmp(self,string):
         try:
-            text = self.evaldiv(self.xmp.find(string).text)
+            text = evaldiv(self.xmp.find(string).text)
         except ValueError:
             text = self.xmp.find(string).text.strip()
         except AttributeError:
@@ -256,17 +271,19 @@ class Image(object):
         
         # p = re.compile(r'[\[, \]]+')
         # deglist = p.split(deg)[1:-1]
-        # out = dms2dd(deglist[0],deglist[1],self.evaldiv(deglist[2]),ref)
+        # out = dms2dd(deglist[0],deglist[1],evaldiv(deglist[2]),ref)
      # #   print("OUT",out)
         # return out 
+    def rational2float(self,rational_strlist):
+        rational_str = str(rational_strlist)
+        p = re.compile(r'[\(, \)]+|[\[, \]]+')
+        return p.split(rational_str)[1:-1]
     
     def convert_latlon(self,exif_deg,exif_ref):
-        deg = str(exif_deg)
         ref = str(exif_ref)
-        p = re.compile(r'[\(, \)]+|[\[, \]]+')
-        deglist = p.split(deg)[1:-1]
+        deglist = convert_rational(exif_deg)
         if len(deglist)==3:
-            return dms2dd(deglist[0],deglist[1],self.evaldiv(deglist[2]),ref)
+            return dms2dd(deglist[0],deglist[1],deglist[2],ref)
         if len(deglist)==6:
             return dms2dd(float(deglist[0])/float(deglist[1]),float(deglist[2])/float(deglist[3]),float(deglist[4])/float(deglist[5]),ref)
         else:
@@ -274,7 +291,7 @@ class Image(object):
     
     def extract_exif(self,string):
         try:
-            text = self.evaldiv(self.exif.get(string))
+            text = evaldiv(self.exif.get(string))
         except ValueError:
             text = str(self.exif.get(string)).strip()
         except AttributeError:
@@ -502,6 +519,8 @@ class ImageJpg(Image):
         return lat,lon
  
     def fill_header_flir(self):
+        
+       # print ("EXIF:", self.exif)
         self.header["file"]["name"] = self.filename
         self.header["image"]["width"] = self.rwidth if self.rwidth else self.width #self.extract_exif("Raw Thermal Image Width")
         self.header["image"]["height"] = self.rheight if self.rheight else self.height #self.extract_exif("Raw Thermal Image Height")
@@ -516,17 +535,20 @@ class ImageJpg(Image):
         self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
         self.header["uav"]["yaw"] = self.extract_xmp("flir:mavyaw") 
         try:
-            self.header["camera"]["yaw"] = self.extract_xmp("flir:mavyaw") + self.extract_xmp("camera:yaw")
+            self.header["camera"]["yaw"] =  self.extract_xmp("camera:yaw") #self.extract_xmp("flir:mavyaw") +
         except:
             self.header["camera"]["yaw"] = -9999
         self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch") 
         self.header["uav"]["euler_order"] = "ZYX"
         try:
-            self.header["file"]["DateTimeOriginal"] = self.exif("Exif DateTimeOriginal")
-        except:  pass
+            self.header["file"]["DateTimeOriginal"] = self.exif["EXIF DateTimeOriginal"]
+        except:  
+            print (self.exif)
+            logger.warning("fill Date Time Original failed", exc_info=True)
         try:
-            self.header["file"]["SubSecTimeOriginal"] = self.exif("Exif SubSecTimeOriginal")
-        except:  pass
+            self.header["file"]["SubSecTimeOriginal"] = self.exif["EXIF SubSecTimeOriginal"]
+        except:  
+            logger.warning("fill SubSecTimeOriginal failed", exc_info=True)
         
         try:
             lat = self.convert_latlon(self.exif["GPS GPSLatitude"],self.exif["GPS GPSLatitudeRef"])
@@ -540,7 +562,10 @@ class ImageJpg(Image):
             self.header["gps"]["abs_altitude"] = self.extract_exif("GPS GPSAltitude")
         except:  pass
         try:
-            self.header["gps"]["timestamp"] = self.extract_exif("GPS GPSTimeStamp")
+            self.header["gps"]["timestamp"] = ":".join(str(x) for x in convert_rational(self.extract_exif("GPS GPSTimeStamp")))
+        except:  pass
+        try:
+            self.header["gps"]["date"] = "-".join(self.extract_exif("GPS GPSDate").split(":")) 
         except:  pass
         
         try:
@@ -569,13 +594,13 @@ class ImageJpg(Image):
         
         try:
             self.header["camera"]['PartNumber'] = self.fff.get("CameraPartNumber","").decode("utf-8") 
-            self.header["camera"]["serial"] = self.fff.get('CameraSerialNumber',"").decode("utf-8") 
-            self.header["file"]["DateTimeOriginal"] = isotimestr(*self.fff.get("DateTimeOriginal",0))
+            self.header["camera"]["SerialNumber"] = self.fff.get('CameraSerialNumber',"").decode("utf-8") 
+        #    self.header["file"]["DateTimeOriginal"] = isotimestr(*self.fff.get("DateTimeOriginal",0))
         except:
             try:
                 self.header["camera"]['PartNumber'] = self.fff.get("CameraPartNumber","")
                 self.header["camera"]["serial"] = self.fff.get('CameraSerialNumber',"")
-                self.header["file"]["DateTimeOriginal"] = self.fff.get("DateTimeOriginal",0)
+         #       self.header["file"]["DateTimeOriginal"] = self.fff.get("DateTimeOriginal",0)
         #self.header["file"]["modifydate"] = self.fff.get("DateTimeOriginal",0)
         #self.header["file"]["createdate"] = self.fff.get("DateTimeOriginal",0)
             except:
@@ -601,7 +626,10 @@ class ImageJpg(Image):
             self.header["uav"]["xacc"] = self.extract_xmp("td:uavaccx") 
             self.header["uav"]["yacc"] = self.extract_xmp("td:uavaccy") 
             self.header["uav"]["zacc"] = self.extract_xmp("td:uavaccz") 
-            
+        except:
+            pass
+        
+        try:    
             self.header["calibration"]["radiometric"]["R"] = float(self.fff.get("PlanckR1",(0))[0])
             self.header["calibration"]["radiometric"]["F"] = float(self.fff.get("PlanckF",(1))[0])
             self.header["calibration"]["radiometric"]["B"] = float(self.fff.get("PlanckB",(0))[0])
@@ -611,7 +639,23 @@ class ImageJpg(Image):
             self.header["calibration"]["radiometric"]["timestamp"] = 0
             self.header["calibration"]["radiometric"]["IRWindowTemperature"] = float(self.fff.get("IRWindowTemperature",(0))[0])
             self.header["calibration"]["radiometric"]["IRWindowTransmission"] = float(self.fff.get("IRWindowTransmission",(1))[0])
+        except:
+            pass
+        
             
+        try:
+            self.header["camera"]['CoreTemp'] = self.extract_xmp("camera:coretemp") 
+            self.header["camera"]['FfcState'] = self.extract_xmp("camera:ffcstate") 
+            self.header["camera"]['FfcDesired'] = self.extract_xmp("camera:ffcdesired") 
+            self.header["camera"]['FrameCount'] = self.extract_xmp("camera:framecount") 
+            self.header["camera"]['FocalLengthPixel'] = self.extract_xmp("camera:focallengthpixel") 
+            self.header["camera"]['FOV'] = self.extract_xmp("camera:fov") 
+            self.header["camera"]['Distortion'] = self.extract_xmp("camera:distortion") 
+            self.header["camera"]['LastFfcFrameCount'] = self.extract_xmp("camera:lastffcframecount")
+            self.header["camera"]['PartNumber'] = self.extract_xmp("camera:partnumber") 
+            self.header["camera"]["SerialNumber"] = self.extract_xmp("camera:serialnumber") 
+            self.header["camera"]['Firmware'] = self.extract_xmp("camera:firmware") 
+                            
         except:
             pass
         
