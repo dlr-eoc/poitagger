@@ -48,8 +48,8 @@ class CopyThread(QtCore.QThread):
             time = parser.parse(str(img.header["gps"]["date"]) + " "+ str(img.header["gps"]["timestamp"]))
         except: 
             logger.error("I didn't find a 'DateTimeOriginal'-Tag in Image Header",exc_info=True)
-          #  time = datetime.datetime.now()
-          #  logger.warning("I didn't find a 'DateTimeOriginal'-Tag in Image Header, so i'll take the current time")
+            time = datetime.datetime.now()
+            logger.warning("I didn't find a 'DateTimeOriginal'-Tag in Image Header, so i'll take the current time")
         foldername = time.strftime("%y%m%d_%H%M_")+self.flightname.replace(" ", "_") #.astimezone(get_localzone())
         outpath = os.path.join(self.rootdir,foldername)
         #print ("HALLO HIER BIN ICH",outpath)
