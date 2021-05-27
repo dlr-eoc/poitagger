@@ -3,7 +3,7 @@ import os
 from shutil import copyfile,copytree
 from PyQt5 import QtCore
 from datetime import datetime
-__version__ = "0.2.15"
+__version__ = "0.2.16"
 
 PATHS = {}
 
