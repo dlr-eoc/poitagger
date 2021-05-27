@@ -535,7 +535,11 @@ class ImageJpg(Image):
         self.header["uav"]["roll"] = self.extract_xmp("flir:mavroll")
         self.header["uav"]["yaw"] = self.extract_xmp("flir:mavyaw") 
         try:
-            self.header["camera"]["yaw"] =  self.extract_xmp("camera:yaw") #self.extract_xmp("flir:mavyaw") +
+            if not self.extract_xmp("td:uavaccx") in [None, ""]: # neues Grabber Skript 
+                self.header["camera"]["yaw"] =  self.extract_xmp("camera:yaw")
+            else:
+                self.header["camera"]["yaw"] = self.extract_xmp("flir:mavyaw") + self.extract_xmp("camera:yaw")
+            #self.extract_xmp("flir:mavyaw") +
         except:
             self.header["camera"]["yaw"] = -9999
         self.header["uav"]["pitch"] = self.extract_xmp("flir:mavpitch") 
