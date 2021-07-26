@@ -11,6 +11,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from . import PATHS 
+from . import CONF
 from . import upload
 from . import gpx
 
@@ -18,12 +19,11 @@ from . import gpx
 logger = logging.getLogger(__name__)
 
 class GpxView(QMainWindow):
-    def __init__(self,settings,model):
+    def __init__(self,model):
         super().__init__()
         uic.loadUi(os.path.join(PATHS["UI"],'gpx.ui'),self)
-        self.dialog = upload.UploadDialog("Upload",settings)
+        self.dialog = upload.UploadDialog("Upload")
         self.gpxdialog = GPXExportDialog()
-        self.settings = settings
         self.model = model
         self.actionGpxExport.triggered.connect(self.gpxdialog.show)
        # self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.model))
@@ -35,7 +35,7 @@ class GpxView(QMainWindow):
     
     def exportserial(self):
       #  print(PATHS["POIS"])
-        cmd = self.settings.value('GPX/gpsbabel',"gpsbabel.exe") + ' -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + PATHS["POIS"] + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
+        cmd = CONF["GPX"]["gpsbabel"] + ' -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + PATHS["POIS"] + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
        # print(cmd)
         ret = os.system(cmd)
         if ret == 0: 
@@ -44,7 +44,7 @@ class GpxView(QMainWindow):
             QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","Ein altes Garmin Geraet wurde nicht gefunden. Falls es ordnungsgemaess angeschlossen ist, koennte es sein, dass der Treiber noch nicht installiert ist. <a href='https://download.garmin.com/software/USBDrivers_2312.exe'>Garmin Serial Treiber herunterladen</a>. "); 
                 
     def exportmassstorage(self):
-        outdir = str(self.settings.value('GPX/outpath'))
+        outdir = str(CONF["GPX"]["outpath"])
         if os.path.isdir(outdir):
             gpxfilename = "pois.gpx"
             outpath = os.path.join(outdir,gpxfilename)
@@ -59,17 +59,17 @@ class GpxView(QMainWindow):
             
     def exportemail(self):
       #  print(PATHS["POIS"])
-        senderEmail = str(self.settings.value('GPX/emailsender'))
-        empfangsEmail = str(self.settings.value('GPX/emailreceiver'))
+        senderEmail = str(CONF["GPX"]["emailsender"])
+        empfangsEmail = str(CONF["GPX"]["emailreceiver"])
         msg = MIMEMultipart()
         msg['From'] = senderEmail
         msg['To'] = empfangsEmail
         msg['Subject'] = "POIs"
         emailText = "Pois sind hier"
         msg.attach(MIMEText(emailText, 'html'))
-        server = smtplib.SMTP(str(self.settings.value('GPX/smtpserver')), str(self.settings.value('GPX/smtpport'))) # Die Server Daten
+        server = smtplib.SMTP(str(CONF["GPX"]["smtpserver"]), str(CONF["GPX"]["smtpport"])) # Die Server Daten
         server.starttls()
-        server.login(senderEmail, str(self.settings.value('GPX/emailpassword'))) # Das Passwort
+        server.login(senderEmail, str(CONF["GPX"]["emailpassword"])) # Das Passwort
         text = msg.as_string()
         server.sendmail(senderEmail, empfangsEmail, text)
         server.quit()
@@ -85,13 +85,13 @@ class GpxView(QMainWindow):
         except:
             logger.error("GPX_TO_GPS save failed",exc_info=True)
             
-        if str(self.settings.value('GPX/exportType')) == "serial":# conf.garminserial_rB.isChecked():
+        if str(CONF["GPX"]["exportType"]) == "serial":# conf.garminserial_rB.isChecked():
             self.exportserial()
-        elif  str(self.settings.value('GPX/exportType')) == "massStorage":# conf.massStorage_rB.isChecked():
+        elif  str(CONF["GPX"]["exportType"]) == "massStorage":# conf.massStorage_rB.isChecked():
             self.exportmassstorage()
-        elif  str(self.settings.value('GPX/exportType')) == "email":# conf.massStorage_rB.isChecked():
+        elif  str(CONF["GPX"]["exportType"]) == "email":# conf.massStorage_rB.isChecked():
             self.exportemail()
-        elif  str(self.settings.value('GPX/exportType')) == "wildretter":# conf.massStorage_rB.isChecked():
+        elif  str(CONF["GPX"]["exportType"]) == "wildretter":# conf.massStorage_rB.isChecked():
             self.exportemail()
             
         else:
@@ -111,12 +111,10 @@ class GPXExportDialog(QtGui.QDialog):
         uic.loadUi(os.path.join(PATHS["UI"],'gpxexport.ui'),self)
         self.setWindowTitle("GPX Export")
         
-        self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
-        self.settings.setFallbacksEnabled(False) 
-        self.lineEdit.setText(self.settings.value("GPX/outpath",""))
-        self.gpsbabelpath = self.settings.value("GPX/gpsbabel","")
-        self.exporttype = self.settings.value('GPX/exportType')
-        self.emailLE.setText(self.settings.value('GPX/email'))
+        self.lineEdit.setText(CONF["GPX"]["outpath"])
+        self.gpsbabelpath = CONF["GPX"]["gpsbabel"]
+        self.exporttype = CONF["GPX"]["exportType"]
+        self.emailLE.setText(CONF["GPX"]["email"])
         
         if str(self.exporttype) == "serial":
             self.gpsbabelRB.setChecked(True)
@@ -137,16 +135,16 @@ class GPXExportDialog(QtGui.QDialog):
         self.lineEdit.setText(QFileDialog.getExistingDirectory(self, "Select Directory",self.lineEdit.text()))
         
     def accept(self):
-        self.settings.setValue("GPX/outpath",self.lineEdit.text())
-        self.settings.setValue('GPX/email',self.emailLE.text())
+        CONF["GPX"]["outpath"] = self.lineEdit.text()
+        CONF["GPX"]["email"] = self.emailLE.text()
         if self.gpsbabelRB.isChecked():
-            self.settings.setValue('GPX/exportType',"serial")
+            CONF["GPX"]["exportType"] = "serial"
         elif self.massstorageRB.isChecked():
-            self.settings.setValue('GPX/exportType',"massStorage")
+            CONF["GPX"]["exportType"] = "massStorage"
         elif self.emailRB.isChecked():
-            self.settings.setValue('GPX/exportType',"email")
+            CONF["GPX"]["exportType"] = "email"
         elif self.wildretterRB.isChecked():
-            self.settings.setValue('GPX/exportType',"wildretter")
+            CONF["GPX"]["exportType"] = "wildretter"
             QtGui.QMessageBox.critical(self, "Diese Auswahl geht noch nicht. Bitte vorerst noch den alten Upload nutzen (Wolken-Icon)"); 
             
         self.done(1)

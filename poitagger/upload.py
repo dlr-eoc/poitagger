@@ -10,18 +10,18 @@ from urllib.request import Request, urlopen
 import traceback
 import os
 from . import PATHS
+from . import CONF
 
 import pyqtgraph as pg
 
 class UploadDialog(QtGui.QDialog):
 
-    def __init__(self,title,settings):
+    def __init__(self,title):
         QtGui.QDialog.__init__(self)
-        self.settings = settings
         uic.loadUi(os.path.join(PATHS["UI"],'upload.ui'),self)
         self.setWindowTitle(title)
         self.connections()
-        self.loadSettings(settings)
+        self.loadSettings()
         #self.setCalib()
 
     def connections(self):
@@ -161,9 +161,9 @@ class UploadDialog(QtGui.QDialog):
         print(json)
 
 
-    def loadSettings(self,settings):
-        self.hoststr = str(self.settings.value('WILDRETTERAPP/url'))
-        self.keystr = str(self.settings.value('WILDRETTERAPP/key'))
+    def loadSettings(self):
+        self.hoststr = str(CONF["WILDRETTERAPP"]["url"])
+        self.keystr = str(CONF["WILDRETTERAPP"]["key"])
         if self.hoststr == None:
             self.hoststr = "https://td.programmiera.de/"
         self.server.insert(self.hoststr)
@@ -171,8 +171,8 @@ class UploadDialog(QtGui.QDialog):
         
     def writeSettings(self):
 #        print("write Settings UploadDialog")
-        self.settings.setValue('WILDRETTERAPP/url', str(self.server.text()))
-        self.settings.setValue('WILDRETTERAPP/key', str(self.key.text()))
+        CONF["WILDRETTERAPP"]["url"] = str(self.server.text())
+        CONF["WILDRETTERAPP"]["key"] = str(self.key.text())
         
 #    def onSearch(self):
         #path = QtGui.QFileDialog.getOpenFileName(self, "eine Kamera Kalibrier-Datei waehlen", self.DeadPixelpathBox.text(), "Calibration File (*.ini)")

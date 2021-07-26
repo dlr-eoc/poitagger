@@ -16,7 +16,8 @@ import shutil
 #import flirsd
 from .image import Image
 import traceback
-from . import PATHS     
+from . import PATHS
+from . import CONF    
 from . import image   
 
 
@@ -36,7 +37,7 @@ class Araloader(QtCore.QThread):
         # self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
         # self.settings.setFallbacksEnabled(False) 
         
-    def readSDCard(self,dialog,settings): #dialog kann nicht in einem qthread erzeugt werden! Deshalb wird der uebergeben
+    def readSDCard(self,dialog): #dialog kann nicht in einem qthread erzeugt werden! Deshalb wird der uebergeben
         sdcardname = "IR_"
         remove = dialog.SDCard_leeren.checkState()
         flying = dialog.nurFlugBilder.checkState()
@@ -50,9 +51,9 @@ class Araloader(QtCore.QThread):
        #     return
         self.type = "SDCard"
         founddir=str(dialog.sourceLE.text())
-        outdir = self.prepare(settings,founddir,remove_images=remove,only_flying=flying)  
+        outdir = self.prepare(founddir,remove_images=remove,only_flying=flying)  
         
-        dialog.st(settings.value("SDCARD/device"),outdir,"")
+        dialog.st(CONF["SDCARD"]["device"],outdir,"")
         ok = dialog.exec_()
         
         if ok == True:
@@ -89,16 +90,15 @@ class Araloader(QtCore.QThread):
         self.start()
     
     
-    def prepare(self, settings, indir, remove_images=False, year=None, only_flying=False):
-        self.settings = settings
+    def prepare(self, indir, remove_images=False, year=None, only_flying=False):
         self.indir = str(indir)
         self.remove_images = remove_images
         self.only_flying = only_flying
         self.year = int(time.strftime("%y"))%10 if year == None else year
         #print(type(self.settings))
-        self.flugnr = int(float(self.settings.value("SYSTEM/flightcounter",0)))
-        self.owner_id = self.settings.value("SYSTEM/owner_id","X")
-        outdir = self.settings.value("PATHS/rootdir", os.path.join(self.indir,"outdir"))
+        self.flugnr = int(float(CONF["SYSTEM"]["flightcounter"]))
+        self.owner_id = CONF["SYSTEM"]["owner_id"]
+        outdir = CONF["PATHS"]["rootdir"]
         self.outdir = str(outdir)
         print(outdir)
         return outdir
@@ -472,9 +472,7 @@ class Araloader(QtCore.QThread):
 if __name__ == "__main__":
     app = QtCore.QCoreApplication([])
     wf = Araloader()
-    settings = QtCore.QSettings("poi_tagger2.ini", QtCore.QSettings.IniFormat)
-    settings.setFallbacksEnabled(False) 
-    wf.prepare(settings,"test/indir")
+     wf.prepare("test/indir")
     wf.start()
     wf.finished.connect(app.exit)
     sys.exit(app.exec_())

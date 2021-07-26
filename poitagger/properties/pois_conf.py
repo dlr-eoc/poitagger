@@ -4,15 +4,15 @@ import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
+from .. import CONF
 class PoisProperties(QtGui.QWidget):
     poicolor = "#ffff00"
     poicolor2 = "##0055ff"
     poicolor_repro = "#005500"
    
-    def __init__(self,settings):
+    def __init__(self):
         QtGui.QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'pois_conf.ui'),self)
-        self.settings = settings
         
         self.colorChooser = QtGui.QColorDialog()
         #self.maskColbtn = pg.ColorButton()
@@ -38,18 +38,17 @@ class PoisProperties(QtGui.QWidget):
     def receiveColor(self,col):
         self.setColor(self.selectedColorLabel,col)
         
-    def loadSettings(self,s):
-        self.settings = s
-        self.setColor(self.poicolor,s.value('POIS/color',"#ff0000"))
-        self.size.setValue(int(s.value('POIS/size',"30")))
-        self.setColor(self.poicolor_repro,s.value('POIS/color_repro',"#0000ff"))
-        self.defaultname.setText(s.value('POIS/defaultname',""))
+    def loadSettings(self):
+        self.setColor(self.poicolor,CONF["POIS"]["color"])
+        self.size.setValue(int(CONF["POIS"]["size"]))
+        self.setColor(self.poicolor_repro,CONF["POIS"]["color_repro"])
+        self.defaultname.setText(CONF["POIS"]["defaultname"])
         
     def writeSettings(self):
-        self.settings.setValue('POIS/color',str(self.poicolor.color.name()))
-        self.settings.setValue('POIS/color_repro',str(self.poicolor_repro.color.name()))
-        self.settings.setValue('POIS/size',str(self.size.value()))
-        self.settings.setValue('POIS/defaultname',str(self.defaultname.text()))
+        CONF["POIS"]["color"] = str(self.poicolor.color.name())
+        CONF["POIS"]["color_repro"] = str(self.poicolor_repro.color.name())
+        CONF["POIS"]["size"] = str(self.size.value())
+        CONF["POIS"]["defaultname"] = str(self.defaultname.text())
         
        
         

@@ -43,6 +43,7 @@ import logging
 
 from . import image 
 from . import PATHS
+from . import CONF
 from . import nested
 #import asctec
 from . import utils2
@@ -57,6 +58,7 @@ try:
 except:
     is_premium = False
     pass
+    traceback.print_exc()
 
 
 logger = logging.getLogger(__name__)
@@ -128,10 +130,9 @@ class Img(QtGui.QWidget):
     imwidth = 640
     imheight = 512
     
-    def __init__(self,conf,startimage,settings):
+    def __init__(self,conf,startimage):
         QtGui.QWidget.__init__(self)
         self.w = pg.GraphicsLayoutWidget() # das ist das Centrawidget, das Thermalbild in der Mitte
-        self.settings = settings
         
         self.vbox = self.w.addViewBox(lockAspect=True,enableMenu=False,invertY=True)
         self.vbox.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight))#,padding=0.0
@@ -186,7 +187,6 @@ class Img(QtGui.QWidget):
         
         self.p.child("fullscreen").sigActivated.connect(lambda: self.vbox.setRange(QtCore.QRect(0,0,self.imwidth,self.imheight),padding=0.0))
         self.conf = conf
-        #self.settings = settings
         self.histlut = pg.HistogramLUTWidget()
         self.imgUI.horizontalLayout.addWidget(self.histlut)
         
@@ -422,7 +422,7 @@ class Img(QtGui.QWidget):
         return x,y
     
     def paintPois(self,liste): 
-        self.size = int(self.settings.value("POIS/size","30"))
+        self.size = int(CONF["POIS"]["size"])
         if self.ara.header["calibration"].get("error_flags",0) & image.ERRORFLAGS.ALL_META: return
         for item in self.vbox.addedItems[:]:# nur die Overlays loeschen #self.scene.items():
             if type(item) in [QtGui.QGraphicsTextItem, QtGui.QGraphicsEllipseItem,]: # pg.graphicsItems.ImageItem.ImageItem: 
@@ -434,7 +434,7 @@ class Img(QtGui.QWidget):
             eli = QtGui.QGraphicsEllipseItem(x-self.size/2.0,y-self.size/2.0,self.size,self.size)
             mytext = QtGui.QGraphicsTextItem(str(i["name"])) 
             mytext.setPos(x-self.size/2.0,y2)
-            if str(self.settings.value("POIS/visible")).lower() != "true": return
+            if str(CONF["POIS"]["visible"]).lower() != "true": return
             if i["filename"]==self.imgname:
                 pcol = QtGui.QPen(QtGui.QColor(self.conf.pois.poicolor.color))#"#ff0000"
                 col =  QtGui.QColor(self.conf.pois.poicolor.color) #"#ff0000"

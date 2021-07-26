@@ -4,28 +4,25 @@ import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
+from .. import CONF
 
 class GpsProperties(QtGui.QWidget):
     
-    def __init__(self,settings):
+    def __init__(self):
         QtGui.QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'gps_conf.ui'),self)
-        self.settings = settings
-        
         self.connections()
         
     def connections(self):
         pass
         
-    def loadSettings(self,s):
-        self.settings = s
-    
-        self.name_LE.setText(s.value('GPS-DEVICE/devicename'))
-        self.harddrive_LE.setText(s.value('GPS-DEVICE/harddrive'))
-        self.folder_LE.setText(s.value('GPS-DEVICE/gpxfolder'))
+    def loadSettings(self):
+        self.name_LE.setText(CONF["GPS-DEVICE"]["devicename"])
+        self.harddrive_LE.setText(CONF["GPS-DEVICE"]["harddrive"])
+        self.folder_LE.setText(CONF["GPS-DEVICE"]["gpxfolder"])
         
-        exporttype = s.value('GPS-DEVICE/exportType')
-        detectmode = s.value('GPS-DEVICE/detectMode')
+        exporttype = CONF["GPS-DEVICE"]["exportType"]
+        detectmode = CONF["GPS-DEVICE"]["detectMode"]
 
         if exporttype == "serial":
             self.garminserial_rB.setChecked(True)
@@ -53,11 +50,11 @@ class GpsProperties(QtGui.QWidget):
         else:
             detectmode = "None"
         
-        self.settings.setValue('GPS-DEVICE/exportType',exporttype)
-        self.settings.setValue('GPS-DEVICE/detectMode',detectmode)
-        self.settings.setValue('GPS-DEVICE/devicename',str(self.name_LE.text()))
-        self.settings.setValue('GPS-DEVICE/harddrive',str(self.harddrive_LE.text()))
-        self.settings.setValue('GPS-DEVICE/gpxfolder',str(self.folder_LE.text()))
+        CONF["GPS-DEVICE"]["exportType"] = exporttype
+        CONF["GPS-DEVICE"]["detectMode"] = detectmode
+        CONF["GPS-DEVICE"]["devicename"] = str(self.name_LE.text())
+        CONF["GPS-DEVICE"]["harddrive"] = str(self.harddrive_LE.text())
+        CONF["GPS-DEVICE"]["gpxfolder"] = str(self.folder_LE.text())
         
        
         

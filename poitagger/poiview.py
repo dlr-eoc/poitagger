@@ -17,6 +17,7 @@ from . import utils2
 from . import flightjson
 from . import nested
 from . import PATHS
+from . import CONF
 from . import poimodel2
 from . import upload
 
@@ -25,11 +26,10 @@ logger = logging.getLogger(__name__)
 
 class PoiView(QMainWindow):
     sigJumpTo = QtCore.pyqtSignal(str)
-    def __init__(self,settings,model):
+    def __init__(self,model):
         super().__init__()
         uic.loadUi(os.path.join(PATHS["UI"],'pois.ui'),self)
-        self.dialog = upload.UploadDialog("Upload",settings)
-        self.settings = settings
+        self.dialog = upload.UploadDialog("Upload")
         self.t = ParameterTree(showHeader=False)
         self.model = model
         self.horizontalLayout.addWidget(self.t)#self.listw)
@@ -41,14 +41,13 @@ class PoiView(QMainWindow):
         self.actionVisible.triggered.connect(self.setVis)
         self.actionUpload.triggered.connect(lambda: self.dialog.openPropDialog(self.model.pois))
         
-        self.actionNeuerMarker.setChecked(utils2.toBool(self.settings.value('POIS/neuerMarker',"True")))
-        self.actionVisible.setChecked(utils2.toBool(self.settings.value('POIS/visible',"True")))
+        self.actionNeuerMarker.setChecked(utils2.toBool(CONF["POIS"]["neuerMarker"]))
+        self.actionVisible.setChecked(utils2.toBool(CONF["POIS"]["visible"]))
         
     
     def setVis(self,trigger):
-        self.settings.setValue('POIS/visible', str(self.actionVisible.isChecked()))
-       # print("reproject",str(self.actionVisible.isChecked()))
-        
+        CONF["POIS"]["visible"] = str(self.actionVisible.isChecked())
+       
     def setMeta(self,fm):
         self.model.loadMeta(fm)
         self.toolBar.addWidget(self.cb)
@@ -101,7 +100,7 @@ class PoiView(QMainWindow):
         currentdata = self.p.child(str(self.cb.currentText())).child("data")
         last = len(currentdata.children())
         #childnames = [i.name() for i in self.p.children()]
-        defaultname = self.settings.value("POIS/defaultname","") 
+        defaultname = str(CONF["POIS"]["defaultname"]) 
         currentdata.insertChild(last,{"name":defaultname+str(last),"value":value,"type":"group", "readonly":False,"expanded":False,"removable":True,"renamable":True})
         data = self.t.topLevelItem(0)
         currentItem = data.child(data.childCount()-1)
@@ -178,7 +177,7 @@ class PoiView(QMainWindow):
 #       print("write Settings Poiview")
         self.dialog.writeSettings()
         #self.settings.setValue('WILDRETTERAPP/url', str(self.server.text()))
-        self.settings.setValue('POIS/neuerMarker', str(self.actionNeuerMarker.isChecked()))
+        CONF["POIS"]["neuerMarker"] = str(self.actionNeuerMarker.isChecked())
    
    # def saveState(self):
      #   with open("saveState.yml", 'w') as outfile:

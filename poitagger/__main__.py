@@ -31,13 +31,14 @@ import shutil
 import platform
 #import qdarkstyle
 
-
 from . import nested
 from . import gpx
 from . import poimodel2
 from . import utils2
 from . import flightjson
 from . import PATHS
+from . import CONF
+from . import db
 from . import __version__
 # Widgets
 from . import importer
@@ -68,19 +69,19 @@ class Main(QMainWindow):
         self.useflight = True
         self.resetwindow = resetwindow
         self.msg = QMessageBox()
-        self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
-        self.settings.setFallbacksEnabled(False) 
-        rd = rootdir if rootdir is not None else str(self.settings.value('PATHS/rootdir'))
-        id = imgdir if imgdir is not None else str(self.settings.value('PATHS/last'))
-        self.imgdiff = 1 if imgdir is not None else int(self.settings.value('PATHS/lastimgid',0))
-        startfilename = str(self.settings.value('PATHS/lastimgname'))
+        #self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
+        #self.settings.setFallbacksEnabled(False) 
+        rd = rootdir if rootdir is not None else CONF["PATHS"]["rootdir"] #str(self.settings.value('PATHS/rootdir'))
+        id = imgdir if imgdir is not None else CONF["PATHS"]["last"] #str(self.settings.value('PATHS/last'))
+        self.imgdiff = 1 if imgdir is not None else int(CONF["PATHS"]["lastimgid"]) #self.settings.value('PATHS/lastimgid',0)
+        startfilename = str(CONF["PATHS"]["lastimgname"]) #self.settings.value('PATHS/lastimgname'))
         
         self.saveDialog = importer.SaveAsDialog(self)
         
-        self.conf = properties.PropertyDialog("Einstellungen",self.settings)
+        self.conf = properties.PropertyDialog("Einstellungen") #,self.settings
         
         
-        self.img = imageview.Img(self.conf,os.path.join(id,startfilename),self.settings)
+        self.img = imageview.Img(self.conf,os.path.join(str(id),startfilename)) #,self.settings
         if self.useflight:
             self.flight = flightjson.Flight(".poitagger.json")
         self.info = info.Info()
@@ -90,14 +91,14 @@ class Main(QMainWindow):
         
         #self.poiview = pois.Pois(self.conf)
         self.poidata = poimodel2.PoiModel()
-        self.poiview = poiview.PoiView(self.settings,self.poidata)
-        self.gpxview = gpxexport.GpxView(self.settings,self.poidata)
+        self.poiview = poiview.PoiView(self.poidata) #self.settings,
+        self.gpxview = gpxexport.GpxView(self.poidata) #self.settings,
         
             
         if self.useflight:
             self.poiview.setMeta(self.flight.p) 
         
-        self.geomain = geoview.GeoWidget(self.settings)
+        self.geomain = geoview.GeoWidget() #self.settings
         
         self.treemain = treeview.TreeWidget(self)
         self.treemain.setRoot(rd)
@@ -125,24 +126,24 @@ class Main(QMainWindow):
         
         self.Console = QTextEdit(self.ConsoleDockWidget)
         
-     #   self.setDockWidget(self.CalibDockWidget,        'GUI/CalibDock',        self.calib)
-        #self.setDockWidget(self.DEMDockWidget,          'GUI/DEMDock',          self.dem)
-        self.setDockWidget(self.ConsoleDockWidget,      'GUI/ConsoleDock',      self.Console)
-        self.setDockWidget(self.PoisDockWidget,         'GUI/PoisDock',         self.poiview)
-        self.setDockWidget(self.GeoViewDockWidget,      'GUI/GeoViewDock',      self.geomain)
-        self.setDockWidget(self.PixeltempDockWidget,    'GUI/PixeltempDock',    self.img.imgUI)
-        self.setDockWidget(self.InfoDockWidget,         'GUI/InfoDock',         self.info.t)
-        self.setDockWidget(self.FMInfoDockWidget,       'GUI/FMInfoDock',       self.flightmain) #fminfo
-        self.setDockWidget(self.VerzeichnisDockWidget,  'GUI/VerzeichnisDock',  self.treemain)#.tree
-        self.setDockWidget(self.GpxDockWidget, 'GUI/GpxDock',self.gpxview)
+     #   self.setDockWidget(self.CalibDockWidget,        'CalibDock',        self.calib)
+        #self.setDockWidget(self.DEMDockWidget,          'DEMDock',          self.dem)
+        self.setDockWidget(self.ConsoleDockWidget,      'ConsoleDock',      self.Console)
+        self.setDockWidget(self.PoisDockWidget,         'PoisDock',         self.poiview)
+        self.setDockWidget(self.GeoViewDockWidget,      'GeoViewDock',      self.geomain)
+        self.setDockWidget(self.PixeltempDockWidget,    'PixeltempDock',    self.img.imgUI)
+        self.setDockWidget(self.ExifDockWidget,         'ExifDock',         self.info.t)
+        self.setDockWidget(self.FMInfoDockWidget,       'FMInfoDock',       self.flightmain) #fminfo
+        self.setDockWidget(self.VerzeichnisDockWidget,  'VerzeichnisDock',  self.treemain)#.tree
+        self.setDockWidget(self.GpxDockWidget, 'GpxDock',self.gpxview)
         
         upperwidgets = [self.GeoViewDockWidget]#,self.CalibDockWidget]#, self.ViewControlDockWidget, self.DEMDockWidget]
         lowerwidgets = [self.ConsoleDockWidget, self.PoisDockWidget, self.GpxDockWidget,self.FMInfoDockWidget]# self.DebugDockWidget,
        # self.Console.hide()
         [self.tabifyDockWidget( self.PixeltempDockWidget, w) for w in upperwidgets]
-        [self.tabifyDockWidget( self.InfoDockWidget,w) for w in lowerwidgets]
+        [self.tabifyDockWidget( self.ExifDockWidget,w) for w in lowerwidgets]
         
-        self.loadSettings(self.settings)
+        self.loadSettings() #self.settings
         
         self.show()
   
@@ -168,7 +169,7 @@ class Main(QMainWindow):
         self.treemain.view.imgPathChanged.connect(self.onImagePathChanged)
         self.treemain.view.imgDirChanged.connect(self.onDirChanged)
         self.img.loaded.connect(lambda: self.onImageChanged(self.img.ara))
-        self.treemain.view.rootDirChanged.connect(lambda rootdir: self.settings.setValue('PATHS/rootdir', rootdir))
+        self.treemain.view.rootDirChanged.connect(lambda rootdir: CONF["PATHS"]["rootdir"])
         
         if self.useflight:
             self.geomain.actionFitMap.triggered.connect(lambda: self.geomain.view.fitBounds(paramreduce.load(self.flight.p.child("general").child("bounding").getValues())))
@@ -247,7 +248,7 @@ class Main(QMainWindow):
     
     def exportgpx(self,gpxfile):#, conf):
         #self.gpxdialog.show()
-        if str(self.settings.value('GPS-DEVICE/exportType')) == "serial":# conf.garminserial_rB.isChecked():
+        if str(CONF["GPS-DEVICE"]["exportType"]) == "serial":# conf.garminserial_rB.isChecked():
             cmd = 'gpsbabel -w -r -t -i gpx,suppresswhite=0,logpoint=0,humminbirdextensions=0,garminextensions=0 -f "' + gpxfile + '" -o garmin,snwhite=0,get_posn=0,power_off=0,erase_t=0,resettime=0 -F usb:'
             print(cmd)
             ret = os.system(cmd)
@@ -256,22 +257,22 @@ class Main(QMainWindow):
             else:
                 QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","ein altes Garmin Geraet wurde nicht gefunden (bei einem neueren GPS-Geraet muss unter Einstellungen/allgemein/GPS-Device MassStorage Device anstatt Garmin Serial/USB ausgewaehlt werden)!"); 
                 
-        elif  str(self.settings.value('GPS-DEVICE/exportType')) == "massStorage":# conf.massStorage_rB.isChecked():
-            if str(self.settings.value('GPS-DEVICE/detectMode')) == "name": #conf.detectName_rB.isChecked():
+        elif  str(CONF["GPS-DEVICE"]["exportType"]) == "massStorage":# conf.massStorage_rB.isChecked():
+            if str(CONF["GPS-DEVICE"]["detectMode"]) == "name": #conf.detectName_rB.isChecked():
                # drive = utils2.getSDCardPath(str(self.settings.value('GPS-DEVICE/harddrive'))) #str(conf.name_LE.text()))
                 drive = None
                 if drive==False:
                     QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Ein Geraet mit dem Namen  %s existiert nicht)!"%str(conf.name_LE.text())); 
                     
                     
-            elif str(self.settings.value('GPS-DEVICE/detectMode'))== "fixedfolder": #conf.fixedFolder_rB.isChecked():
-                drive = str(self.settings.value('GPS-DEVICE/harddrive')) #str(conf.harddrive_LE.text())
+            elif str(CONF["GPS-DEVICE"]["detectMode"])== "fixedfolder": #conf.fixedFolder_rB.isChecked():
+                drive = str(CONF["GPS-DEVICE"]["harddrive"]) #str(conf.harddrive_LE.text())
             else:
                 QtGui.QMessageBox.critical(self, "Info0","kein Detektionsmodus gewaehlt! (unter Einstellungen/GPS-Device)"); 
             
             if not drive==False and not drive==None:
-                print(drive,str(self.settings.value('GPS-DEVICE/gpxfolder')))
-                outdir = os.path.join(drive,str(self.settings.value('GPS-DEVICE/gpxfolder')))    #conf.folder_LE.text()
+                print(drive,str(CONF["GPS-DEVICE"]["gpxfolder"]))
+                outdir = os.path.join(drive,str(CONF["GPS-DEVICE"]["gpxfolder"]))    #conf.folder_LE.text()
             
                 if os.path.isdir(outdir):
                     gpxfilename = "pois.gpx"
@@ -301,48 +302,52 @@ class Main(QMainWindow):
            self.PoisDockWidget.raise_()
            
         
-    def loadSettings(self, s):
-        [self.setTopDockWidget(w, s.value(v+"Focus")=="true") for w,v in self.dockwidgets]
-        [w.setVisible(s.value(v+"Visible")=="true") for w,v in self.dockwidgets]
-        size = QtCore.QSize(s.value('GUI/size'))
-        pos = QtCore.QPoint(s.value('GUI/pos'))
-        # screen = app.primaryScreen()  
-        # if self.resetwindow:
-            # self.resize(800,600)
-            # self.move(0,0)
-        # else:
-            # curscreen = screenAt(pos)
-            # if not curscreen:
-                # pos = QtCore.QPoint(0,0)
-                # curscreen = screenAt(pos)
-            # size = size.boundedTo(curscreen.virtualSize())
-            # self.resize(size)
-            # self.move(pos)
+    def loadSettings(self): #, s
+        [self.setTopDockWidget(w, utils2.toBool(CONF["GUI"][v+"Focus"])) for w,v in self.dockwidgets]
+        #[self.setTopDockWidget(w, s.value(v+"Focus")=="true") for w,v in self.dockwidgets]
+        [w.setVisible(utils2.toBool(CONF["GUI"][v+"Visible"])) for w,v in self.dockwidgets]
+        size = QtCore.QSize(int(CONF["GUI"]["size_width"]),int(CONF["GUI"]["size_height"]))
+        pos = QtCore.QPoint(int(CONF["GUI"]["pos_x"]),int(CONF["GUI"]["pos_y"]))
+        screen = app.primaryScreen()  
+        if self.resetwindow:
+            self.resize(800,600)
+            self.move(0,0)
+        else:
+            curscreen = screenAt(pos)
+            if not curscreen:
+                pos = QtCore.QPoint(0,0)
+                curscreen = screenAt(pos)
+            size = size.boundedTo(curscreen.virtualSize())
+            self.resize(size)
+            self.move(pos)
         
         
-        self.img.infoUI.CVfliphorCheckBox.setChecked(s.value('VIEW/fliphor')=="true")
-        self.img.infoUI.CVflipverCheckBox.setChecked(s.value('VIEW/flipver')=="true")
+        self.img.infoUI.CVfliphorCheckBox.setChecked(CONF["VIEW"]["fliphor"]=="true")
+        self.img.infoUI.CVflipverCheckBox.setChecked(CONF["VIEW"]["flipver"]=="true")
         
     #    self.poiview.loadSettings(self.settings)
         
-    def writeSettings(self,s):
-        s.setValue('PATHS/rootdir', self.treemain.view.rootdir)
-        s.setValue('PATHS/last', self.treemain.view.imgdir)
-        if len(self.treemain.view.aralist)>0:
-            s.setValue('PATHS/lastimgid', self.treemain.view.aralist[0]["id"])
-            s.setValue('PATHS/lastimgname', self.treemain.view.aralist[0]["filename"])
-        s.setValue('GUI/size', self.size())
-        s.setValue('GUI/pos', self.pos())
+    def writeSettings(self):
+        CONF["PATHS"]["rootdir"] = self.treemain.view.rootdir
+        CONF["PATHS"]["last"] = self.treemain.view.imgdir
+       # if len(self.treemain.view.aralist)>0:
+       #     s.setValue('PATHS/lastimgid', self.treemain.view.aralist[0]["id"])
+       #     s.setValue('PATHS/lastimgname', self.treemain.view.aralist[0]["filename"])
+        CONF["GUI"]["size_width"] = str(self.size().width())
+        CONF["GUI"]["size_height"] = str(self.size().height())
+        CONF["GUI"]["pos_x"] = str(self.pos().x())
+        CONF["GUI"]["pos_y"] = str(self.pos().y())
         
-        [s.setValue(v+"Visible",w.isVisible()) for w,v in self.dockwidgets]
-        [s.setValue(v+"Focus",self.isTopDockWidget(w)) for w,v in self.dockwidgets]
-        
-        s.setValue('VIEW/fliphor',self.img.infoUI.CVfliphorCheckBox.isChecked())
-        s.setValue('VIEW/flipver',self.img.infoUI.CVflipverCheckBox.isChecked())
+        for w,v in self.dockwidgets:
+            CONF["GUI"][v+"Visible"] = w.isVisible() 
+            CONF["GUI"][v+"Focus"] = self.isTopDockWidget(w) 
+            
+        CONF["VIEW"]["fliphor"] = str(self.img.infoUI.CVfliphorCheckBox.isChecked())
+        CONF["VIEW"]["flipver"] = str(self.img.infoUI.CVflipverCheckBox.isChecked())
      #   s.setValue("SDCARD/device",self.saveDialog.sourceLE.text())
         self.poiview.writeSettings()
         
-        
+        db.safe_config(CONF)
         
     def shortcuts(self):
         self.escAction = QtGui.QAction('escape', self)
@@ -366,12 +371,11 @@ class Main(QMainWindow):
             widget.raise_()
    
     def closeEvent(self, e=None):
-        self.settings.sync()
-        self.writeSettings(self.settings)
+        self.writeSettings()
         if self.useflight:
             self.flight.save()
         if e: e.accept()
-
+        db.disconnect()
 
 def screenAt(*pos):
     #print (type(pos),type(*pos),pos,*pos)

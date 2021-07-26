@@ -10,8 +10,10 @@ from dateutil import parser
 #import pytz
 #from tzlocal import get_localzone
 
+from . import image 
+from . import utils2 
 from . import PATHS     
-from . import image   
+from . import CONF  
 
 logger = logging.getLogger(__name__)
 
@@ -109,19 +111,17 @@ class SaveAsDialog(QtGui.QDialog):
     
     def __init__(self,parent=None):
         super().__init__(parent)
-        self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
-        self.settings.setFallbacksEnabled(False) 
         uic.loadUi(os.path.join(PATHS["UI"],'save_as.ui'),self)
         self.sourceTB.clicked.connect(self.onSearchSource)
         self.pathButton.clicked.connect(self.onSearch)
         self.setWindowTitle("Daten einlesen")
         self.setModal(True)
         self.worker = CopyThread()
-        self.sourceLE.setText(self.settings.value('IMPORT/folder'))
-        self.rootLE.setText(self.settings.value('PATHS/rootdir'))
-        self.flightnameLE.setText(self.settings.value('IMPORT/flightname'))
-        self.nurFlugBilder.setChecked(self.settings.value('IMPORT/nurFlugBilder',False,type=bool))
-        self.SDCard_leeren.setChecked(self.settings.value('IMPORT/SDCard_leeren',False,type=bool))
+        self.sourceLE.setText(CONF["IMPORT"]["folder"])
+        self.rootLE.setText(CONF["PATHS"]["rootdir"])
+        self.flightnameLE.setText(CONF["IMPORT"]["flightname"])
+        self.nurFlugBilder.setChecked(utils2.toBool(CONF["IMPORT"]["nurFlugBilder"]))
+        self.SDCard_leeren.setChecked(utils2.toBool(CONF["IMPORT"]["SDCard_leeren"]))
      
     def connections(self):
         self.worker.critical.connect(lambda txt : QtGui.QMessageBox.critical(self, "SD-Karte einlesen",txt))
@@ -142,15 +142,15 @@ class SaveAsDialog(QtGui.QDialog):
     
     def accept(self):
         indir = str(self.sourceLE.text())
-        self.settings.setValue('IMPORT/folder',indir)
+        CONF["IMPORT"]["folder"] = indir
         rootdir = str(self.rootLE.text())
-        self.settings.setValue('PATH/rootdir',rootdir)
+        CONF["PATH"]["rootdir"] = rootdir
         flightname = str(self.flightnameLE.text())
-        self.settings.setValue('IMPORT/flightname',flightname)
+        CONF["IMPORT"]["flightname"] = flightname
         nurFlugBilder = self.nurFlugBilder.isChecked()
-        self.settings.setValue('IMPORT/nurFlugBilder',nurFlugBilder)
+        CONF["IMPORT"]["nurFlugBilder"] = str(nurFlugBilder)
         clearsdcard = self.SDCard_leeren.isChecked()
-        self.settings.setValue('IMPORT/SDCard_leeren',clearsdcard)
+        CONF["IMPORT"]["SDCard_leeren"] = str(clearsdcard)
         self.worker.copy(indir, rootdir, flightname,nurFlugBilder,clearsdcard)
         self.hide()
     #def reject(self):

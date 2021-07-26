@@ -15,6 +15,7 @@ import copy
 import numpy as np
 import logging
 from . import PATHS
+from . import CONF
 from . import utils2
 WIDTH = 0.00003
 HEIGHT = 0.00003
@@ -23,12 +24,11 @@ HEIGHT = 0.00003
 logger = logging.getLogger(__name__)
 
 class GeoWidget(QMainWindow): 
-    def __init__(self,settings):
+    def __init__(self):
         super().__init__()
         uic.loadUi(os.path.join(PATHS["UI"],'geomain.ui'),self)
         self.setWindowFlags(QtCore.Qt.Widget)
-        self.settings = settings
-        self.view = Browser(settings)
+        self.view = Browser()
         self.view.setSizeHint(200,300)
         self.setCentralWidget(self.view)
         self.imgdir = ""
@@ -105,10 +105,9 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
     followUav = True
     jsloaded = False
     
-    def __init__(self,settings):
+    def __init__(self):
     
         self.view = QtWebEngineWidgets.QWebEngineView.__init__(self)
-        self.settings = settings
         self.setWindowTitle('Loading...')
         self.titleChanged.connect(self.adjustTitle)
         self.page = Page()
@@ -133,8 +132,8 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
    
     def _loadFinished(self):
         #pk.eyJ1IjoiZWFzeSIsImEiOiJjaXBqajhrcDYwMDVqdnJudHBpd3RlbHdhIn0.1l-xj2wHpfXg-Pi1oNKrCg
-        mapboxtoken = self.settings.value("GEOVIEW/mapboxtoken")
-        mapboxstyle = self.settings.value("GEOVIEW/mapboxstyle")
+        mapboxtoken = CONF["GEOVIEW"]["mapboxtoken"]
+        mapboxstyle = CONF["GEOVIEW"]["mapboxstyle"]
         self.page.runJavaScript("mapboxgl.accessToken ='{}'".format(mapboxtoken))
         line = "var map = new mapboxgl.Map({ container: 'map', style: "+"'{}', ".format(mapboxstyle)+"center: [11.0165, 48.1405],zoom: 18});"
         #print (line)

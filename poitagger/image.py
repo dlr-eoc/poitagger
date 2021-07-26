@@ -851,6 +851,8 @@ class ImageAra(Image):
         self.image = np.array(za, dtype=np.uint8) 
         return self.image
     
+   
+          
     def read_header(self, fileobj, size):
         try:
             rawheader = fileobj.read(size)
@@ -987,6 +989,9 @@ class ImageAra(Image):
         self.header["gps"]["start_speed_accuracy"] = self.rawheader["startup_gps"]["speed_accuracy"]/10.0**3    
         self.header["gps"]["start_speed_x"] = self.rawheader["startup_gps"]["speed_x"]/10.0**3      
         self.header["gps"]["start_speed_y"] = self.rawheader["startup_gps"]["speed_y"]/10.0**3  
+        #if self.header["file"]["asctec_fw_version"]["major"]== 1 and self.header["file"]["asctec_fw_version"]["minor"]>=9:
+        #    self.header["uav"]["yaw"] = self.rawheader["intel"]["yaw"] /10.0**2 
+        #    self.header["camera"]["yaw"] = self.rawheader["intel"]["yaw"] /10.0**2 
         self.header["gps"]["acc_x"] = self.rawheader["dlr"]["gps_acc_x"]/10.0**3           
         self.header["gps"]["acc_y"] = self.rawheader["dlr"]["gps_acc_y"]/10.0**3
         

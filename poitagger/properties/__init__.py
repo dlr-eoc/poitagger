@@ -5,19 +5,20 @@ import os
 import pyqtgraph as pg
 from . import pois_conf,gps_conf,image_conf,geoview_conf,gpx_conf
 from .. import PATHS 
+from .. import CONF 
+
 class PropertyDialog(QtGui.QDialog):
    
-    def __init__(self,title,settings):
+    def __init__(self,title):
         QtGui.QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'properties.ui'),self)
         self.setWindowTitle(title)
         
-        self.settings = settings
-        self.pois = pois_conf.PoisProperties(self.settings)
-        self.gps = gps_conf.GpsProperties(self.settings)
-        self.gpx = gpx_conf.GpxProperties(self.settings)
-        self.image = image_conf.ImageProperties(self.settings)
-        self.geoview = geoview_conf.GeoviewProperties(self.settings)
+        self.pois = pois_conf.PoisProperties()
+        self.gps = gps_conf.GpsProperties()
+        self.gpx = gpx_conf.GpxProperties()
+        self.image = image_conf.ImageProperties()
+        self.geoview = geoview_conf.GeoviewProperties()
         self.tabWidget.addTab(self.pois,"Pois")
         self.tabWidget.addTab(self.gps,"GPS-Device")
         self.tabWidget.addTab(self.gpx,"GPX")
@@ -46,7 +47,7 @@ class PropertyDialog(QtGui.QDialog):
         self.hide()
         
     def loadSettings(self,lst):
-        [i.loadSettings(self.settings) for i in lst]
+        [i.loadSettings() for i in lst]
         
     def writeSettings(self,lst):
         [i.writeSettings() for i in lst]

@@ -4,6 +4,7 @@ import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
+from .. import CONF
 
 class ImageProperties(QtGui.QWidget):
     a = 255
@@ -12,10 +13,9 @@ class ImageProperties(QtGui.QWidget):
     r = 0
     
    
-    def __init__(self,settings):
+    def __init__(self):
         QtGui.QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'image_conf.ui'),self)
-        self.settings = settings
         
         self.tailrejection = 5
         self.homoKernelX = 147
@@ -87,9 +87,8 @@ class ImageProperties(QtGui.QWidget):
             self.camcalib = QtCore.QSettings(path, QtCore.QSettings.IniFormat)
             self.setCalib()
     
-    def loadSettings(self,s):
-        self.settings = s
-        
+    def loadSettings(self):
+        pass
     def writeSettings(self):
         pass
        

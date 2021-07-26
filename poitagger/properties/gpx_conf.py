@@ -5,12 +5,12 @@ import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
+from .. import CONF
 
 class GpxProperties(QtGui.QWidget):
-    def __init__(self,settings):
+    def __init__(self):
         QtGui.QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'gpx_export.ui'),self)
-        self.settings = settings
         self.label.setText("mit dieser Übertragungsart können die Pois z.B. auf ältere Garmin Geräte übertragen <br>werden. <a href='https://www.gpsbabel.org/'>GPSBabel</a> muss separat installiert werden.")   
         self.label.setOpenExternalLinks(True)
         self.connections()
@@ -22,14 +22,12 @@ class GpxProperties(QtGui.QWidget):
         self.babelpath = QFileDialog.getOpenFileName(self, "Select GPSBabel binary",self.gpsbabelLE.text())[0]
         self.gpsbabelLE.setText(self.babelpath)
     
-    def loadSettings(self,s):
-        self.settings = s
-        self.gpsbabelLE.setText(s.value('GPX/gpsbabel'))
+    def loadSettings(self):
+        self.gpsbabelLE.setText(CONF["GPX"]["gpsbabel"])
         
     
     def writeSettings(self):
-        pass
-        self.settings.setValue('GPX/gpsbabel',str(self.gpsbabelLE.text()))
+        CONF["GPX"]["gpsbabel"] = str(self.gpsbabelLE.text())
         
        
         

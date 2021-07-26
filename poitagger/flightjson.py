@@ -21,6 +21,7 @@ from . import image
 from . import utils2
 from . import nested
 from . import PATHS
+from . import CONF
 
 types = {"<class 'int'>":"int",
         "<class 'float'>":"float",
@@ -160,19 +161,19 @@ class FlightChoose(QDialog):
         self.setModal(True)
         self.confdialog = FlightConfig()
         
-        self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
-        self.settings.setFallbacksEnabled(False) 
+       # self.settings = QtCore.QSettings(PATHS["CONF"], QtCore.QSettings.IniFormat)
+       # self.settings.setFallbacksEnabled(False) 
         
         calibfiles = os.listdir(PATHS["USER_CALIB"])
         self.comboBox.addItems(calibfiles)
         self.path = path
         #print ("settings:",self.settings.value("FLIGHT/cameraconfiguration"))
-        self.comboBox.setCurrentText(str(self.settings.value("FLIGHT/cameraconfiguration")))
+        self.comboBox.setCurrentText(str(CONF["FLIGHT"]["cameraconfiguration"]))
         self.comboBox.currentTextChanged.connect(self.writeSettings)
         self.show()
     
     def writeSettings(self,value):
-        self.settings.setValue("FLIGHT/cameraconfiguration",value)
+        CONF["FLIGHT"]["cameraconfiguration"] = str(value) 
         
     def createConfig(self):
         self.confdialog.setPath(self.path)

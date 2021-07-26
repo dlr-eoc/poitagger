@@ -422,9 +422,8 @@ class Pois(QtGui.QMainWindow):
             pass
 
             
-    def loadSettings(self, settings):
-        self.settings = settings
-        self.dialog.loadSettings(settings)
+    def loadSettings(self):
+        self.dialog.loadSettings()
         
     def writeSettings(self):
         pass
