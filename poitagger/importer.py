@@ -1,4 +1,5 @@
 from PyQt5 import QtCore, QtGui, uic
+from PyQt5.QtWidgets import QDialog
 import os
 import time
 import datetime
@@ -106,8 +107,10 @@ class CopyThread(QtCore.QThread):
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)
             self.critical.emit("SD-Karte einlesen fehlgeschlagen: %s "%value)
-              
-class SaveAsDialog(QtGui.QDialog):
+
+    
+    
+class SaveAsDialog(QDialog):
     
     def __init__(self,parent=None):
         super().__init__(parent)
@@ -144,7 +147,7 @@ class SaveAsDialog(QtGui.QDialog):
         indir = str(self.sourceLE.text())
         CONF["IMPORT"]["folder"] = indir
         rootdir = str(self.rootLE.text())
-        CONF["PATH"]["rootdir"] = rootdir
+        CONF["PATHS"]["rootdir"] = rootdir
         flightname = str(self.flightnameLE.text())
         CONF["IMPORT"]["flightname"] = flightname
         nurFlugBilder = self.nurFlugBilder.isChecked()
@@ -156,3 +159,87 @@ class SaveAsDialog(QtGui.QDialog):
     #def reject(self):
     #    super().reject()
         
+class DBImportThread(QtCore.QThread):   
+    log = QtCore.pyqtSignal(str)
+    critical = QtCore.pyqtSignal(str)
+    info = QtCore.pyqtSignal(str)
+    progress = QtCore.pyqtSignal(int)
+    
+    def copy(self,indir,rootdir,flightname,nurFlugBilder,clearsdcard):
+        self.indir = indir
+        self.rootdir = rootdir
+        self.flightname = flightname
+        self.nurFlugBilder = nurFlugBilder
+        self.clearsdcard = clearsdcard
+        self.start()
+        
+    def run(self):
+        self.Flights = {}
+        try:
+            for root, dirs, files in sorted(os.walk(self.indir)):
+                ImagesToCopy = []
+                for f in files:
+                    if not os.path.splitext(f)[1].lower() in image.SUPPORTED_EXTENSIONS: continue
+                    if self.nurFlugBilder and not self.is_flying(os.path.join(root,f)): continue
+                    ImagesToCopy.append(os.path.join(root,f))
+                if len(files)==0: continue
+                img = image.Image.factory(os.path.join(root,f),True)
+                name = self.get_foldername(img)
+                self.Flights[name]=ImagesToCopy.copy()
+            
+            for k,v in self.Flights.items():
+                k_renamed = self.create_folder(k)
+                for img in v:
+                    print("Copy", img, k_renamed)
+                    shutil.copy2(img,k_renamed)
+            
+            if self.clearsdcard:
+                for root, dirs, files in os.walk(self.indir):
+                    for d in dirs:
+                        shutil.rmtree(os.path.join(root, d))
+                    for f in files:
+                        os.remove(os.path.join(root, f))
+            self.info.emit("Das Einlesen der SD-Karte war erfolgreich!") 
+         
+            
+        except:
+            (type, value, traceback) = sys.exc_info()
+            sys.excepthook(type, value, traceback)
+            self.critical.emit("SD-Karte einlesen fehlgeschlagen: %s "%value)
+            
+class ImportDialog(QDialog):
+    
+    def __init__(self,parent=None):
+        super().__init__(parent)
+        uic.loadUi(os.path.join(PATHS["UI"],'import.ui'),self)
+        self.sourceTB.clicked.connect(self.onSearchSource)
+        self.setWindowTitle("Daten einlesen")
+        self.setModal(True)
+        self.worker = DBImportThread()
+        self.sourceLE.setText(CONF["IMPORT"]["folder"])
+        self.flightnameLE.setText(CONF["IMPORT"]["flightname"])
+        self.nurFlugBilder.setChecked(utils2.toBool(CONF["IMPORT"]["nurFlugBilder"]))
+        self.SDCard_leeren.setChecked(utils2.toBool(CONF["IMPORT"]["SDCard_leeren"]))
+     
+    def connections(self):
+        self.worker.critical.connect(lambda txt : QtGui.QMessageBox.critical(self, "Datenimport",txt))
+        self.worker.info.connect(lambda txt : QtGui.QMessageBox.information(self, "Datenimport",txt))
+        
+    def onSearchSource(self):
+        path = QtGui.QFileDialog.getExistingDirectory(self, "einen anderen Ordner waehlen", self.sourceLE.text())
+        if path != "": self.sourceLE.setText(path)
+    
+    
+    def accept(self):
+        indir = str(self.sourceLE.text())
+        CONF["IMPORT"]["folder"] = indir
+        flightname = str(self.flightnameLE.text())
+        CONF["IMPORT"]["flightname"] = flightname
+        nurFlugBilder = self.nurFlugBilder.isChecked()
+        CONF["IMPORT"]["nurFlugBilder"] = str(nurFlugBilder)
+        clearsdcard = self.SDCard_leeren.isChecked()
+        CONF["IMPORT"]["SDCard_leeren"] = str(clearsdcard)
+        
+        self.worker.copy(indir, CONF["PATHS"]["rootdir"], flightname,nurFlugBilder,clearsdcard)
+        self.hide()
+    

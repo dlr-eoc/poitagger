@@ -4,8 +4,10 @@ import sys
 import os
 import logging
 from . import treemodel
-from . import image
+
 from . import PATHS
+
+SUPPORTED_EXTENSIONS = [".ara",".ar2",".raw",".jpeg",".jpg",".tif",".tiff"]
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class TreeWidget(QMainWindow):
         if self.actiontest.isChecked():
             self.view.model.setNameFilters(self.poifiles)
         else:
-            self.view.model.setNameFilters(["*"+x for x in image.SUPPORTED_EXTENSIONS])
+            self.view.model.setNameFilters(["*"+x for x in SUPPORTED_EXTENSIONS])
           
     def progress(self, path): 
         currentIdx = self.view.currentIndex()
@@ -157,7 +159,7 @@ class TreeView(QTreeView):
         super(TreeView, self).__init__(parent)
         self.model = treemodel.TreeModel() 
         self.model.setReadOnly(False)
-        self.model.setNameFilters(["*"+x for x in image.SUPPORTED_EXTENSIONS])
+        self.model.setNameFilters(["*"+x for x in SUPPORTED_EXTENSIONS])
         self.model.setNameFilterDisables(False)
         self.model.directoryLoaded.connect(self.rootPathLoaded)
        

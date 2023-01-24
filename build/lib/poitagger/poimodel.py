@@ -14,8 +14,6 @@ from PyQt5 import QtGui,QtCore,uic
 
 import camproject
 
-from . import gpx
-from . import image
 from . import PATHS
 from . import upload
 from . import transform

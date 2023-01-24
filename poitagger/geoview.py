@@ -224,6 +224,7 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
     
     
     def setUavPath(self,uavpath):
+        #print("UAVPATH",uavpath)
         if not self.jsloaded: return 
         P = np.array(uavpath)
         if len(P)==0: 
@@ -238,7 +239,14 @@ class Browser(QtWebEngineWidgets.QWebEngineView):
         #print ("UAVPATH")
         self.page.runJavaScript('map.getSource("uavpath").setData({});'.format(geojson))
         
-    
+    def setImgBorder(self,border):
+        if not self.jsloaded: return 
+        P = np.array(border)
+        if len(P)==0: 
+            return
+        geojson = {"type": "Feature", "geometry": {"type": "LineString","coordinates": border}}
+        self.page.runJavaScript('map.getSource("img").setData({});'.format(geojson))
+        
     def load_filedata(self,ara):     
         try:
             self.moveUav(ara["gps"].get("latitude",0),ara["gps"].get("longitude",0),ara.header["uav"]["yaw"])

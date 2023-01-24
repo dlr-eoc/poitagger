@@ -30,7 +30,7 @@
      <x>0</x>
      <y>0</y>
      <width>1067</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -198,7 +198,9 @@
    </attribute>
    <addaction name="separator"/>
    <addaction name="actionSD_Karte_einlesen"/>
+   <addaction name="actionImport"/>
    <addaction name="actionGpx_to_gps"/>
+   <addaction name="actionFillDBImg"/>
   </widget>
   <widget class="QDockWidget" name="GeoViewDockWidget">
    <property name="windowTitle">
@@ -356,6 +358,24 @@
    </property>
    <property name="text">
     <string>Druckansicht</string>
+   </property>
+  </action>
+  <action name="actionImport">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/import.jpg</normaloff>icons/import.jpg</iconset>
+   </property>
+   <property name="text">
+    <string>Import</string>
+   </property>
+  </action>
+  <action name="actionFillDBImg">
+   <property name="icon">
+    <iconset>
+     <normaloff>icons/import32_.png</normaloff>icons/import32_.png</iconset>
+   </property>
+   <property name="text">
+    <string>filldbimg</string>
    </property>
   </action>
   <zorder>ExifDockWidget</zorder>

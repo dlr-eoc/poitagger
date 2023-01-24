@@ -96,6 +96,29 @@ map.on('load', function () {
             "line-dasharray":[4,8]
         }
     });
+    map.addLayer({
+        "id": "img",
+        "type": "line",
+        "source": {
+            "type": "geojson",
+            "data": {
+                "type": "Feature",
+                "properties": {},
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": []
+                }
+            }
+        },
+        "layout": {
+            "line-join": "round",
+            "line-cap": "round"
+        },
+        "paint": {
+            "line-color": "#33f",
+            "line-width": 1,
+        }
+    });
     map.addControl(new mapboxgl.ScaleControl({
         maxWidth: 60,
         unit: 'metric'

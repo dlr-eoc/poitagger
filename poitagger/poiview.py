@@ -12,7 +12,7 @@ import datetime
 from collections import OrderedDict,MutableMapping,MutableSequence
 from ast import literal_eval
 
-from . import image
+
 from . import utils2
 from . import flightjson
 from . import nested

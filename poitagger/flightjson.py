@@ -734,7 +734,8 @@ class ImportFlightMeta(QtCore.QThread):
         Radi = defaultdict(list)
         Bore = defaultdict(list)
         for i in self.ImgHdr:
-            if os.path.splitext(i["file"].get("name",""))[1].lower()==".ara" and i["file"]["dlr_protokoll"]["erkennung"]!=b"DLR":
+            
+            if os.path.splitext(i["file"].get("name",""))[1].lower()==".ara" and "dlr_protokoll" in i["file"] and i["file"]["dlr_protokoll"].get("erkennung","")!=b"DLR":
                 continue
             for k,v in i["calibration"]["geometric"].items(): Geom[k].append(v)
             for k,v in i["calibration"]["radiometric"].items(): Radi[k].append(v)
@@ -829,6 +830,7 @@ class ImportFlightMeta(QtCore.QThread):
         out = {"name":"pois","type":"group", "expanded":True, "children":[{"name":"0","type":"group","children": [{"name":"timestamp","type":"str","readonly":True,
                 "value":ts},{"name":"description","type":"str","readonly":False,"value":"initial dataset"},
                         {"name":"data","type":"group","readonly":True,"expanded":True, "children":P}]}]}
+        #print("FLIGHTJSON out", out)                            
         return out
     
     def run(self):

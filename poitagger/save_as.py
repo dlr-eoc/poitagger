@@ -8,7 +8,7 @@ import PIL
 import shutil
 
 from . import PATHS     
-from . import image   
+
 
 class CopyThread(QtCore.QThread):   
     log = QtCore.pyqtSignal(str)

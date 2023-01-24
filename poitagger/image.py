@@ -967,7 +967,9 @@ class ImageAra(Image):
         
         self.header["camera"]["serial"] = self.rawheader["camera"]["sernum"]               
         self.header["camera"]["serial_sensor"] = self.rawheader["camera"]["sernum_sensor"]        
-        self.header["camera"]["version"] = self.rawheader["camera"]["version"]              
+        self.header["camera"]["version"] = self.rawheader["camera"]["version"]  
+        if self.header["camera"]["version"] == 0:
+            self.header["camera"]["pitch"] = - self.header["camera"]["pitch"]
         self.header["camera"]["fw_version"] = self.rawheader["camera"]["fw_version"]        
         self.header["camera"]["pixelshift_x"] = 17e-6            
         self.header["camera"]["pixelshift_y"] = 17e-6

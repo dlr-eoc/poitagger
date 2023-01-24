@@ -1,11 +1,11 @@
 from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QDialog
 import ast
 import requests
 import simplejson as json
 from urllib.parse import urlencode
-#import urllib.parse
+import ssl
 from urllib.request import Request, urlopen
 import traceback
 import os
@@ -14,10 +14,13 @@ from . import CONF
 
 import pyqtgraph as pg
 
-class UploadDialog(QtGui.QDialog):
+ssl._create_default_https_context = ssl._create_unverified_context
+
+
+class UploadDialog(QDialog):
 
     def __init__(self,title):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["UI"],'upload.ui'),self)
         self.setWindowTitle(title)
         self.connections()

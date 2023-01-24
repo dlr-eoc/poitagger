@@ -1,7 +1,5 @@
 import sqlite3
 
-
-
 def listtodict(lst):
     dic = {}
     for i in lst:
@@ -44,7 +42,7 @@ class DB(object):
         self.con.close()
         
     def showtables(self):
-        return [i[0] for i in db.query("SELECT name FROM sqlite_master")]
+        return [i[0] for i in self.query("SELECT name FROM sqlite_master")]
     
     def columns(self,table):
         return self.query("PRAGMA table_info({});".format(table))

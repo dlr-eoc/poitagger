@@ -29,7 +29,8 @@ gibt es eine eigene Methode, die dann die Dinge entsprechend Zeichnet.
 
 from __future__ import print_function
 
-from PyQt5 import QtCore,QtGui,uic
+from PyQt5 import QtCore,QtGui,QtWidgets,uic
+from PyQt5.QtWidgets import QWidget,QAction,QActionGroup
 import pyqtgraph as pg
 import pyqtgraph.exporters
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
@@ -119,7 +120,7 @@ class ORIENTATION(object):
 
     
 
-class Img(QtGui.QWidget):
+class Img(QWidget):
     log = QtCore.pyqtSignal(str)
     loaded = QtCore.pyqtSignal(bool)
     highlighting = QtCore.pyqtSignal(str)
@@ -131,7 +132,7 @@ class Img(QtGui.QWidget):
     imheight = 512
     
     def __init__(self,conf,startimage):
-        QtGui.QWidget.__init__(self)
+        QWidget.__init__(self)
         self.w = pg.GraphicsLayoutWidget() # das ist das Centrawidget, das Thermalbild in der Mitte
         
         self.vbox = self.w.addViewBox(lockAspect=True,enableMenu=False,invertY=True)
@@ -178,6 +179,7 @@ class Img(QtGui.QWidget):
                 {'name': 'homogenize', 'type': 'bool'},
                 {'name': 'analog', 'type': 'bool'},
                 {'name': 'ki', 'type': 'bool'},
+                {'name': 'setlevel', 'type': 'bool'},
                 ]})
             
         self.p = Parameter.create(name='params', type='group',children=params)
@@ -215,6 +217,7 @@ class Img(QtGui.QWidget):
         if is_premium:
             self.p.child('Premium').child('homogenize').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
             self.p.child('Premium').child('analog').sigValueChanged.connect(lambda: self.loadImg(self.curimg))
+            self.p.child('Premium').child('setlevel').sigValueChanged.connect(lambda: self.histlut.item.setLevels(min=28300,max=31000))
         
         self.w.scene().sigMouseMoved.connect(self.mouseMoved)
         self.w.scene().sigMouseClicked.connect(self.pixelClicked)
@@ -252,19 +255,19 @@ class Img(QtGui.QWidget):
         self.toolBar = toolBar
         
         tempIcon = QtGui.QIcon(QtGui.QPixmap(os.path.join(PATHS["ICONS"],"temp.png")))
-        self.tempAction = QtGui.QAction(tempIcon,"temp", self)
+        self.tempAction = QAction(tempIcon,"temp", self)
         self.tempAction.setToolTip("Measure Temperature")
         self.tempAction.setCheckable(True)
         self.toolBar.addAction(self.tempAction)
         
         poiIcon = QtGui.QIcon(QtGui.QPixmap(os.path.join(PATHS["ICONS"],"poi2.png")))
-        self.poiAction = QtGui.QAction(poiIcon,"poi", self)
+        self.poiAction = QAction(poiIcon,"poi", self)
         self.poiAction.setToolTip("Point of Interest")
         self.poiAction.setCheckable(True)
         self.poiAction.setChecked(True)
         self.toolBar.addAction(self.poiAction)
         
-        self.actionGroupTools = QtGui.QActionGroup(self)
+        self.actionGroupTools = QActionGroup(self)
         self.actionGroupTools.addAction(self.tempAction)
         self.actionGroupTools.addAction(self.poiAction)
         self.actionGroupTools.triggered.connect(self.changeMouseMode)
@@ -425,14 +428,14 @@ class Img(QtGui.QWidget):
         self.size = int(CONF["POIS"]["size"])
         if self.ara.header["calibration"].get("error_flags",0) & image.ERRORFLAGS.ALL_META: return
         for item in self.vbox.addedItems[:]:# nur die Overlays loeschen #self.scene.items():
-            if type(item) in [QtGui.QGraphicsTextItem, QtGui.QGraphicsEllipseItem,]: # pg.graphicsItems.ImageItem.ImageItem: 
+            if type(item) in [QtWidgets.QGraphicsTextItem, QtWidgets.QGraphicsEllipseItem,]: # pg.graphicsItems.ImageItem.ImageItem: 
                 self.vbox.removeItem(item)
         for i in liste:
             x,y = float(i["x"]),float(i["y"])
             #print (type(x),type(y))
             y2 = y+self.size/2.0 #if not self.proc.flipud else self.imheight - i[4]+self.size/2.0 -1
-            eli = QtGui.QGraphicsEllipseItem(x-self.size/2.0,y-self.size/2.0,self.size,self.size)
-            mytext = QtGui.QGraphicsTextItem(str(i["name"])) 
+            eli = QtWidgets.QGraphicsEllipseItem(x-self.size/2.0,y-self.size/2.0,self.size,self.size)
+            mytext = QtWidgets.QGraphicsTextItem(str(i["name"])) 
             mytext.setPos(x-self.size/2.0,y2)
             if str(CONF["POIS"]["visible"]).lower() != "true": return
             if i["filename"]==self.imgname:

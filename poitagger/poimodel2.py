@@ -15,7 +15,6 @@ from PyQt5 import QtGui,QtCore,uic
 import camproject
 
 from . import gpx
-from . import image
 from . import PATHS
 from . import upload
 from . import transform
@@ -93,7 +92,26 @@ class PoiModel(QtCore.QObject):
         self.setAttitude()
        # print(self.Ext.getParams())
        # print(self.ExtR.getParams()["pose"])
-        
+    
+    def calcImgBorder(self):
+        P = []
+        #print("0,0:", self.Cam.reprojectToPlane(np.array([0,0])))
+        P.append(self.Cam.reprojectToPlane(np.array([0,0])))
+        P.append(self.Cam.reprojectToPlane(np.array([self.im_width-1,0]),0)[0:2])
+        P.append(self.Cam.reprojectToPlane(np.array([self.im_width-1,self.im_height-1]),0)[0:2])
+        P.append(self.Cam.reprojectToPlane(np.array([0,self.im_height-1]),0)[0:2])
+        P.append(self.Cam.reprojectToPlane(np.array([0,0]),0)[0:2])
+        border = []
+        #if any(np.array([any(P[i].mask.ravel()) for i in range(5)]).ravel()):
+        #    return []
+        #print(P)
+        try:
+            for i in range(5):
+                lat, lon = utm.to_latlon(P[i][1],P[i][0],self.ZoneNumber,self.ZoneLetter)
+                border.append([lon, lat])
+            return border
+        except:
+            return []
     def loadMeta(self,meta):
         self.im_width = par(meta, ["general","images","width"],0) #meta.child("general").child("images").child("width").value() #["general"]["images"]["width"]
         self.im_height = par(meta, ["general","images","height"],0) #meta.child("general").child("images").child("height").value()#["general"]["images"]["height"]
@@ -377,7 +395,6 @@ if __name__ == "__main__":
     # from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow, QLineEdit,QToolButton,QAction,QMessageBox,QPushButton,QVBoxLayout,QProgressDialog
     # import pyqtgraph as pg
     # from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    # from . import image
     # from . import flightjson
         
     # app = QApplication(sys.argv)

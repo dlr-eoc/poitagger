@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
-from PyQt5.QtWidgets import QFileDialog,QMainWindow,QTableWidgetItem
+from PyQt5.QtWidgets import QFileDialog,QMainWindow,QTableWidgetItem,QDialog
 import os
 import platform
 import shutil
@@ -105,9 +105,9 @@ class GpxView(QMainWindow):
             self.tableWidget.setItem(k,2,QTableWidgetItem(str(i["lon"])))
         self.tableWidget.resizeColumnsToContents()
         
-class GPXExportDialog(QtGui.QDialog):
+class GPXExportDialog(QDialog):
     def __init__(self):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["UI"],'gpxexport.ui'),self)
         self.setWindowTitle("GPX Export")
         

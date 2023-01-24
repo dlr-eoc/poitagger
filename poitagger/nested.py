@@ -7,6 +7,30 @@ def nothing(key,value,**kwargs):
     return value
 
 
+def reduce_rdf(k,v,**kwargs): 
+    '''
+    this is a callback function for nested. 
+    it reduces single rdf-lists to its value
+    example:
+    >>>rdfdict = {'@rdf:about': '', 
+        'camera:bandname': OrderedDict([('rdf:seq',OrderedDict([('rdf:li', 'LWIR')]))]),
+        'camera:centralwavelength': OrderedDict([('rdf:seq', OrderedDict([('rdf:li', '10000')]))]),
+        'camera:wavelengthfwhm': OrderedDict([('rdf:seq',OrderedDict([('rdf:li', '4500')]))]),
+        'camera:tlineargain': '0.00',}
+    
+    >>>nested.Nested(rdfdict,reduce_rdf).data
+    {'@rdf:about': '', 
+        'camera:bandname': 'LWIR', 
+        'camera:centralwavelength': '10000',
+        'camera:wavelengthfwhm': '4500', 
+        'camera:tlineargain': '0.00'}
+     '''
+    if type(v) == dict:
+        if len(v)==1 and next(iter(v)) == "rdf:seq":
+            if type(v["rdf:seq"])==dict and len(v["rdf:seq"]) ==1: 
+                return v["rdf:seq"].get("rdf:li",v)
+    return v   
+    
 def pre_paramtodict(k,v,**kwargs):
     '''
     this is a callback function for nested. it converts the output of getValues() from a Parameter from the pyQtGraph module.
@@ -45,7 +69,14 @@ def paramtodict(k,v,**kwargs):
             v = v[0]
     return v
     
-    
+def lowerkeys(k,v,**kwargs): 
+    '''
+    this is a callback function for nested. 
+    it just converts all keys to lowercase
+     '''
+    if type(v) == dict:
+        return {k1.lower() if type(k1) in [bytes,str] else k1: v1 for k1,v1 in v.items()}
+    return v       
    
 def getBranch(container,branchlist):
     '''
@@ -63,8 +94,8 @@ class Nested():
         self.callback = callback
         self.callback_pre = callback_pre
         self.rootname = rootname
-        self.dicttype = kwargs.get("dicttype",dict)    
-        self.listtype = kwargs.get("listtype",list)    
+        self.dicttype = kwargs.get("dicttype",None)    
+        self.listtype = kwargs.get("listtype",None)    
         self.tupletype = kwargs.get("tupletype",tuple)
         if container:
             self.load(container,**kwargs)
@@ -101,10 +132,14 @@ class Nested():
                 appendfunction(key,self.nestedTuple(key,value,**kwargs))
         kwargs["parent"] = before #"/".join(re.split(r'(?<!\\)/', kwargs["parent"])[:-1])
         kwargs["parentlist"].pop()
+        #print ("\x1b[32m\"DATA", container,key,value,kwargs,"\"\x1b[32m")
         return container
     
     def nestedList(self,key,lst,**kwargs):
-        tree = self.listtype()
+        if self.listtype==None:
+            tree = type(lst)()
+        else:
+            tree = self.listtype()
         for k,v in enumerate(lst):
             self.inner(tree,k,v,lambda k,v: tree.append(v),kwargs)
         return self.callback(key,tree,**kwargs)
@@ -119,7 +154,10 @@ class Nested():
         return self.callback(key,value,**kwargs)
 
     def nestedDict(self,key,dic,**kwargs):
-        tree = self.dicttype()
+        if self.dicttype==None:
+            tree = type(dic)()
+        else:
+            tree = self.dicttype()
         for k,v in dic.items():
             self.inner(tree,k,v,tree.__setitem__,kwargs)
         return self.callback(key,tree,**kwargs)

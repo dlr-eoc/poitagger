@@ -15,7 +15,8 @@ import dateutil.parser
 import datetime
 import pytz 
 import math
-from . import image
+
+SUPPORTED_EXTENSIONS = [".ara",".ar2",".raw",".jpeg",".jpg",".tif",".tiff"]
 
 
 gray_color_table = [QtGui.qRgb(i, i, i) for i in range(256)]
@@ -118,7 +119,7 @@ def imgfiles(dirpath):
     for root, dirs, files in os.walk(dirpath):
         ImageFiles = []
         for i in sorted(files):
-            if os.path.splitext(i.lower())[1] in image.SUPPORTED_EXTENSIONS:
+            if os.path.splitext(i.lower())[1] in SUPPORTED_EXTENSIONS:
                 #print(i)
                 ImageFiles.append(i)
         return root, ImageFiles
@@ -380,32 +381,6 @@ def set_filenames(infile,md,YEAR,CAMERA):
         outtxt =  base + ".txt" 
         return (outrawfile,outfile,outtxt)
 
-def rename_folder(path):
-    error = False
-    if not path: error = True
-    valid = False
-    if re.match(r".*Flug\d{3}_\d{4}-\d\d-\d\d_\d\d-\d\d",path): return (path,error)
-    for last in sorted(os.listdir(path),reverse=True):
-        if last[-4:]==".txt":
-            meta = mt.Meta()
-            meta.load(os.path.join(path,last))
-            md = meta.to_dict()
-            if md["gps-date"]:
-                valid = True
-                try:
-                    (base,lastdir) = os.path.split(path)
-                    newtime = "%s-%s" %(md["gps-utc-time"][:2],md["gps-utc-time"][3:5])
-                    newend = "_%s_%s" %(md["gps-date"],newtime)
-                    os.rename(base,base+newend)
-                    newname = base+newend
-                    break
-                except:
-                    print(traceback.format_exc())
-                    error = True
-    if not valid:
-        error = True
-    return (newname,error)
-    
         
 '''
 Convert Dictionaries with Lists in it to Dictionary with enumerated nested Dictionary         

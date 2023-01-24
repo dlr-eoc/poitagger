@@ -1,20 +1,21 @@
 from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
+from PyQt5.QtWidgets import QWidget,QDialog,QColorDialog
 import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
 from .. import CONF
-class PoisProperties(QtGui.QWidget):
+class PoisProperties(QWidget):
     poicolor = "#ffff00"
     poicolor2 = "##0055ff"
     poicolor_repro = "#005500"
    
     def __init__(self):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'pois_conf.ui'),self)
         
-        self.colorChooser = QtGui.QColorDialog()
+        self.colorChooser = QColorDialog()
         #self.maskColbtn = pg.ColorButton()
         
         self.connections()

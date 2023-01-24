@@ -18,7 +18,7 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning) # PyQtGraph has a FutureWarning: h5py: Conversion from float to np.floating is deprecated
 
 from PyQt5 import QtCore,QtGui,uic, QtWidgets
-from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow,QMessageBox,QTextEdit
+from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow,QMessageBox,QTextEdit,QAction
 
 import numpy as np
 import logging
@@ -53,6 +53,9 @@ from . import treeview
 from . import gpxexport
 #from . import mplog
 #from . import dem
+from . import filldbimg
+
+
 
 paramreduce = nested.Nested(callback=nested.paramtodict,callback_pre=nested.pre_paramtodict,tupletype=list)
 
@@ -77,6 +80,7 @@ class Main(QMainWindow):
         startfilename = str(CONF["PATHS"]["lastimgname"]) #self.settings.value('PATHS/lastimgname'))
         
         self.saveDialog = importer.SaveAsDialog(self)
+        self.importDialog = importer.ImportDialog(self)
         
         self.conf = properties.PropertyDialog("Einstellungen") #,self.settings
         
@@ -189,6 +193,7 @@ class Main(QMainWindow):
     
     def actionconnects(self):
         self.actionSD_Karte_einlesen.triggered.connect(self.saveDialog.open) #lambda: self.wf.readSDCard(self.saveDialog,self.settings))
+        self.actionImport.triggered.connect(self.importDialog.open)
         self.actionJpg_export.triggered.connect(self.img.save_jpg)
         self.actionPng_export.triggered.connect(self.img.save_png)
         #self.actionConvert_folder_to_jpg.triggered.connect(lambda: self.wf.convertFolderJpg(self.treemain.view.current_path()))
@@ -197,7 +202,12 @@ class Main(QMainWindow):
         self.actionEinstellungen.triggered.connect(self.conf.openPropDialog)
         self.poiview.actionVisible.triggered.connect(lambda: self.img.loadImg(self.img.curimg))
         
+        self.actionFillDBImg.triggered.connect(self.filldbimg)
         
+        
+    def filldbimg(self):
+        filldbimg.import_flight(self.treemain.view.imgdir)
+    
     def logconnects(self):
         self.log.connect(self.Console.append)
         #self.wf.log.connect(self.Console.append)
@@ -207,8 +217,8 @@ class Main(QMainWindow):
         self.img.temp.log.connect(self.Console.append)
         
     def onDirChanged(self,path):
-        print ("old:",self.flight.path)
-        print ("new:",path)
+       # print ("old:",self.flight.path)
+       # print ("new:",path)
         #self.flight.save()
         #time.sleep(5)
         if self.useflight:
@@ -226,6 +236,8 @@ class Main(QMainWindow):
         self.poidata.setPose(ara.header)
         self.poidata.getPois(ara.filename)
         self.geomain.setCurrentImg(ara.header)
+            
+        self.geomain.view.setImgBorder(self.poidata.calcImgBorder())
       
     def gpx_to_gps(self):
         pois = self.poiview.getPoisAsGpx()
@@ -350,8 +362,8 @@ class Main(QMainWindow):
         db.safe_config(CONF)
         
     def shortcuts(self):
-        self.escAction = QtGui.QAction('escape', self)
-        self.clearAction = QtGui.QAction('clear', self)
+        self.escAction = QAction('escape', self)
+        self.clearAction = QAction('clear', self)
         self.createKeyCtrl(self.escAction, QtCore.Qt.Key_Escape)
         self.createKeyCtrl(self.clearAction, QtCore.Qt.Key_C)
         
@@ -390,7 +402,7 @@ def screenAt(*pos):
 def main():
     global app
     arg = docopt(__doc__, version=__version__)
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     
     if os.name == "nt":
        import ctypes

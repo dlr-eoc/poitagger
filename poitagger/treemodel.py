@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import QApplication,QFileSystemModel, QTreeView, QFileIconP
 
 import sys, os
 #import icons_rc
-from . import image
 from . import PATHS
 rootdir = "D:/WILDRETTER-DATEN"
 

@@ -1,12 +1,13 @@
 from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
+from PyQt5.QtWidgets import QWidget,QDialog,QColorDialog
 import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
 from .. import CONF
 
-class ImageProperties(QtGui.QWidget):
+class ImageProperties(QWidget):
     a = 255
     b = 0
     g = 255
@@ -14,7 +15,7 @@ class ImageProperties(QtGui.QWidget):
     
    
     def __init__(self):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'image_conf.ui'),self)
         
         self.tailrejection = 5
@@ -23,7 +24,7 @@ class ImageProperties(QtGui.QWidget):
         self.calibfile = os.path.join(PATHS["CALIB"],"/default.ini")
         self.camcalib = QtCore.QSettings(self.calibfile, QtCore.QSettings.IniFormat)
         
-        self.colorChooser = QtGui.QColorDialog()
+        self.colorChooser = QColorDialog()
         self.maskColbtn = pg.ColorButton()
         
         self.DeadPixelpathBox.setText(self.calibfile)
