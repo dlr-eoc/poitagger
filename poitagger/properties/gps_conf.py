@@ -1,14 +1,15 @@
 from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
+from PyQt5.QtWidgets import QWidget,QDialog
 import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
 
-class GpsProperties(QtGui.QWidget):
+class GpsProperties(QWidget):
     
     def __init__(self,settings):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'gps_conf.ui'),self)
         self.settings = settings
         

@@ -30,6 +30,7 @@ gibt es eine eigene Methode, die dann die Dinge entsprechend Zeichnet.
 from __future__ import print_function
 
 from PyQt5 import QtCore,QtGui,uic
+from PyQt5.QtWidgets import QWidget, QFileDialog,QAction,QActionGroup
 import pyqtgraph as pg
 import pyqtgraph.exporters
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType 
@@ -117,7 +118,7 @@ class ORIENTATION(object):
 
     
 
-class Img(QtGui.QWidget):
+class Img(QWidget):
     log = QtCore.pyqtSignal(str)
     loaded = QtCore.pyqtSignal(bool)
     highlighting = QtCore.pyqtSignal(str)
@@ -129,7 +130,7 @@ class Img(QtGui.QWidget):
     imheight = 512
     
     def __init__(self,conf,startimage,settings):
-        QtGui.QWidget.__init__(self)
+        QWidget.__init__(self)
         self.w = pg.GraphicsLayoutWidget() # das ist das Centrawidget, das Thermalbild in der Mitte
         self.settings = settings
         
@@ -252,19 +253,19 @@ class Img(QtGui.QWidget):
         self.toolBar = toolBar
         
         tempIcon = QtGui.QIcon(QtGui.QPixmap(os.path.join(PATHS["ICONS"],"temp.png")))
-        self.tempAction = QtGui.QAction(tempIcon,"temp", self)
+        self.tempAction = QAction(tempIcon,"temp", self)
         self.tempAction.setToolTip("Measure Temperature")
         self.tempAction.setCheckable(True)
         self.toolBar.addAction(self.tempAction)
         
         poiIcon = QtGui.QIcon(QtGui.QPixmap(os.path.join(PATHS["ICONS"],"poi2.png")))
-        self.poiAction = QtGui.QAction(poiIcon,"poi", self)
+        self.poiAction = QAction(poiIcon,"poi", self)
         self.poiAction.setToolTip("Point of Interest")
         self.poiAction.setCheckable(True)
         self.poiAction.setChecked(True)
         self.toolBar.addAction(self.poiAction)
         
-        self.actionGroupTools = QtGui.QActionGroup(self)
+        self.actionGroupTools = QActionGroup(self)
         self.actionGroupTools.addAction(self.tempAction)
         self.actionGroupTools.addAction(self.poiAction)
         self.actionGroupTools.triggered.connect(self.changeMouseMode)
@@ -477,7 +478,7 @@ class Img(QtGui.QWidget):
         if not self.saveimgdir:
             self.saveimgdir = self.imgdir
         vorschlag = os.path.join(self.saveimgdir,self.imgbasename+".jpg")
-        filename = QtGui.QFileDialog.getSaveFileName(self,"Save file",vorschlag,"Image (*.jpg)", );
+        filename = QFileDialog.getSaveFileName(self,"Save file",vorschlag,"Image (*.jpg)", );
         self.saveimgdir, last = os.path.split(str(filename[0]))
         self.exporter = pg.exporters.ImageExporter(self.image)
         self.exporter.params.param('width').setValue(int(self.imwidth), blockSignal=self.exporter.widthChanged)
@@ -490,7 +491,7 @@ class Img(QtGui.QWidget):
         if not self.saveimgdir:
             self.saveimgdir = self.imgdir
         vorschlag = os.path.join(self.saveimgdir,self.imgbasename+".png")
-        filename = QtGui.QFileDialog.getSaveFileName(self,"Save file",vorschlag,"Image (*.png)", );
+        filename = QFileDialog.getSaveFileName(self,"Save file",vorschlag,"Image (*.png)", );
         self.saveimgdir, last = os.path.split(str(filename[0]))
         
         self.exporter = pg.exporters.ImageExporter(self.image)

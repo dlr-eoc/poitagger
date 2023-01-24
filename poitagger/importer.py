@@ -1,4 +1,5 @@
 from PyQt5 import QtCore, QtGui, uic
+from PyQt5.QtWidgets import QDialog
 import os
 import time
 import datetime
@@ -105,7 +106,7 @@ class CopyThread(QtCore.QThread):
             sys.excepthook(type, value, traceback)
             self.critical.emit("SD-Karte einlesen fehlgeschlagen: %s "%value)
               
-class SaveAsDialog(QtGui.QDialog):
+class SaveAsDialog(QDialog):
     
     def __init__(self,parent=None):
         super().__init__(parent)

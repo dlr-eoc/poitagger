@@ -1,14 +1,15 @@
 from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
+from PyQt5.QtWidgets import QDialog
 import ast
 import os
 import pyqtgraph as pg
 from . import pois_conf,gps_conf,image_conf,geoview_conf,gpx_conf
 from .. import PATHS 
-class PropertyDialog(QtGui.QDialog):
+class PropertyDialog(QDialog):
    
     def __init__(self,title,settings):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'properties.ui'),self)
         self.setWindowTitle(title)
         

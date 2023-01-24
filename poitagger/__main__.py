@@ -18,7 +18,7 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning) # PyQtGraph has a FutureWarning: h5py: Conversion from float to np.floating is deprecated
 
 from PyQt5 import QtCore,QtGui,uic, QtWidgets
-from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow,QMessageBox,QTextEdit
+from PyQt5.QtWidgets import QApplication,QWidget,QMainWindow,QMessageBox,QTextEdit,QAction
 
 import numpy as np
 import logging
@@ -252,22 +252,22 @@ class Main(QMainWindow):
             print(cmd)
             ret = os.system(cmd)
             if ret == 0: 
-                QtGui.QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden ueber das Garmin-Serial/USB-Protokoll uebertragen"); 
+                QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden ueber das Garmin-Serial/USB-Protokoll uebertragen"); 
             else:
-                QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","ein altes Garmin Geraet wurde nicht gefunden (bei einem neueren GPS-Geraet muss unter Einstellungen/allgemein/GPS-Device MassStorage Device anstatt Garmin Serial/USB ausgewaehlt werden)!"); 
+                QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","ein altes Garmin Geraet wurde nicht gefunden (bei einem neueren GPS-Geraet muss unter Einstellungen/allgemein/GPS-Device MassStorage Device anstatt Garmin Serial/USB ausgewaehlt werden)!"); 
                 
         elif  str(self.settings.value('GPS-DEVICE/exportType')) == "massStorage":# conf.massStorage_rB.isChecked():
             if str(self.settings.value('GPS-DEVICE/detectMode')) == "name": #conf.detectName_rB.isChecked():
                # drive = utils2.getSDCardPath(str(self.settings.value('GPS-DEVICE/harddrive'))) #str(conf.name_LE.text()))
                 drive = None
                 if drive==False:
-                    QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Ein Geraet mit dem Namen  %s existiert nicht)!"%str(conf.name_LE.text())); 
+                    QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Ein Geraet mit dem Namen  %s existiert nicht)!"%str(conf.name_LE.text())); 
                     
                     
             elif str(self.settings.value('GPS-DEVICE/detectMode'))== "fixedfolder": #conf.fixedFolder_rB.isChecked():
                 drive = str(self.settings.value('GPS-DEVICE/harddrive')) #str(conf.harddrive_LE.text())
             else:
-                QtGui.QMessageBox.critical(self, "Info0","kein Detektionsmodus gewaehlt! (unter Einstellungen/GPS-Device)"); 
+                QMessageBox.critical(self, "Info0","kein Detektionsmodus gewaehlt! (unter Einstellungen/GPS-Device)"); 
             
             if not drive==False and not drive==None:
                 print(drive,str(self.settings.value('GPS-DEVICE/gpxfolder')))
@@ -281,16 +281,16 @@ class Main(QMainWindow):
                         os.system('copy "' + gpxfile.replace("/",os.sep) + '" "' + outpath.replace("/",os.sep) + '" ')
                     else:
                         shutil.copyfile(gpxfile, outpath)
-                    QtGui.QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden hierher kopiert: %s "%outpath); 
+                    QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden hierher kopiert: %s "%outpath); 
                     
                 
                 else:
-                    QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Das angegebene Verzeichnis %s existiert nicht)!"%outdir); 
+                    QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Das angegebene Verzeichnis %s existiert nicht)!"%outdir); 
             else:
-                    QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Das Laufwerk des GPS-Geraetes wurde nicht erkannt)!"); 
+                    QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","GPS-Geraet nicht gefunden (Das Laufwerk des GPS-Geraetes wurde nicht erkannt)!"); 
                 
         else:
-            QtGui.QMessageBox.critical(self, "Info2","kein export device typ gewaehlt (unter Einstellungen/GPS-Device)"); 
+            QMessageBox.critical(self, "Info2","kein export device typ gewaehlt (unter Einstellungen/GPS-Device)"); 
                     
             
     
@@ -345,8 +345,8 @@ class Main(QMainWindow):
         
         
     def shortcuts(self):
-        self.escAction = QtGui.QAction('escape', self)
-        self.clearAction = QtGui.QAction('clear', self)
+        self.escAction = QAction('escape', self)
+        self.clearAction = QAction('clear', self)
         self.createKeyCtrl(self.escAction, QtCore.Qt.Key_Escape)
         self.createKeyCtrl(self.clearAction, QtCore.Qt.Key_C)
         
@@ -386,7 +386,7 @@ def screenAt(*pos):
 def main():
     global app
     arg = docopt(__doc__, version=__version__)
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     
     if os.name == "nt":
        import ctypes

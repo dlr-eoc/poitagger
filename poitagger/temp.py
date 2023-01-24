@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from PyQt5 import QtCore,QtGui,uic
+from PyQt5.QtWidgets import QWidget
 import numpy as np
 import utm
 import os
@@ -14,14 +15,14 @@ from . import PATHS
 
 logger = logging.getLogger(__name__)
 
-class Temp(QtGui.QWidget):
+class Temp(QWidget):
     
     log = QtCore.pyqtSignal(str)
     #minmax = QtCore.pyqtSignal(float,float)
     
     
     def __init__(self):
-        QtGui.QWidget.__init__(self)
+        QWidget.__init__(self)
         uic.loadUi(os.path.join(PATHS["UI"],'temp.ui'),self)
         #self.setLayout(self.layout)
         self.connections()

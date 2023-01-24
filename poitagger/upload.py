@@ -1,5 +1,8 @@
 from __future__ import print_function
-from PyQt5 import QtCore, QtGui, uic
+from PyQt5 import QtCore, QtGui, uic, QtWidgets
+from PyQt5.QtWidgets import QDialog
+from PyQt5.QtGui import QDesktopServices
+
 from PyQt5.QtWidgets import QApplication
 import ast
 import requests
@@ -13,10 +16,10 @@ from . import PATHS
 
 import pyqtgraph as pg
 
-class UploadDialog(QtGui.QDialog):
+class UploadDialog(QDialog):
 
     def __init__(self,title,settings):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         self.settings = settings
         uic.loadUi(os.path.join(PATHS["UI"],'upload.ui'),self)
         self.setWindowTitle(title)
@@ -40,7 +43,7 @@ class UploadDialog(QtGui.QDialog):
     def loadWebsite(self):
         try:
             url = QtCore.QUrl(self.server.text())
-            QtGui.QDesktopServices.openUrl(url)
+            QDesktopServices.openUrl(url)
         except:
             logger.error("loadWebsite failed!")
             

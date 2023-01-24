@@ -1,14 +1,14 @@
 from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QWidget,QDialog,QColorDialog,QFileDialog
 import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
 
-class GpxProperties(QtGui.QWidget):
+class GpxProperties(QWidget):
     def __init__(self,settings):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'gpx_export.ui'),self)
         self.settings = settings
         self.label.setText("mit dieser Übertragungsart können die Pois z.B. auf ältere Garmin Geräte übertragen <br>werden. <a href='https://www.gpsbabel.org/'>GPSBabel</a> muss separat installiert werden.")   

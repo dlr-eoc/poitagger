@@ -4,7 +4,7 @@ Funktioniert ganz anders, deshalb geht das alles hier  nicht!
 """
 
 from PyQt5 import QtCore,QtGui,uic, QtWebEngineWidgets, QtPrintSupport
-from PyQt5.QtWidgets import QMainWindow,QApplication,QPushButton
+from PyQt5.QtWidgets import QMainWindow,QApplication,QPushButton,QDialog
 
 from lxml import etree
 import ast
@@ -55,7 +55,7 @@ class GeoWidget(QMainWindow):
             
     def handlePrint(self):
         dialog = QtPrintSupport.QPrintDialog()
-        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+        if dialog.exec_() == QDialog.Accepted:
             self.handlePaintRequest(dialog.printer())
         
     def handlePreview(self):

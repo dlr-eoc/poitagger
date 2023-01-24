@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
-from PyQt5.QtWidgets import QFileDialog,QMainWindow,QTableWidgetItem
+from PyQt5.QtWidgets import QFileDialog,QMainWindow,QTableWidgetItem,QMessageBox,QDialog
 import os
 import platform
 import shutil
@@ -39,9 +39,9 @@ class GpxView(QMainWindow):
        # print(cmd)
         ret = os.system(cmd)
         if ret == 0: 
-            QtGui.QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden ueber das Garmin-Serial/USB-Protokoll uebertragen"); 
+            QMessageBox.information(self, "Gps-Datenuebertragung ","Die GPS-Datenuebertragung war erfolgreich! Die Wegpunkte wurden ueber das Garmin-Serial/USB-Protokoll uebertragen"); 
         else:
-            QtGui.QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","Ein altes Garmin Geraet wurde nicht gefunden. Falls es ordnungsgemaess angeschlossen ist, koennte es sein, dass der Treiber noch nicht installiert ist. <a href='https://download.garmin.com/software/USBDrivers_2312.exe'>Garmin Serial Treiber herunterladen</a>. "); 
+            QMessageBox.critical(self, "Gps-Datenuebertragung fehlgeschlagen!","Ein altes Garmin Geraet wurde nicht gefunden. Falls es ordnungsgemaess angeschlossen ist, koennte es sein, dass der Treiber noch nicht installiert ist. <a href='https://download.garmin.com/software/USBDrivers_2312.exe'>Garmin Serial Treiber herunterladen</a>. "); 
                 
     def exportmassstorage(self):
         outdir = str(self.settings.value('GPX/outpath'))
@@ -95,7 +95,7 @@ class GpxView(QMainWindow):
             self.exportemail()
             
         else:
-            QtGui.QMessageBox.critical(self, "Info2","kein export device typ gewaehlt "); 
+            QMessageBox.critical(self, "Info2","kein export device typ gewaehlt "); 
     
     def refresh(self):
         self.tableWidget.setRowCount(len(self.model.pois))
@@ -105,9 +105,9 @@ class GpxView(QMainWindow):
             self.tableWidget.setItem(k,2,QTableWidgetItem(str(i["lon"])))
         self.tableWidget.resizeColumnsToContents()
         
-class GPXExportDialog(QtGui.QDialog):
+class GPXExportDialog(QDialog):
     def __init__(self):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["UI"],'gpxexport.ui'),self)
         self.setWindowTitle("GPX Export")
         
@@ -147,7 +147,7 @@ class GPXExportDialog(QtGui.QDialog):
             self.settings.setValue('GPX/exportType',"email")
         elif self.wildretterRB.isChecked():
             self.settings.setValue('GPX/exportType',"wildretter")
-            QtGui.QMessageBox.critical(self, "Diese Auswahl geht noch nicht. Bitte vorerst noch den alten Upload nutzen (Wolken-Icon)"); 
+            QMessageBox.critical(self, "Diese Auswahl geht noch nicht. Bitte vorerst noch den alten Upload nutzen (Wolken-Icon)"); 
             
         self.done(1)
         

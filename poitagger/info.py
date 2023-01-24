@@ -1,4 +1,5 @@
 from PyQt5 import QtCore,QtGui,uic
+from PyQt5.QtWidgets import QWidget
 import pyqtgraph as pg
 import pyqtgraph.parametertree.parameterTypes as pTypes
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
@@ -31,12 +32,12 @@ def paramtree(dic):
             params.append({"name": k, 'type': "group", 'children': paramtree(v)})
     return params
     
-class Info(QtGui.QWidget):
+class Info(QWidget):
     log = QtCore.pyqtSignal(str)
     position = QtCore.pyqtSignal(float,float,float) # lat, lon
     
     def __init__(self):
-        QtGui.QWidget.__init__(self)
+        QWidget.__init__(self)
         self.t = ParameterTree(showHeader=False)
         self.importer = ImportInfo()
         self.t.setParameters(self.importer.p, showTop=False)

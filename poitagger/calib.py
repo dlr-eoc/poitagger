@@ -7,7 +7,7 @@ from . import PATHS
 
 logger = logging.getLogger(__name__)
 
-class Calib(QtGui.QMainWindow):
+class Calib(QMainWindow):
     log = QtCore.pyqtSignal(str)
     conf =  QtCore.pyqtSignal(QtCore.QSettings) 
     def __init__(self):

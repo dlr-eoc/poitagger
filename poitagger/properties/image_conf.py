@@ -1,11 +1,12 @@
 from __future__ import print_function
 from PyQt5 import QtCore, QtGui, uic
+from PyQt5.QtWidgets import QWidget,QDialog,QColorDialog,QFileDialog
 import ast
 import pyqtgraph as pg
 import os
 from .. import PATHS 
 
-class ImageProperties(QtGui.QWidget):
+class ImageProperties(QWidget):
     a = 255
     b = 0
     g = 255
@@ -13,7 +14,7 @@ class ImageProperties(QtGui.QWidget):
     
    
     def __init__(self,settings):
-        QtGui.QDialog.__init__(self)
+        QDialog.__init__(self)
         uic.loadUi(os.path.join(PATHS["PROPERTIES"],'image_conf.ui'),self)
         self.settings = settings
         
@@ -23,7 +24,7 @@ class ImageProperties(QtGui.QWidget):
         self.calibfile = os.path.join(PATHS["CALIB"],"/default.ini")
         self.camcalib = QtCore.QSettings(self.calibfile, QtCore.QSettings.IniFormat)
         
-        self.colorChooser = QtGui.QColorDialog()
+        self.colorChooser = QColorDialog()
         self.maskColbtn = pg.ColorButton()
         
         self.DeadPixelpathBox.setText(self.calibfile)
@@ -78,7 +79,7 @@ class ImageProperties(QtGui.QWidget):
         self.deadpixel={"serial":camserial,"bad_pixels_v":badpxl_v,"bad_pixels_h":badpxl_h,"bad_lines_v":badpxlline_v,"bad_lines_h":badpxlline_h,"set_mid_value":set_mid_value}
             
     def onSearch(self):
-        path = QtGui.QFileDialog.getOpenFileName(self, "eine Kamera Kalibrier-Datei waehlen", self.DeadPixelpathBox.text(), "Calibration File (*.ini)")
+        path = QFileDialog.getOpenFileName(self, "eine Kamera Kalibrier-Datei waehlen", self.DeadPixelpathBox.text(), "Calibration File (*.ini)")
         if path == "":
             return
         else:
